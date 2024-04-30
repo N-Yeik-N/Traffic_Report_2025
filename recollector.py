@@ -6,8 +6,13 @@ from tale.tale_tools import tale_by_excel
 from boarding.boarding_tools import board_by_excel
 import locale
 from clases_data import *
+from dataclasses import asdict
 
-locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+try:
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+except locale.Error as e:
+    pass
+    #print(f"Error al establecer la configuración regional: {e}")
 
 #############
 # UBICACION #
@@ -15,7 +20,7 @@ locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
 def location(path_subarea):
     # Folders #
-    path_parts = path_subarea.split("\\")
+    path_parts = path_subarea.split("/") #<--- Linux...
     numsubarea = os.path.split(path_subarea)[1][-3:] #<---
     nameproject = path_parts[-3] #<---
     pattern = r'Proyecto\s+([^()]+)\s+\((.*?)\)'
@@ -23,22 +28,22 @@ def location(path_subarea):
     if coincidence:
         nomdistrito = coincidence.group(1) #<---
 
-    INFO = folderVariables(
-        numsubarea = numsubarea,
-        nameproject = nameproject,
-        nomdistrito = nomdistrito
-    )
+    dict_INFO = {
+        'numsubarea': numsubarea,
+        'nameproject': nameproject,
+        'nomdistrito': nomdistrito,
+    }
 
-    return INFO
+    return dict_INFO
 
 ###################################
 # CONTEO Y HORA DE MÁXIMA DEMANDA #
 ###################################
 
 def counts(path_subarea):
-    path_parts = path_subarea.split("\\")
+    path_parts = path_subarea.split("/") #<--- Linux...
     subarea_id = path_parts[-1]
-    proyect_folder = '\\'.join(path_parts[:-2])
+    proyect_folder = '/'.join(path_parts[:-2]) #<--- Linux...
 
     field_data = Path(proyect_folder) / "7. Informacion de Campo" / subarea_id / "Vehicular"
     excel_tipicidades = {}
@@ -236,6 +241,6 @@ def boarding(path_subarea):
 
     print(day_tip_list)
 
-if __name__ == '__main__':
-    PATH = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-    boarding(PATH)
+# if __name__ == '__main__':
+#     PATH = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
+#     boarding(PATH)
