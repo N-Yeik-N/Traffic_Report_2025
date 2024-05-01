@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from peakhour.peakfinder import peakhour_finder, compute_ph_system
+from tables.tools.peakfinder import peakhour_finder, compute_ph_system
 from tale.tale_tools import tale_by_excel
 from boarding.boarding_tools import board_by_excel
 import locale
