@@ -1,6 +1,14 @@
 from openpyxl import load_workbook
 import re
-from clases import *
+from dataclasses import dataclass
+
+@dataclass
+class cycleTime:
+    tipicidad: str
+    codigo: str
+    nombre: str
+    cycletime: int
+    phases: list
 
 """ 
 Solo se extraerá información para los tiempos de ciclo en el turno mañana.
@@ -53,6 +61,6 @@ def get_info(path, tipicidad):
 
 
 if __name__ == '__main__':
-    PATH = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\7. Informacion de Campo\Sub Area 016\Tiempo de Ciclo Semaforico\SS-78_Av. Rosa Lozano - Jr. Cerro Gris_Tiempo de Ciclo y Fases.xlsx"
-    data = get_info(PATH, "Atipico")
+    PATH = r"data/1. Proyecto Surco (Sub. 16 -59)/7. Informacion de Campo/Sub Area 016/Tiempo de Ciclo Semaforico/SS-77_Av. Rosa Lozano - Jr. Geranios_Tiempo de Ciclo y Fases.xlsx"
+    data = get_info(PATH, "Tipico")
     print(data)

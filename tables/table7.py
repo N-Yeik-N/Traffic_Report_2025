@@ -1,18 +1,34 @@
-import pandas as pd
 import os
+from tools.boarding import board_by_excel, create_table
 
-def table7(path_subarea):
-    path_excel = r"data\Cronograma Vissim.xlsx"
-    df = pd.read_excel(path_excel, sheet_name='Cronograma', header=0, usecols="A:E", skiprows=1)
-    df = df.drop(columns=["Codigo TDR", "Entregable"])
+def table7(path_subarea) -> None:
+    path_parts = path_subarea.split("/") #<--- LINUX
+    subarea_id = path_parts[-1]
+    proyect_folder = '/'.join(path_parts[:-2]) #<--- LINUX
 
-    numsubarea = os.path.split(path_subarea)[1][-3:]
-    no = int(numsubarea)
+    field_data = os.path.join(
+        proyect_folder,
+        "7. Informacion de Campo",
+        subarea_id,
+        "Embarque y Desembarque"
+    )
 
-    code_by_subarea = df[df['Sub Area'] == no]['Codigo'].tolist()
+    excels_by_tipicidad = {}
+    for tipicidad in ["Tipico", "Atipico"]:
+        tipicidad_folder = os.path.join(field_data, tipicidad)
+        list_excels = os.listdir(tipicidad_folder)
+        list_excels = [os.path.join(tipicidad_folder, file) for file in list_excels
+                       if file.endswith(".xlsx") and not file.startswith("~")]
+        excels_by_tipicidad[tipicidad] = list_excels
 
-    
+    tables_by_tipicidad = {}
+    for tipicidad, excel_list in excels_by_tipicidad.items():
+        tables_by_code = {}
+        for excel in excel_list:
+            codigo, tableList = board_by_excel(excel)
+            tables_by_code[codigo] = tableList
+        tables_by_tipicidad[tipicidad] = tables_by_code
 
-if __name__ == '__main__':
-    path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-    table7(path)
+    for key, value in tables_by_tipicidad.items():
+        for code, tableData in value.items():
+            create_table(tableData, key, code)
