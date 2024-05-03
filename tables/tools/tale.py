@@ -1,7 +1,21 @@
 from openpyxl import load_workbook
 import pandas as pd
+import re
 
 def tale_by_excel(path):
+    pattern1 = r"([A-Z]+[0-9]+)"
+    pattern2 = r"([A-Z]+-[0-9]+)"
+    name_excel = path.split("\\")[-1]
+    coincidence1 = re.search(pattern1, name_excel)
+    coincidence2 = re.search(pattern2, name_excel)
+
+    if coincidence1:
+        code = coincidence1.group(1)
+    elif coincidence2:
+        code = coincidence2.group(1)
+    else:
+        print(f"Error - Este excel no tiene código: {path}")
+
     wb = load_workbook(path, read_only=True, data_only=True)
     ws = wb['Base Data']
     sentido_slice = slice("C7","C14")
@@ -18,34 +32,30 @@ def tale_by_excel(path):
 
     quantity = len(list_acceso)
 
-    dict_turns = {}
     list_slices = [
         slice("D20","K59"),
         slice("O20","V59"),
         slice("AK20","AR59"),
     ]
 
-    for i, turn in enumerate(["Mañana", "Tarde", "Noche"]):
-        dict_info = _get_statistics(list_slices[i], ws, quantity)
-        dict_turns[turn] = dict_info
+    column_names = ["Turn","Direction","Access","Max","Mean","Std"]
+    df = pd.DataFrame(columns=column_names)
+
+    for id, turno in enumerate(["Mañana","Tarde","Noche"]):
+        means,maxs,stds = _get_statistics(list_slices[id], ws, quantity)
+        for acceso, sentido, mean, max, std in zip(list_acceso, list_sentido, means, maxs, stds):
+            df.loc[len(df)] = [turno, sentido, acceso, max, mean, std]
+            #df = df.concat({"Turn": turno, "Direction": sentido, "Access": acceso, "Max": max, "Mean": mean, "Std": std}, ignore_index=True)
+
+    date = ws['D4'].value
 
     wb.close()
 
-    dict_info = {
-        "Datos": sentido_acceso_dict,
-        "Numeros": dict_turns
-    }
-    
-    return dict_info
+    return code, date, df
 
 def _get_statistics(slice_turn, ws, quant):
     df = pd.DataFrame([[cell.value for cell in row] for row in ws[slice_turn]]).iloc[:,:quant]
-    means = df.mean(axis=0, skipna=True).round(2)
-    maxs = df.max(axis=0, skipna=True).round(2)
-    stds = df.std(axis=0, skipna=True).round(2)
-    dict_info = {
-        "max": maxs,
-        "mean": means,
-        "std": stds,
-    }
-    return dict_info
+    means = df.mean(axis=0, skipna=True).round(2).fillna('-')
+    maxs = df.max(axis=0, skipna=True).round(2).fillna('-')
+    stds = df.std(axis=0, skipna=True).round(2).fillna('-')
+    return means, maxs,stds

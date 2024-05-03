@@ -1,21 +1,14 @@
 from docxtpl import DocxTemplate
-from recollector import *
-
+from call_functions import location
 
 def fill_docx(path):
-    doc = DocxTemplate("templates/main.docx")
+    doc = DocxTemplate("templates/template.docx")
     
     #Location
-    dict_info = location(path)
+    VARIABLES1 = location(path)
 
-    #counts
-    RESULTS = counts(path)
-    for topic, dictionario in RESULTS.items():
-        print(topic)
-        print(dictionario)
-
-    #doc.render(dict_info)
-    #doc.save("TEST.docx")
+    doc.render(VARIABLES1)
+    doc.save("TEST.docx")
 
 if __name__ == '__main__':
     PATH = r"/home/chiky/Projects/REPORT/data/1. Proyecto Surco (Sub. 16 -59)/6. Sub Area Vissim/Sub Area 016"
