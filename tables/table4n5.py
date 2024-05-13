@@ -1,6 +1,9 @@
 import os
-from tools.tale import tale_by_excel
+from tables.tools.tale import tale_by_excel
+from pathlib import Path
+
 #docx
+from docxtpl import DocxTemplate
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.table import WD_ALIGN_VERTICAL
@@ -8,10 +11,14 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-def table4n5(path_subarea):
-    path_parts = path_subarea.split("\\")
+def append_document_content(source_doc, target_doc) -> None:
+    for element in source_doc.element.body:
+        target_doc.element.body.append(element)
+
+def create_table4n5(path_subarea):
+    path_parts = path_subarea.split("/")
     subarea_id = path_parts[-1]
-    proyect_folder = '\\'.join(path_parts[:-2])
+    proyect_folder = '/'.join(path_parts[:-2])
 
     field_data = os.path.join(
         proyect_folder,
@@ -55,6 +62,7 @@ def table4n5(path_subarea):
     #Creating table 4
     doc = Document()
     table = doc.add_table(rows=7, cols=5)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for i, texto in enumerate([
         "Intersección","Día","Tipicidad","Turno","Horario"]):
         table.cell(0,i).text = texto
@@ -119,9 +127,12 @@ def table4n5(path_subarea):
             cell.width = Inches(x)
 
     table.style = "Table Grid"
-    doc.save("./db/table4.docx")
+    table4_path = Path(path_subarea) / "Tablas" / "table4.docx"
+    doc.save(table4_path)
 
     #Creating table 5
+    count = 1
+    list_REF = []
     for tipicidad, dataList in data_by_tipicidad.items():
         for data in dataList:
             if tipicidad == "Tipico":
@@ -129,6 +140,7 @@ def table4n5(path_subarea):
                 doc = Document()
                 
                 table = doc.add_table(rows=1, cols=6)
+                table.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 for i, texto in enumerate([
                     "Turno","Sentido","Acceso","Longitud de Cola Máxima","Longitud de Cola Promedio","Desviación Estándar"
                 ]):
@@ -183,4 +195,31 @@ def table4n5(path_subarea):
                         cell.width = Inches(x)
                 
                 table.style = 'Table Grid'
-                doc.save(f"./db/table5_{data[0]}_{tipicidad}.docx")
+                table5_path = Path(path_subarea) / "Tablas" / f"table5_{count}.docx"
+                doc.save(table5_path)
+                
+                doc_template = DocxTemplate("./templates/template_tablas.docx")
+                new_table = doc_template.new_subdoc(table5_path)
+                texto = f"Resumen de la longitud de cola de la intersección {data[0]} día típico"
+                VARIABLES = {
+                    'texto': texto,
+                    'tabla': new_table,
+                }
+                doc_template.render(VARIABLES)
+                ref_path = Path(path_subarea) / "Tablas" / f"table5_{count}_REF.docx"
+                doc_template.save(ref_path)
+                list_REF.append(ref_path)
+                count += 1
+    
+    doc_target = Document(list_REF[0])
+    for i in range(len(list_REF)):
+        if i == 0: continue
+        doc_source = Document(list_REF[i])
+        append_document_content(doc_source, doc_target)
+        table5_path_aux = Path(path_subarea) / "Tablas" / f"table5.docx"
+        doc_target.save(table5_path_aux)
+        doc_target = Document(table5_path_aux)
+
+    table5_path = Path(path_subarea) / "Tablas" / "table5.docx"
+    doc_target.save(table5_path)
+    return table4_path, table5_path

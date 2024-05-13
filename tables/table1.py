@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from pathlib import Path
 
 #docx
 from docx import Document
@@ -9,8 +10,8 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-def table1(path_subarea):
-    path_excel = r"tools\Cronograma Vissim.xlsx"
+def create_table1(path_subarea):
+    path_excel = r"data\Cronograma Vissim.xlsx"
     df = pd.read_excel(path_excel, sheet_name='Cronograma', header=0, usecols="A:E", skiprows=1)
     df = df.drop(columns=["Codigo TDR", "Entregable"])
 
@@ -23,6 +24,7 @@ def table1(path_subarea):
     name_by_subarea = df[df['Sub Area'] == no]['Intersección'].tolist()
 
     table = doc.add_table(rows = 1+len(code_by_subarea), cols = 3)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
     #Headers:
     table.cell(0,0).text = "Código"
     table.cell(0,1).text = "Intersección"
@@ -59,8 +61,11 @@ def table1(path_subarea):
             cell.width = Inches(x)
     table.style = 'Table Grid'
 
-    doc.save("./db/table1.docx")
+    final_path = Path(path_subarea) / "Tablas" / "table1.docx"
 
-if __name__ == '__main__':
-    path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-    table1(path)
+    if not os.path.exists(final_path.parent):
+        os.makedirs(final_path.parent)
+
+    doc.save(final_path)
+
+    return final_path

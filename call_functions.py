@@ -1,17 +1,19 @@
 import os
 import pandas as pd
+from pdfs.tools import *
+import re
 
 project_names = {
-    1: "MEJORAMIENTO Y AMPLIACION DE LA INFRAESTRUCTURA SEMAFORICA DEL DISTRITO DE SANTIAGO DE SURCO - PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    2: "MEJORAMIENTO Y AMPLIACION DE LA INFRAESTRUCTURA SEMAFORICA DEL DISTRITO DE SANTIAGO DE SURCO - PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    3: "MEJORAMIENTO DEL SERVICIO DE TRANSITABILIDAD DE LA RED SEMAFORICA DE LOS EJES VIALES: AV. PIRAMIDE DEL SOL, AV. CHINCHAYSUYO, AV. GRAN CHIMU, AV. RIVA AGUERO, AV. ANCASH, AV. CESAR VALLEJO, AV. LURIGANCHO, AV. PORTADA DEL SOL, EN LOS DISTRITOS DE EL AGUSTINO Y SAN JUAN DE LURIGANCHO DE LA PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    4: "MEJORAMIENTO Y AMPLIACION DEL SERVICIO DE TRANSITABILIDAD DE LA RED SEMAFORICA DE LOS EJES VIALES: AV. DEFENSORES DEL MORRO, AV. MIGUEL GRAU, AV. PEDRO DE OSMA, AV. SAN MARTIN, AV. EL SOL OESTE, CA. TEODOCIO PARREÑO, AV. LIMA, AV. GUARDIA CIVIL, AV. CHORRILLOS, AV. ARIOSTO MATELLINI, AV. ALAMEDA SUR, AV. EL SOL, AV. ALAMEDA SAN MARCOS, AV. GUARDIA PERUANA, AV. MARISCAL CASTILLA, EN LOS DISTRITOS DE CHORRILLOS Y BARRANCO DE LA PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    5: "MEJORAMIENTO DE LA RED SEMAFORICA EN LAS INTERSECCIONES DEL EJE VIAL DE LA AV. UNIVERSITARIA (TRAMO: AV. SANTA ELVIRA - AV. LA PAZ) DE LOS DISTRITOS DE LIMA, SAN MARTIN DE PORRES, LOS OLIVOS Y EL DISTRITO DE PUEBLO LIBRE - PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    6: "MEJORAMIENTO DE LA RED SEMAFORICA EN LAS INTERSECCIONES DEL EJE VIAL DE LA AV. JAVIER PRADO - AV. FAUSTINO SANCHEZ CARRION - AV. LA MARINA, DISTRITO DE LA MOLINA, SANTIAGO DE SURCO, JESUS MARIA, SAN ISIDRO, MAGDALENA DEL MAR Y DISTRITO DE SAN MIGUEL - PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    7: "MEJORAMIENTO Y AMPLIACION DE LA RED SEMAFORICA DE LA CICLOVIA DE LA ZONA CENTRO I Y II, DE LOS DISTRITOS DE LIMA, JESUS MARIA, PUEBLO LIBRE, LA VICTORIA Y DISTRITO DE BREÑA - PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    8: "MEJORAMIENTO Y AMPLIACION DE LA RED SEMAFORICA DE LOS EJES VIALES: AV. SALVADOR ALLENDE, AV. SAN JUAN, AV. CESAR CANEVARO, AV. MIGUEL IGLESIAS, AV. 26 DE NOVIEMBRE, AV. JOSE CARLOS MARIATEGUI, AV. LIMA, AV. PACHACUTEC, EN LOS DISTRITOS DE SAN JUAN DE MIRAFLORES Y VILLA MARIA DEL TRIUNFO DE LA PROVINCIA DE LIMA - DEPARTAMENTO EN LOS DISTRITOS DE VILLA MARIA DEL TRIUNFO Y SAN JUAN DE MIRAFLORES DE LA PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    9: "MEJORAMIENTO Y AMPLIACION DE LA RED SEMAFORICA DE LOS EJES VIALES: AV. REVOLUCION, AV. MARIANO PASTOR SEVILLA, AV. MICAELA BASTIDAS, AV. JUAN VELASCO ALVARADO, AV. CENTRAL, AV. 200 MILLAS, AV. 1° DE MAYO, AV. SEPARADORA INDUSTRIAL, DEL DISTRITO DE VILLA EL SALVADOR - PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
-    10: "MEJORAMIENTO DE LA RED SEMAFORICA DE LOS EJES VIALES: AV. LA MOLINA, AV. LA UNIVERSIDAD, AV. RAÚL FERRERO, AV. SIETE, AV. MANUEL PRADO UGARTECHE, AV. ALAM. DEL CORREGIDOR, AV. LOS FRESNOS, AV. LOS CONSTRUCTORES, AV. SEPARADORA INDUSTRIAL EN LOS DISTRITOS DE LA MOLINA Y SANTA ANITA DE LA PROVINCIA DE LIMA - DEPARTAMENTO DE LIMA",
+    1: "Mejoramiento y ampliación de la infraestructura semafórica del distrito de Santiago de Surco - Provincia de Lima - Departamento de Lima",
+    2: "Mejoramiento y ampliación de la infraestructura semafórica del distrito de Santiago de Surco - Provincia de Lima - Departamento de Lima",
+    3: "Mejoramiento del servicio de transitabilidad de la red semafórica de los ejes viales: Av. Piramide del Sol, Av. Chinchaysuyo, Av. Gran Chimu, Av. Riva Aguero, Av. Ancash, Av. Cesar Vallejo, Av. Luringancho, Av. Portada del Sol, en los distritos de El Agustino y San Juan de Lurigancho de la Provincia de Lima - Departamento de Lima",
+    4: "Mejoramiento y ampliación del servicio de transitabilidad de la red semafórica de los ejes viale: Av. Defensores del Morro, Av. Miguel Grau, Av. Pedro de Osma, Av. San Martin, Av. El Sol Oeste, Ca. Teodocio Parreño, Av. Lima, Av. Guardia Civil, Av. Chorrillos, Av. Ariosto Matellini, Av. Alameda Sur, Av. El Sol, Av. Alameda San Marcos, Av. Guardia Peruana, Av. Mariscal Castilla, en los distritos de Chorrillos y Barranco de la Provincia de Lima - Departamento de Lima",
+    5: "Mejoramiento de la red semafórica en las intersecciones del eje vial de La Av. Universitaria (Tramo: Av. Santa Elvira - Av. La Paz) de los distritos de Lima, San Martin de Porres, Los Olivos y el distrito de Pueblo Libre - Provincia de Lima - Departamento de Lima",
+    6: "Mejoramiento de la red semafórica en las intersecciones del eje vial de La Av. Javier Prado - Av. Faustino Sánchez Carrión - Av. La Marina, distrito de La Molina, Santiago de Surco, Jesús María, San Isidro, Magdalena del Mar y distrito de San Miguel - Provincia de Lima - Departamento de Lima",
+    7: "Mejoramiento y ampliación de la red semafórica de la ciclovía de la zona centro I y II, de los distritos de Lima, Jesús María, Pueblo Libre, La Victoria y distrito de Breña - Provincia de Lima - Departamento de Lima",
+    8: "Mejoramiento y ampliación de la red semafórica de los ejes viale: Av. Salvador Allende, Av. San Juan, Av. Cesar Canevaro, Av. Miguel Iglesias, Av. 26 de Noviembre, Av. Jose Carlos Mariategui, Av. Lima, Av. Pachacutec, en los distritos de San Juan de Miraflores y Villa María del Triunfo de la Provincia de Lima - Departamento de Lima",
+    9: "Mejoramiento y ampliación de la red semafórica de los ejes viale: Av. Revolución, Av. Mariano Pastor Sevilla, Av. Micaela Bastidas, Av. Juan Velasco Alvarado, Av. Central, Av. 200 Millas, Av. 1° de Mayo, Av. Separadora Industrial, del distrito de Villa El Salvador - Provincia de Lima - Departamento de Lima",
+    10: "Mejoramiento de la red semafórica de los ejes viales: Av. La Molina, Av. La Universidad, Av. Raúl Ferrero, Av. Siete, Av. Manuel Prado Ugarteche, Av. Alam. Del Corregidor, Av. Los Fresnos, Av. Los Constructores, Av. Separadora Industrial en los distritos de La Molina y Santa Anita de la Provincia de Lima - Departamento de Lima",
 }
 
 def location(path_subarea):
@@ -25,8 +27,10 @@ def location(path_subarea):
     codintersecciones = df_general[df_general['Sub_Area'] == int(numsubarea)]["Code"].unique().tolist()
     if len(intersecciones) == 1:
         presinter = "presenta la ubicacion de la intersección"
+        presinter2 = "la intersección"
     else:
         presinter = "presentan las ubicaciones de las siguientes intersecciones:"
+        presinter2 = "las intersecciones"
 
     texto = ""
     for i, nombre_inter in enumerate(intersecciones):
@@ -47,8 +51,10 @@ def location(path_subarea):
 
     if len(intersecciones) > 1:
         descsubarea = "las intersecciones pertenecientes"
+        prestablas = "las tablas"
     else:
         descsubarea = "la intersección perteneciente"
+        prestablas = "la tabla"
 
     VARIABLES = {
         "numsubarea": numsubarea,
@@ -58,6 +64,153 @@ def location(path_subarea):
         "nominterseccion": nominterseccion,
         "codinterseccion": codinterseccion,
         "descsubarea": descsubarea,
+        "presinter2": presinter2,
+        "prestablas": prestablas
     }
 
     return VARIABLES
+
+def histogramas(path_subarea) -> str:
+    listCodes = get_codes(path_subarea)
+    anexos_path = os.path.join(path_subarea, "Anexos")
+
+    folderAnexos = os.listdir(anexos_path)
+    
+    if not "Vehicular" in folderAnexos:
+        print("ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'")
+
+    folderVehicular = os.path.join(anexos_path, "Vehicular")
+    listPDFS = os.listdir(folderVehicular)
+
+    pdfs_by_code = {}
+    for code in listCodes:
+        pdfs_by_code[code] = []
+
+    pattern1 = r"([A-Z]+[0-9]+)"
+    pattern2 = r"([A-Z]+-[0-9]+)"
+    for pdf in listPDFS:
+        match_pdf = re.search(pattern1, pdf) or re.search(pattern2, pdf)
+        if match_pdf:
+            code_str = match_pdf[1]
+            pdfs_by_code[code_str].append(pdf)
+
+    listSelectedPDF = []
+    for code, pdfs in pdfs_by_code.items():
+        for pdf in pdfs:
+            if 'Histograma' in pdf:
+                listSelectedPDF.append((code, os.path.join(folderVehicular,pdf)))
+
+    pattern1 = r"(_A)"
+    pattern2 = r"(_T)"
+    listPathImages = []
+    dataPDF = []
+    for code, pdf_path in listSelectedPDF:
+        namePDF = os.path.split(pdf_path)[1]
+        namePDF = namePDF[:-4]
+        match_tipicidad = re.search(pattern1, namePDF) or re.search(pattern2, namePDF)
+        if match_tipicidad:
+            tipicidad = match_tipicidad[1][1] #[1] "_T" o "_A" / [1][1] "T" o "A"
+        listPathImages.append(convert_pdf_to_image(pdf_path, folderVehicular, namePDF))
+        dataPDF.append((code, tipicidad))
+    
+    resultList = []
+    for data, images in zip(dataPDF, listPathImages):
+        resultList.append((data[0], data[1], images))
+
+    resultList = sorted(resultList, key = lambda x: (x[0], -ord(x[1])))
+
+    histograma_path = create_histogramas_subdocs(resultList, path_subarea)
+
+    return histograma_path
+
+def flujogramas_vehiculares(path_subarea):
+    listCodes = get_codes(path_subarea)
+    anexos_path = os.path.join(path_subarea, "Anexos")
+
+    folderAnexos = os.listdir(anexos_path)
+
+    if not "Vehicular" in folderAnexos:
+        print("ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'")
+
+    folderVehicular = os.path.join(anexos_path, "Vehicular")
+    listPDFS = os.listdir(folderVehicular)
+
+    pdfs_by_code = {}
+    for code in listCodes:
+        pdfs_by_code[code] = []
+
+    pattern1 = r"([A-Z]+[0-9]+)"
+    pattern2 = r"([A-Z]+-[0-9]+)"
+    for pdf in listPDFS:
+        match_pdf = re.search(pattern1, pdf) or re.search(pattern2, pdf)
+        if match_pdf:
+            code_str = match_pdf[1]
+            pdfs_by_code[code_str].append(pdf)
+
+    listSelectedPDF = []
+    listCodes = []
+    for code, pdfs in pdfs_by_code.items():
+        for pdf in pdfs:
+            if 'V_Ma_T' in pdf:
+                listSelectedPDF.append((code, os.path.join(folderVehicular, pdf)))
+                listCodes.append(code)
+
+    listPathImages = []
+    for code, pdf_path in listSelectedPDF:
+        namePDF = os.path.split(pdf_path)[1]
+        namePDF = namePDF[:-4]
+        listPathImages.append(convert_pdf_to_image(pdf_path, folderVehicular, namePDF))
+
+    resultList = []
+    for code, imagePath in zip(listCodes, listPathImages):
+        resultList.append((code, imagePath))
+
+    flujograma_path = create_flujogramas_vehicular_subdocs(resultList, path_subarea)
+
+    return flujograma_path
+
+def flujogramas_peatonales(path_subarea):
+    listCodes = get_codes(path_subarea)
+    anexos_path = os.path.join(path_subarea, "Anexos")
+
+    folderAnexos = os.listdir(anexos_path)
+
+    if not "Peatonal" in folderAnexos:
+        print("ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'")
+
+    folderPeatonal = os.path.join(anexos_path, "Peatonal")
+    listPDFS = os.listdir(folderPeatonal)
+
+    pdfs_by_code = {}
+    for code in listCodes:
+        pdfs_by_code[code] = []
+
+    pattern1 = r"([A-Z]+[0-9]+)"
+    pattern2 = r"([A-Z]+-[0-9]+)"
+    for pdf in listPDFS:
+        match_pdf = re.search(pattern1, pdf) or re.search(pattern2, pdf)
+        if match_pdf:
+            code_str = match_pdf[1]
+            pdfs_by_code[code_str].append(pdf)
+
+    listSelectedPDF = []
+    listCodes = []
+    for code, pdfs in pdfs_by_code.items():
+        for pdf in pdfs:
+            if "Turno 01_T" in pdf:
+                listSelectedPDF.append((code, os.path.join(folderPeatonal, pdf)))
+                listCodes.append(code)
+
+    listPathImages = []
+    for code, pdf_path in listSelectedPDF:
+        namePDF = os.path.split(pdf_path)[1]
+        namePDF = namePDF[:-4]
+        listPathImages.append(convert_pdf_to_image(pdf_path, folderPeatonal, namePDF))
+
+    resultList = []
+    for code, imagePath in zip(listCodes, listPathImages):
+        resultList.append((code, imagePath))    
+
+    flujograma_path = create_flujograma_peatonal_subdocs(resultList, path_subarea)
+
+    return flujograma_path

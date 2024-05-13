@@ -58,9 +58,3 @@ def get_info(path, tipicidad):
     )
 
     return data
-
-
-if __name__ == '__main__':
-    PATH = r"data/1. Proyecto Surco (Sub. 16 -59)/7. Informacion de Campo/Sub Area 016/Tiempo de Ciclo Semaforico/SS-77_Av. Rosa Lozano - Jr. Geranios_Tiempo de Ciclo y Fases.xlsx"
-    data = get_info(PATH, "Tipico")
-    print(data)

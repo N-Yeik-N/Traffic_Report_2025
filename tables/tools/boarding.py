@@ -2,7 +2,10 @@ import pandas as pd
 from openpyxl import load_workbook
 from dataclasses import dataclass
 import statistics
+from pathlib import Path
+
 #docx
+from docxtpl import DocxTemplate
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.table import WD_ALIGN_VERTICAL
@@ -59,11 +62,13 @@ def board_by_excel(path) -> tuple[str, list]:
 
 def create_table(
         tableData,  #Lista de un dataclass con la información por fila.
-        tipicidad,  #Tipicidad
         code,       #Código de intersección
+        count,      #Nro. de orden de la tabla
+        path_subarea, #Path de la subarea
         ) -> None:
     doc = Document()
     table = doc.add_table(rows=len(tableData)+1, cols=6)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for i, texto in enumerate(["Turno","Sentido","Acceso", "Máx. de Tiempo", "Prom. Tiempo", "Des. St. Tiempo"]):
         table.cell(0,i).text = texto
     
@@ -143,5 +148,17 @@ def create_table(
             cell.width = Inches(x)
 
     table.style = "Table Grid"
+    table7_path = Path(path_subarea) / "Tablas" / f"table7_{count}.docx"
+    doc.save(table7_path)
 
-    doc.save(f"./db/table7_{tipicidad}_{code}.docx")
+    doc_template = DocxTemplate("./templates/template_tablas.docx")
+    new_table = doc_template.new_subdoc(table7_path)
+    texto = f"Embarque y desembarque de la intersección {code} día típico"
+    VARIABLES = {
+        'texto': texto,
+        'tabla': new_table,
+    }
+    doc_template.render(VARIABLES)
+    table7_path_ref = Path(path_subarea) / "Tablas" / f"table7_{count}_REF.docx"
+    doc_template.save(table7_path_ref)
+    return table7_path_ref

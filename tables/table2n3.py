@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from pathlib import Path
-from tools.peakfinder import peakhour_finder, compute_ph_system
+from tables.tools.peakfinder import peakhour_finder, compute_ph_system
 
 #docx
 from docx import Document
@@ -11,12 +11,12 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-def table2(path_subarea):
-    path_parts = path_subarea.split("\\") #<--- Linux...
+def create_table2n3(path_subarea):
+    path_parts = path_subarea.split("/") #<--- Linux...
     subarea_id = path_parts[-1]
-    proyect_folder = '\\'.join(path_parts[:-2]) #<--- Linux...
-
+    proyect_folder = '/'.join(path_parts[:-2]) #<--- Linux...
     field_data = Path(proyect_folder) / "7. Informacion de Campo" / subarea_id / "Vehicular"
+
     excel_tipicidades = {}
 
     for tipicidad in ["Tipico","Atipico"]:
@@ -42,7 +42,7 @@ def table2(path_subarea):
     day_tip_list = []
     day_ati_list = []
 
-    path_excel = r"tools\Cronograma Vissim.xlsx"
+    path_excel = r"data\Cronograma Vissim.xlsx"
     df = pd.read_excel(path_excel, sheet_name='Cronograma', header=0, usecols="A:E", skiprows=1)
     df = df.drop(columns=["Codigo TDR", "Entregable"])
 
@@ -146,8 +146,8 @@ def table2(path_subarea):
 
     day_tip = list(set(day_tip_list))[0]
     day_ati = list(set(day_ati_list))[0]
-    #dcontet = day_tip.strftime("%d de %B del %Y") #<---
-    #dcontea = day_ati.strftime("%d de %B del %Y") #<---
+    dcontet = day_tip.strftime("%d de %B del %Y") #<---
+    dcontea = day_ati.strftime("%d de %B del %Y") #<---
 
     dconteot = day_tip.strftime("%d/%m/%Y") #<---
     dconteoa = day_ati.strftime("%d/%m/%Y") #<---
@@ -158,6 +158,7 @@ def table2(path_subarea):
 
     doc = Document()
     table = doc.add_table(rows = 5+len(code_by_subarea)*2, cols = 5)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
     #Default texts
     table.cell(0,0).text = "Código"
     table.cell(0,1).text = 'Intersección'
@@ -229,7 +230,9 @@ def table2(path_subarea):
 
     table.style = 'Table Grid'
 
-    doc.save("./db/table2.docx")
+    final_path_2 = Path(path_subarea) / "Tablas" / "table2.docx"
+
+    doc.save(final_path_2)
 
     ####################
     # CREATING TABLE 3 #
@@ -237,6 +240,7 @@ def table2(path_subarea):
 
     doc = Document()
     table = doc.add_table(rows=7 ,cols=5)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     table.cell(0,0).text = "Intersección"
     table.cell(0,1).text = "Día"
@@ -303,8 +307,8 @@ def table2(path_subarea):
 
     table.style = 'Table Grid'
 
-    doc.save("./db/table3.docx")
+    final_path_3 = Path(path_subarea) / "Tablas" / "table3.docx"
 
-if __name__ == '__main__':
-    path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-    table2(path)
+    doc.save(final_path_3)
+
+    return final_path_2, final_path_3, dconteot, dconteoa

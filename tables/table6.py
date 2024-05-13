@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from pathlib import Path
 
 #docx
 from docx import Document
@@ -9,7 +10,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-def table6(path_subarea):
+def create_table6(path_subarea):
     path_excel = r"data\Cronograma Vissim.xlsx"
     df = pd.read_excel(path_excel, sheet_name='Cronograma', header=0, usecols="A:E", skiprows=1)
     df = df.drop(columns=["Codigo TDR", "Entregable"])
@@ -39,6 +40,7 @@ def table6(path_subarea):
 
     doc = Document()
     table = doc.add_table(rows = 7, cols = 5)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     #Default texts
     table.cell(0,0).text = "Intersección"
@@ -108,9 +110,6 @@ def table6(path_subarea):
             cell.width = Inches(x)
 
     table.style = 'Table Grid'
-
-    doc.save("./db/table6.docx")
-
-if __name__ == '__main__':
-    path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-    table6(path)
+    table6_path = Path(path_subarea) / "Tablas" / "table6.docx"
+    doc.save(table6_path)
+    return table6_path
