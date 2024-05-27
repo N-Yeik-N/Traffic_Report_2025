@@ -42,9 +42,13 @@ def board_by_excel(path) -> tuple[str, list]:
         for sentido in sentidos:
             for acceso in accesos:
                 timeSerie = df[(df["Turno"] == turno) & (df["Sentido"] == sentido) & (df["Acceso"] == acceso)]["Tiempo"].tolist()
+                if timeSerie == []: continue
                 maximo = str(max(timeSerie))
                 promedio = str(round(statistics.mean(timeSerie),2))
-                desviacion = str(round(statistics.stdev(timeSerie),2))
+                if len(timeSerie) == 1:
+                    desviacion = "0.0"
+                else:
+                    desviacion = str(round(statistics.stdev(timeSerie),2))
 
                 info = BoardingTable(
                     codigo = codigo,

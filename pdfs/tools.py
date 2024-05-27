@@ -5,10 +5,17 @@ from docxtpl import DocxTemplate, InlineImage
 from docx.shared import Inches
 from docx import Document
 from pathlib import Path
+from docxcompose.composer import Composer
 
-def _append_document_content(source_doc, target_doc) -> None:
-    for element in source_doc.element.body:
-        target_doc.element.body.append(element)
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
+
+    composer.save(finalPath)
 
 def get_codes(subarea_path) -> list:
     num_subarea = os.path.split(subarea_path)[1][-3:]
@@ -17,15 +24,14 @@ def get_codes(subarea_path) -> list:
     return listCodes
 
 def convert_pdf_to_image(pdf_path, output_path, name) -> None:
-    #print(pdf_path)
     try:
         images = convert_from_path(pdf_path)
-    except Exception as e:
-        print(e)
+    except AttributeError as e:
         return print("ERROR: No se pudo convertir el PDF a imagen. Si ya fue creado antes debes borrarlo primero.")
+    except Exception as inst:
+        raise inst
 
-    if len(images) > 1:
-        return print("ERROR: PDF tiene mas de una hoja.")
+    assert len(images) <= 1, "ERROR: PDF tiene mas de una hoja."
     
     destiny_path = os.path.join(output_path, name + '.png')
     for i in range(len(images)):
@@ -36,7 +42,7 @@ def convert_pdf_to_image(pdf_path, output_path, name) -> None:
 
     return destiny_path
 
-def create_histogramas_subdocs(resultList: list, path_subarea: str | Path) -> str: 
+def create_histogramas_subdocs(resultList: list, path_subarea: str | Path, agentType: str) -> str: 
     PATH_TEMPLATE = r".\templates\template_tablas.docx"
 
     listWords = []
@@ -44,8 +50,10 @@ def create_histogramas_subdocs(resultList: list, path_subarea: str | Path) -> st
         doc = DocxTemplate(PATH_TEMPLATE)
         if tipicidad == "T": tipico_texto = "típico"
         elif tipicidad == "A": tipico_texto = "atípico"
-
-        texto = f"Histograma vehicular de las HP por cada turno en la intersección {code} día {tipico_texto}"
+        if agentType == "Vehicular":
+            texto = f"Histograma vehicular de las HP por cada turno en la intersección {code} día {tipico_texto}"
+        elif agentType == "Peatonal":
+            texto = f"Histograma peatonal de las HP por cada turno en la intersección {code} día {tipico_texto}"
         image = InlineImage(doc, imagePath, width=Inches(6))
 
         variables = {
@@ -58,16 +66,10 @@ def create_histogramas_subdocs(resultList: list, path_subarea: str | Path) -> st
         doc.save(final_path)
         listWords.append(final_path) #Already in order
 
-    doc_target = Document(listWords[0])
-    for i in range(len(listWords)):
-        if i == 0: continue
-        doc_source = Document(listWords[i])
-        _append_document_content(doc_source, doc_target)
-        histograma_path = Path(path_subarea) / "Tablas" / "histogramas.docx"
-        doc_target.save(histograma_path)
-        doc_target = Document(histograma_path)
-        
-    doc_target.save(histograma_path)
+    histograma_path = os.path.join(path_subarea, "Tablas", f"histogramas_{agentType}.docx")
+    filePathMaster = listWords[0]
+    filePathList = listWords[1:]
+    _combine_all_docx(filePathMaster, filePathList, histograma_path)
 
     return histograma_path
 
@@ -90,16 +92,11 @@ def create_flujogramas_vehicular_subdocs(resultList: list, path_subarea: str | P
         doc.save(final_path)
         listWords.append(final_path)
 
-    doc_target = Document(listWords[0])
-    for i in range(len(listWords)):
-        if i == 0: continue
-        doc_source = Document(listWords[i])
-        _append_document_content(doc_source, doc_target)
-        flujogramas_path = Path(path_subarea) / "Tablas" / "flujogramas_vehiculares.docx"
-        doc_target.save(flujogramas_path)
-        doc_target = Document(flujogramas_path)
+    flujogramas_path = os.path.join(path_subarea, "Tablas", "flujogramas_vehiculares.docx")
 
-    doc_target.save(flujogramas_path)
+    filePathMaster = listWords[0]
+    filePathList = listWords[1:]
+    _combine_all_docx(filePathMaster, filePathList, flujogramas_path)
 
     return flujogramas_path
 
@@ -123,15 +120,9 @@ def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Pat
         listWords.append(final_path)
         listWords.append(final_path)
 
-    doc_target = Document(listWords[0])
-    for i in range(len(listWords)):
-        if i == 0: continue
-        doc_source = Document(listWords[i])
-        _append_document_content(doc_source, doc_target)
-        flujograma_path = Path(path_subarea) / "Tablas" / "flujogramas_peatonales.docx"
-        doc_target.save(flujograma_path)
-        doc_target = Document(flujograma_path)
-    
-    doc_target.save(flujograma_path)
+    flujograma_path = os.path.join(path_subarea, "Tablas", "flujogramas_peatonales.docx")
+    filePathMaster = listWords[0]
+    filePathList = listWords[1:]
+    _combine_all_docx(filePathMaster, filePathList, flujograma_path)
 
     return flujograma_path

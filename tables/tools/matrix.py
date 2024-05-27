@@ -8,7 +8,6 @@ def read_matrix(excel_path):
     sliceOrigin = slice("B1","AZ1") #Maximum 50 origins
     sliceDestiny = slice("A2", "A51") #Maximum 50 detinys
 
-
     origins = ['O'+str(elem.value) for row in ws[sliceOrigin] for elem in row if elem.value != None]
     destinys = ['D'+str(row[0].value) for row in ws[sliceDestiny]]
 

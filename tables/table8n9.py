@@ -5,6 +5,7 @@ from tables.tools.cycles import get_dates_cycles
 from pathlib import Path
 
 #docx
+from docxtpl import DocxTemplate
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.table import WD_ALIGN_VERTICAL
@@ -46,8 +47,11 @@ def create_table9(path_subarea):
         ]):
             table.cell(0, i).text = texto
     row_no = 1
+
+    codeList = []
     for phase in phasesList: #TODO: Solo se escribe una vez datos generales y luego por filas. Averiguar qué hacer.
         table.cell(row_no, 0).text = phase.codigo
+        codeList.append(phase.codigo)
         table.cell(row_no, 0).merge(table.cell(row_no+len(phaseData.phases)-1, 0))
 
         table.cell(row_no, 1).text = phase.nombre
@@ -95,10 +99,42 @@ def create_table9(path_subarea):
             cell.width = Inches(x)
 
     table.style = "Table Grid"
-    table9_path = Path(path_subarea) / "Tablas" / "table9.docx"
+
+    #The next code deletes the empty paragraph at the end of the table
+    """ if doc.paragraphs[-1].text == "":
+        p = doc.paragraphs[-1]._element
+        p.getparent().remove(p)
+        p._p = p._element = None #=O """
+
+    table9_path = Path(path_subarea) / "Tablas" / "table9_sinREF.docx"
     doc.save(table9_path)
 
-    return table9_path
+    doc_template = DocxTemplate(r"templates\template_tablas.docx")
+    if len(codeList) == 1:
+        texto = f"Tiempos de ciclo de la intersección {codeList[0]}"
+    elif len(codeList) > 1:
+        texto_aux = ""
+        for i, code in enumerate(codeList):
+            if i == len(codeList) - 1:
+                texto_aux += f"y {code}"
+            elif i == len(codeList) - 2:
+                texto_aux += f"{code}"
+            else:
+                texto_aux += f"{code}, "
+            
+        texto = f"Tiempos de ciclos y fases de las intersecciones {texto_aux}"
+
+    table9 = doc_template.new_subdoc(table9_path)
+
+    doc_template.render({
+        "texto": texto,
+        "tabla": table9
+    })
+
+    finalPath = os.path.join(path_subarea, "Tablas", "table9.docx")
+    doc_template.save(finalPath)
+
+    return finalPath
 
 def create_table8(path_subarea):
     path_excel = r"data\Cronograma Vissim.xlsx"

@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from pdfs.tools import *
 import re
+from docxcompose.composer import Composer
 
 project_names = {
     1: "Mejoramiento y ampliación de la infraestructura semafórica del distrito de Santiago de Surco - Provincia de Lima - Departamento de Lima",
@@ -16,7 +17,17 @@ project_names = {
     10: "Mejoramiento de la red semafórica de los ejes viales: Av. La Molina, Av. La Universidad, Av. Raúl Ferrero, Av. Siete, Av. Manuel Prado Ugarteche, Av. Alam. Del Corregidor, Av. Los Fresnos, Av. Los Constructores, Av. Separadora Industrial en los distritos de La Molina y Santa Anita de la Provincia de Lima - Departamento de Lima",
 }
 
-def location(path_subarea):
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
+
+    composer.save(finalPath)
+
+def location(path_subarea) -> list[dict, list]:
     numsubarea = os.path.split(path_subarea)[1][-3:]
     df_general = pd.read_excel("./data/Datos Generales.xlsx", sheet_name="DATOS", header=0, usecols="A:E")
     nro_entregable = df_general[df_general['Sub_Area'] == int(numsubarea)]["Entregable"].unique()[0]
@@ -35,6 +46,8 @@ def location(path_subarea):
     texto = ""
     for i, nombre_inter in enumerate(intersecciones):
         if i == len(intersecciones)-1:
+            texto += ' y' + nombre_inter
+        elif i == len(intersecciones)-2:
             texto += nombre_inter
         else:
             texto += nombre_inter +', '
@@ -44,6 +57,8 @@ def location(path_subarea):
     texto = ""
     for i, code_inter in enumerate(codintersecciones):
         if i == len(codintersecciones)-1:
+            texto += ' y ' + code_inter
+        elif i == len(codintersecciones)-2:
             texto += code_inter
         else:
             texto += code_inter+', '
@@ -68,69 +83,82 @@ def location(path_subarea):
         "prestablas": prestablas
     }
 
-    return VARIABLES
+    return VARIABLES, codintersecciones
 
 def histogramas(path_subarea) -> str:
     listCodes = get_codes(path_subarea)
     anexos_path = os.path.join(path_subarea, "Anexos")
 
     folderAnexos = os.listdir(anexos_path)
-    
-    if not "Vehicular" in folderAnexos:
-        print("ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'")
 
-    folderVehicular = os.path.join(anexos_path, "Vehicular")
-    listPDFS = os.listdir(folderVehicular)
+    assert "Vehicular" in folderAnexos, "ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'"
+    assert "Peatonal" in folderAnexos, "ERROR: No se encontro el archivo 'Peatonal' en la carpeta 'Anexos'"
 
-    pdfs_by_code = {}
-    for code in listCodes:
-        pdfs_by_code[code] = []
+    dictContentFolders = {
+        'Vehicular': os.path.join(anexos_path, "Vehicular"),
+        'Peatonal': os.path.join(anexos_path, "Peatonal"),
+    }
 
-    pattern1 = r"([A-Z]+[0-9]+)"
-    pattern2 = r"([A-Z]+-[0-9]+)"
-    for pdf in listPDFS:
-        match_pdf = re.search(pattern1, pdf) or re.search(pattern2, pdf)
-        if match_pdf:
-            code_str = match_pdf[1]
-            pdfs_by_code[code_str].append(pdf)
+    histogramaTotal_path = []
+    for agentType, pathFolder in dictContentFolders.items():
+        listPDFS = os.listdir(pathFolder)
 
-    listSelectedPDF = []
-    for code, pdfs in pdfs_by_code.items():
-        for pdf in pdfs:
-            if 'Histograma' in pdf:
-                listSelectedPDF.append((code, os.path.join(folderVehicular,pdf)))
+        pdfs_by_code = {}
+        for code in listCodes:
+            pdfs_by_code[code] = []
 
-    pattern1 = r"(_A)"
-    pattern2 = r"(_T)"
-    listPathImages = []
-    dataPDF = []
-    for code, pdf_path in listSelectedPDF:
-        namePDF = os.path.split(pdf_path)[1]
-        namePDF = namePDF[:-4]
-        match_tipicidad = re.search(pattern1, namePDF) or re.search(pattern2, namePDF)
-        if match_tipicidad:
-            tipicidad = match_tipicidad[1][1] #[1] "_T" o "_A" / [1][1] "T" o "A"
-        listPathImages.append(convert_pdf_to_image(pdf_path, folderVehicular, namePDF))
-        dataPDF.append((code, tipicidad))
-    
-    resultList = []
-    for data, images in zip(dataPDF, listPathImages):
-        resultList.append((data[0], data[1], images))
+        pattern1 = r"([A-Z]+[0-9]+)"
+        pattern2 = r"([A-Z]+-[0-9]+)"
+        for pdf in listPDFS:
+            match_pdf = re.search(pattern1, pdf) or re.search(pattern2, pdf)
+            if match_pdf:
+                code_str = match_pdf[1]
+                pdfs_by_code[code_str].append(pdf)
 
-    resultList = sorted(resultList, key = lambda x: (x[0], -ord(x[1])))
+        listSelectedPDF = []
+        for code, pdfs in pdfs_by_code.items():
+            for pdf in pdfs:
+                if 'Histograma' in pdf:
+                    listSelectedPDF.append((code, os.path.join(pathFolder, pdf)))
 
-    histograma_path = create_histogramas_subdocs(resultList, path_subarea)
+        pattern1 = r"(_A)"
+        pattern2 = r"(_T)"
+        dataPDFs = []
+        for code, pdf_path in listSelectedPDF:
+            namePDF = os.path.split(pdf_path)[1]
+            namePDF = namePDF[:-4]
+            match_tipicidad = re.search(pattern1, namePDF) or re.search(pattern2, namePDF)
+            if match_tipicidad:
+                tipicidad = match_tipicidad[1][1] #[1] "_T" o "_A" / [1][1] "T" o "A"
+            if pdf_path.endswith(".png"):
+                #print("Ya existe el PDF en .png, si hay correcciones borrar:\n", pdf_path)
+                continue
+            dataPDFs.append([
+                code,
+                tipicidad,
+                convert_pdf_to_image(pdf_path, pathFolder, namePDF),
+            ])
 
-    return histograma_path
+        dataPDFs = sorted(dataPDFs, key = lambda x: (x[0], -ord(x[1])))
 
-def flujogramas_vehiculares(path_subarea):
+        histograma_path = create_histogramas_subdocs(dataPDFs, path_subarea, agentType)
+        histogramaTotal_path.append(histograma_path)
+
+    finalPath = os.path.join(path_subarea, "Tablas", "histogramas.docx")
+    filePathMaster = histogramaTotal_path[0]
+    filePathsList = histogramaTotal_path[1:]
+
+    _combine_all_docx(filePathMaster, filePathsList, finalPath)
+
+    return finalPath
+
+def flujogramas_vehiculares(path_subarea) -> str:
     listCodes = get_codes(path_subarea)
     anexos_path = os.path.join(path_subarea, "Anexos")
 
     folderAnexos = os.listdir(anexos_path)
 
-    if not "Vehicular" in folderAnexos:
-        print("ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'")
+    assert "Vehicular" in folderAnexos, "ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'"
 
     folderVehicular = os.path.join(anexos_path, "Vehicular")
     listPDFS = os.listdir(folderVehicular)
@@ -155,21 +183,24 @@ def flujogramas_vehiculares(path_subarea):
                 listSelectedPDF.append((code, os.path.join(folderVehicular, pdf)))
                 listCodes.append(code)
 
-    listPathImages = []
+    dataInfo = []
     for code, pdf_path in listSelectedPDF:
+        if pdf_path.endswith('.png'):
+            #print("Ya existe el PDF en .png, si hay correcciones, borrar:\n", pdf_path)
+            continue
         namePDF = os.path.split(pdf_path)[1]
         namePDF = namePDF[:-4]
-        listPathImages.append(convert_pdf_to_image(pdf_path, folderVehicular, namePDF))
+        dataInfo.append([
+            code,
+            convert_pdf_to_image(pdf_path, folderVehicular, namePDF),
+        ])
+        print("PDF convertido a imagen:", namePDF)
 
-    resultList = []
-    for code, imagePath in zip(listCodes, listPathImages):
-        resultList.append((code, imagePath))
-
-    flujograma_path = create_flujogramas_vehicular_subdocs(resultList, path_subarea)
+    flujograma_path = create_flujogramas_vehicular_subdocs(dataInfo, path_subarea)
 
     return flujograma_path
 
-def flujogramas_peatonales(path_subarea):
+def flujogramas_peatonales(path_subarea) -> str:
     listCodes = get_codes(path_subarea)
     anexos_path = os.path.join(path_subarea, "Anexos")
 
@@ -203,6 +234,9 @@ def flujogramas_peatonales(path_subarea):
 
     listPathImages = []
     for code, pdf_path in listSelectedPDF:
+        if pdf_path.endswith('.png'):
+            print("Ya existe el PDF en .png, si hay correcciones, borrar:\n", pdf_path)
+            continue
         namePDF = os.path.split(pdf_path)[1]
         namePDF = namePDF[:-4]
         listPathImages.append(convert_pdf_to_image(pdf_path, folderPeatonal, namePDF))

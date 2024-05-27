@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
 import re
-from tools.matrix import read_matrix
+from tables.tools.matrix import read_matrix
+import pandas as pd
 #docx
+from docxcompose.composer import Composer
+from docxtpl import DocxTemplate
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.table import WD_ALIGN_VERTICAL
@@ -10,55 +13,29 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.table import _Cell
+from docx.enum.section import WD_SECTION
 
-def create_table14(path_subarea):
-    subareaName = os.path.split(path_subarea)[-1]
-    subareaID = subareaName[-3:]
-    #subarea_id = path_parts[-1]
-    actualFolder = Path(path_subarea) / "Actual"
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
 
+    composer.save(finalPath)
 
-    scenarios_by_tipicidad = {}
-    for tipicidad in ["Tipico", "Atipico"]:
-        tipFolder = actualFolder / tipicidad
-        listScenarios = os.listdir(tipFolder)
-        
-        listScenarios = [scenario for scenario in listScenarios if os.path.isdir(tipFolder / scenario)]
-        scenarios_by_tipicidad[tipicidad] = listScenarios
+def _set_vertical_cell_direction(cell: _Cell, direction: str) -> None:
+    #direction: tbRl -- Top to bottom, Right to left
+    #direction: btLr -- Bottom to top, Left to right
+    assert direction in ("tbRl", "btLr")
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    textDirection = OxmlElement('w:textDirection')
+    textDirection.set(qn('w:val'), direction)
+    tcPr.append(textDirection)
 
-    matrixes_by_tipicidad = {}
-    for tipicidad, listScenarios in scenarios_by_tipicidad.items():
-        listMatrixes = []
-        for scenario in listScenarios:
-            scenarioFolder = actualFolder / tipicidad / scenario
-            listExcels = os.listdir(scenarioFolder)
-            excelMatrix = [excel for excel in listExcels
-                          if excel.endswith(".xlsx") and not excel.startswith("~") and 'Matriz' in excel]
-            if len(excelMatrix) > 1: print("Error: Hay más de una matriz en: ", scenario)
-            listMatrixes.append(scenarioFolder / excelMatrix[0])
-
-        matrixes_by_tipicidad[tipicidad] = listMatrixes
-    
-    pattern = r'Matriz-OD_([A-Z]+).xlsx'
-    for tipicidad, listExcels in matrixes_by_tipicidad.items():
-        for excel in listExcels:
-            nameExcel = os.path.split(excel)[-1]
-            coincidence = re.search(pattern, nameExcel)
-            if coincidence:
-                nameScenario = coincidence.group(1)
-            else:
-                print("Error: No se encontro un nombre correcto de escenario en: ", excel)
-
-            try:
-                ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad = read_matrix(excel)
-                table_creation(ORIGINS, DESTINYS, MATRIX)
-            except Exception as inst:
-                raise inst
-            
-            #doc_template = DocxTemplate("./templates/template_tablas.docx")
-            texto = f"Orígenes - Destinos de la subárea {subareaID} {nameScenario} día {tipicidad.lower()}"
-            
-def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad):
+def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, subareaPath):
     doc = Document()
     table = doc.add_table(rows = 2+len(ORIGINS), cols = 2+len(DESTINYS))
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -86,10 +63,8 @@ def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad):
     )
 
     #Filling blank spaces:
-    table.cell(0,0).text = ""
-    table.cell(0,1).text = ""
-    table.cell(1,0).text = ""
-    table.cell(1,1).text = ""
+    table.cell(0,0).text = "O\D"
+    table.cell(0,0).merge(table.cell(1,1))
 
     for selected_row in [0]:
         for cell in table.rows[selected_row].cells:
@@ -137,24 +112,126 @@ def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad):
     for i, row in enumerate(table.rows):
         for j, cell in enumerate(row.cells):
             if (i,j) in cell_exceptions: continue
-            print(i,j)
             cell.style = 'Table Grid'
 
-    if tipicidad == 'tipico': tip = 'T'
-    elif tipicidad == 'atipico': tip = 'A'
+    if tipicidad == 'Tipico': tip = 'T'
+    elif tipicidad == 'Atipico': tip = 'A'
 
-    final_name = f"table_{nameScenario}_{nameScenario}_{tip}.docx"
+    table.style = 'Table Grid'
 
-    doc.save(final_name)
+    tablasFolder = os.path.join(subareaPath, 'Tablas')
+    final_name = f"table14_{nameScenario}_{tip}.docx"
+    finalPath = os.path.join(tablasFolder,final_name)
+    doc.save(finalPath)
 
-    return final_name
+    return finalPath
 
-def _set_vertical_cell_direction(cell: _Cell, direction: str) -> None:
-    #direction: tbRl -- Top to bottom, Right to left
-    #direction: btLr -- Bottom to top, Left to right
-    assert direction in ("tbRl", "btLr")
-    tc = cell._tc
-    tcPr = tc.get_or_add_tcPr()
-    textDirection = OxmlElement('w:textDirection')
-    textDirection.set(qn('w:val'), direction)
-    tcPr.append(textDirection)
+def create_table14(path_subarea):
+    subareaName = os.path.split(path_subarea)[-1]
+    subareaID = subareaName[-3:]
+    #subarea_id = path_parts[-1]
+    actualFolder = Path(path_subarea) / "Actual"
+
+    #Finding balanced scenario:
+    balanceFolder = Path(path_subarea) / "Balanceado"
+    for tipicidad in ["Tipico", "Atipico"]:
+        folderList = os.listdir(balanceFolder / tipicidad)
+        folderList = [file for file in folderList if not file.endswith('.ini')]
+        for folder in folderList:
+            pathFolder = balanceFolder / tipicidad / folder
+            contentList = os.listdir(pathFolder)
+            for content in contentList:
+                if 'Reporte_GEH-R2' in content:
+                    tipicidadBalanced = tipicidad
+                    scenarioBalanced = folder
+                    break
+
+    if scenarioBalanced == "Manana": scenarioBalanced = "HPM"
+    elif scenarioBalanced == "Tarde": scenarioBalanced = "HPT"
+    elif scenarioBalanced == "Noche": scenarioBalanced = "HPN"
+
+    scenarios_by_tipicidad = {}
+    for tipicidad in ["Tipico", "Atipico"]:
+        tipFolder = actualFolder / tipicidad
+        listScenarios = os.listdir(tipFolder)
+        
+        listScenarios = [scenario for scenario in listScenarios if os.path.isdir(tipFolder / scenario)]
+        scenarios_by_tipicidad[tipicidad] = listScenarios
+
+    matrixes_by_tipicidad = {}
+    for tipicidad, listScenarios in scenarios_by_tipicidad.items():
+        listMatrixes = []
+        for scenario in listScenarios:
+            scenarioFolder = actualFolder / tipicidad / scenario
+            listExcels = os.listdir(scenarioFolder)
+            excelMatrix = [excel for excel in listExcels
+                          if excel.endswith(".xlsx") and not excel.startswith("~") and 'Matriz' in excel]
+            if len(excelMatrix) > 1: print("Error: Hay más de una matriz en: ", scenario)
+            listMatrixes.append(scenarioFolder / excelMatrix[0])
+
+        matrixes_by_tipicidad[tipicidad] = listMatrixes
+    
+    listPathsByTipicidad = []
+    pattern = r'Matriz-OD_([A-Z]+).xlsx'
+    for tipicidad, listExcels in matrixes_by_tipicidad.items():
+        for excel in listExcels:
+            nameExcel = os.path.split(excel)[-1]
+            coincidence = re.search(pattern, nameExcel)
+            if coincidence:
+                nameScenario = coincidence.group(1)
+            else:
+                print("Error: No se encontro un nombre correcto de escenario en: ", excel)
+
+            try:
+                ORIGINS, DESTINYS, MATRIX = read_matrix(excel)
+                tablePath = table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, path_subarea)
+            except Exception as inst:
+                raise inst
+            
+            if tipicidad == tipicidadBalanced:
+                if nameScenario == scenarioBalanced:
+                    selectedInformation = [ORIGINS, DESTINYS, MATRIX]
+
+            doc_template = DocxTemplate("./templates/template_tablas2.docx")
+            texto = f"Orígenes - Destinos de la subárea {subareaID} {nameScenario} día {tipicidad.lower()}"
+            new_table = doc_template.new_subdoc(tablePath)
+            VARIABLES = {
+                'texto': texto,
+                'tabla': new_table,
+            }
+            doc_template.render(VARIABLES)
+            if tipicidad == 'Tipico':
+                tip = "T"
+            elif tipicidad == "Atipico":
+                tip = "A"
+            finalPath = os.path.join(path_subarea, "Tablas", f"table14_{nameScenario}_{tip}_REF.docx")
+            doc_template.save(finalPath)
+            listPathsByTipicidad.append(finalPath)
+
+    table14_path = os.path.join(path_subarea, "Tablas", "tabla14.docx")
+    filePathMaster = listPathsByTipicidad[0]
+    filePathList = listPathsByTipicidad[1:]
+    _combine_all_docx(filePathMaster, filePathList, table14_path)
+
+    #Information about maximums value of calibrated matrix
+    dataframeMatrix = pd.DataFrame(selectedInformation[2])
+    #max_value = dataframeMatrix.max().max()
+    rowMax, colMax = dataframeMatrix.stack().idxmax()
+
+    originMax = selectedInformation[0][rowMax]
+    destinationMax = selectedInformation[1][colMax]
+
+    VARIABLES = {
+        'numorig': str(len(selectedInformation[0])),
+        'numdesti': str(len(selectedInformation[1])),
+        'numorigmax': str(originMax),
+        'numdestimax': str(destinationMax),
+    }
+
+    #TODO: Anteriormente estaban las variables orig y desti, en los que se necesitaba
+    #el nombre del link en donde se encuentra dicho origen o destino, la idea sería
+    #conseguir ese dataframe y guardarlo para poder leerlo más adelante.
+
+    table14_path = os.path.normpath(table14_path)
+
+    return table14_path, VARIABLES
