@@ -5,6 +5,8 @@ from docxcompose.composer import Composer
 from docxtpl import DocxTemplate, InlineImage
 from docx import Document
 from docx.shared import Inches
+from images.tools.diana import create_dianas
+from images.tools.r2 import create_r2s
 
 def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
     number_of_sections = len(filePathsList)
@@ -17,6 +19,36 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
     composer.save(finalPath)
 
 def create_resultados_images(subareaPath) -> str:
+    #Locating GEH-R2 file:
+    balancedFolder = os.path.join(subareaPath, "Balanceado")
+    for tipicidad in ["Tipico", "Atipico"]:
+        tipicidadFolder = os.path.join(balancedFolder, tipicidad)
+        scenariosContent = os.listdir(tipicidadFolder)
+        scenariosContent = [file for file in scenariosContent if not file.endswith(".ini")]
+        for scenario in scenariosContent:
+            scenarioFolder = os.path.join(tipicidadFolder, scenario)
+            #Looking for GEH-R2 excel
+            folderContent = os.listdir(scenarioFolder)
+            for file in folderContent:
+                if "GEH-R2.xlsm" in file:
+                    excelPath = os.path.join(scenarioFolder, file)
+                    break
+
+    #Creating images:
+    try:
+        create_r2s(excelPath)
+    except Exception as e:
+        print("Error creando gráfica de R2s")
+        print(str(e))
+        raise e
+    try:
+        create_dianas(excelPath)
+    except TypeError as e:
+        print("Tabla 16\tError\tNo se tiene resultados en .json del estado Actual")
+    except Exception as e:
+        raise e
+
+    #Creating tables
     tablasPath = os.path.join(subareaPath, "Tablas")
     listContent = os.listdir(tablasPath)
 

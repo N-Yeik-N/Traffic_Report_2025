@@ -42,10 +42,17 @@ def create_table17(subareaPath):
 
     typesNames = typesNames[:typesNumbers]
     gehValues =     [str(round(row[0].value,1)) for row in ws[listSlices[0]]][:typesNumbers]
-    criterion1_1 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[1]]][:typesNumbers]
-    criterion1_2 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[2]]][:typesNumbers]
-    criterion1_3 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[3]]][:typesNumbers]
-    criterion2_1 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[4]]][:typesNumbers]
+    try:
+        criterion1_1 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[1]]][:typesNumbers]
+        criterion1_2 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[2]]][:typesNumbers]
+        criterion1_3 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[3]]][:typesNumbers]
+    except TypeError as e:
+        print("Tabla 17\tERROR\tResultados del GEH-R2")
+    try:
+        criterion2_1 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[4]]][:typesNumbers]
+    except ValueError as e:
+        print("Extiende las fórmulas en el excel de GEH-R2, la zona de resultados. No debe haber !DIV=0")
+        raise e
 
     wb.close()
 

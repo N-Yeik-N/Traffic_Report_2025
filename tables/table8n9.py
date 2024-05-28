@@ -64,8 +64,8 @@ def create_table9(path_subarea):
         for j in range(row_no, row_no+len(phase.phases)):
             table.cell(j, 3).text = f"Fase {no_phase+1}"
             table.cell(j, 4).text = str(phase.phases[no_phase][0]) #Verde
-            table.cell(j, 5).text = str(phase.phases[no_phase][1]) #Rojo
-            table.cell(j, 6).text = str(phase.phases[no_phase][2]) #Ámbar
+            table.cell(j, 5).text = str(phase.phases[no_phase][1]) #Ambar
+            table.cell(j, 6).text = str(phase.phases[no_phase][2]) #Rojo
             no_phase += 1
 
         row_no += len(phase.phases)

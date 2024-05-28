@@ -46,7 +46,7 @@ def location(path_subarea) -> list[dict, list]:
     texto = ""
     for i, nombre_inter in enumerate(intersecciones):
         if i == len(intersecciones)-1:
-            texto += ' y' + nombre_inter
+            texto += ' y ' + nombre_inter
         elif i == len(intersecciones)-2:
             texto += nombre_inter
         else:
@@ -194,7 +194,7 @@ def flujogramas_vehiculares(path_subarea) -> str:
             code,
             convert_pdf_to_image(pdf_path, folderVehicular, namePDF),
         ])
-        print("PDF convertido a imagen:", namePDF)
+        #print("PDF convertido a imagen:", namePDF)
 
     flujograma_path = create_flujogramas_vehicular_subdocs(dataInfo, path_subarea)
 
@@ -235,7 +235,7 @@ def flujogramas_peatonales(path_subarea) -> str:
     listPathImages = []
     for code, pdf_path in listSelectedPDF:
         if pdf_path.endswith('.png'):
-            print("Ya existe el PDF en .png, si hay correcciones, borrar:\n", pdf_path)
+            #print("Ya existe el PDF en .png, si hay correcciones, borrar:\n", pdf_path)
             continue
         namePDF = os.path.split(pdf_path)[1]
         namePDF = namePDF[:-4]

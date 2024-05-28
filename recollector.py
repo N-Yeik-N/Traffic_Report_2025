@@ -6,6 +6,7 @@ from boarding.boarding_tools import board_by_excel
 import locale
 from clases_data import *
 from dataclasses import asdict
+from tables.tools.tale import tale_by_excel
 
 try:
     locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')

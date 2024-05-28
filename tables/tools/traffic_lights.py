@@ -38,15 +38,16 @@ def get_info(path, tipicidad):
 
     if tipicidad == "Tipico":
         tc = int(ws['E10'].value)
-        numfase = [[elem.value for elem in row] for row in ws[slice("H10","AK10")]][0].index(None)//2
-        phases = [[elem.value for elem in row] for row in ws[slice("H10","AK10")]][0][:numfase*2]
+        numfase = [[elem.value for elem in row] for row in ws[slice("H10","AK10")]][0].index(None)//3
+        phases = [[elem.value for elem in row] for row in ws[slice("H10","AK10")]][0][:numfase*3]
         phases = [phases[i:i+3] for i in range(0, len(phases),3)]
     elif tipicidad == "Atipico":
         tc = int(ws['E18'].value)
-        numfase = [[elem.value for elem in row] for row in ws[slice("H18","AK18")]][0].index(None)//2
-        phases = [[elem.value for elem in row] for row in ws[slice("H18","AK18")]][0][:numfase*2]
+        numfase = [[elem.value for elem in row] for row in ws[slice("H18","AK18")]][0].index(None)//3
+        phases = [[elem.value for elem in row] for row in ws[slice("H18","AK18")]][0][:numfase*3]
         phases = [phases[i:i+3] for i in range(0, len(phases),3)]
 
+    #TODO: Esta considerado aquí 3 fases pero deben ser dos.
     wb.close()
 
     data = cycleTime(
