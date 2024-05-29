@@ -49,7 +49,7 @@ def create_table9(path_subarea):
     row_no = 1
 
     codeList = []
-    for phase in phasesList: #TODO: Solo se escribe una vez datos generales y luego por filas. Averiguar qué hacer.
+    for phase in phasesList:
         table.cell(row_no, 0).text = phase.codigo
         codeList.append(phase.codigo)
         table.cell(row_no, 0).merge(table.cell(row_no+len(phaseData.phases)-1, 0))
@@ -88,11 +88,14 @@ def create_table9(path_subarea):
     for row in table.rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
-                run.font.name = 'Arial Narrow'
-                run.font.size = Pt(11)
-                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                try:
+                    run = paragraph.runs[0]
+                    run.font.name = 'Arial Narrow'
+                    run.font.size = Pt(11)
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                except:
+                    pass
 
     for id, x in zip([0,1,2,3,4,5,6],[0.5,2,1,0.7,0.5,0.5,0.5]):
         for cell in table.columns[id].cells:

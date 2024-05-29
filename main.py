@@ -17,6 +17,7 @@ from src.call_functions import *
 from sigs.sig_actual import get_sigs_actual
 from images.resultados import create_resultados_images
 from results.reading_json import generate_results
+from conclusions.table23 import create_table23
 
 import logging
 
@@ -126,7 +127,7 @@ class MyWindow(QMainWindow, Ui_Form):
             VARIABLES.update({"tabla9": table9})
             print("Tabla 9\t\tOK\tGráficas de programaciones semafóricas")
         except Exception as e:
-            print("Tabla 9:\t\tERROR\tGráficas de programaciones semafóricas")
+            print("Tabla 9\t\tERROR\tGráficas de programaciones semafóricas")
             LOGGER.warning(str(e))
 
         try:
@@ -206,9 +207,19 @@ class MyWindow(QMainWindow, Ui_Form):
             table20_path = generate_results(self.path_subarea)
             #table20 = doc.new_subdoc(table20_path)
             #VARIABLES.update({"tabla20": table20})
-            print("Tabla 20\ttOK\tTablas de resultados peatonales, vehiculares y de nodos")
+            print("Tabla 20\tOK\tTablas de resultados peatonales, vehiculares y de nodos")
+            print("Copiar contenido del siguiente path:\n",table20_path)
         except Exception as e:
             print("Tabla 20\tERROR\tTablas de resultados peatonales, vehiculares y de nodos")
+            LOGGER.warning(str(e))
+
+        try:
+            table23_path = create_table23(self.path_subarea)
+            table23 = doc.new_subdoc(table23_path)
+            VARIABLES.update({"tabla23": table23})
+            print("Tabla 23\tOK\tTabla resumen de resultados")
+        except Exception as e:
+            print("Tabla 23\tERROR\tTabla resumen de resultados")
             LOGGER.warning(str(e))
 
         #Paragraphs:

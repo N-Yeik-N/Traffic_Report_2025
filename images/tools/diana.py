@@ -88,7 +88,7 @@ def create_dianas(excelPath) -> None:
     wb = load_workbook(excelPath, read_only=True, data_only=True)
     ws = wb['GEH']
     valores = [[elem.value for elem in row] for row in ws[slice("BW7", "CP7")]][0]
-    num_veh = next((i for i, val in enumerate(valores) if val in ('n', 'N', None)), None)
+    num_veh = next((i for i, val in enumerate(valores) if val in ('n', 'N', 1, None)), None)
 
     num_giros = [row[0].value for row in ws[slice("K8","K77")]].index(None)+1
     list_data = []

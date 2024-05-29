@@ -43,7 +43,7 @@ def convert_pdf_to_image(pdf_path, output_path, name) -> None:
     return destiny_path
 
 def create_histogramas_subdocs(resultList: list, path_subarea: str | Path, agentType: str) -> str: 
-    PATH_TEMPLATE = r".\templates\template_tablas.docx"
+    PATH_TEMPLATE = r".\templates\template_imagenes.docx"
 
     listWords = []
     for code, tipicidad, imagePath in resultList:
@@ -74,7 +74,7 @@ def create_histogramas_subdocs(resultList: list, path_subarea: str | Path, agent
     return histograma_path
 
 def create_flujogramas_vehicular_subdocs(resultList: list, path_subarea: str | Path) -> str:
-    PATH_TEMPLATE = r".\templates\template_tablas.docx"
+    PATH_TEMPLATE = r".\templates\template_imagenes.docx"
 
     listWords = []
     for code, imagePath in resultList:
@@ -101,7 +101,7 @@ def create_flujogramas_vehicular_subdocs(resultList: list, path_subarea: str | P
     return flujogramas_path
 
 def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Path) -> str:
-    PATH_TEMPLATE = r".\templates\template_tablas.docx"
+    PATH_TEMPLATE = r".\templates\template_imagenes.docx"
 
     listWords = []
     for code, imagePath in resultList:

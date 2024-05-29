@@ -4,6 +4,7 @@ from pathlib import Path
 
 #docx
 from docx import Document
+from docxtpl import DocxTemplate
 from docx.shared import Pt, Inches
 from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -112,4 +113,14 @@ def create_table6(path_subarea):
     table.style = 'Table Grid'
     table6_path = Path(path_subarea) / "Tablas" / "table6.docx"
     doc.save(table6_path)
-    return table6_path
+
+    doc_template = DocxTemplate("./templates/template_tablas.docx")
+    texto = f"Fecha y hora de la recolección de datos de embarque y desembarque"
+    new_table = doc_template.new_subdoc(table6_path)
+
+    doc_template.render({"texto": texto, "tabla": new_table})
+
+    finalPath = os.path.join(path_subarea, "Tablas", "boardinTable.docx")
+    doc_template.save(finalPath)
+
+    return finalPath

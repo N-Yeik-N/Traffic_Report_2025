@@ -41,7 +41,7 @@ def create_table17(subareaPath):
     ]
 
     typesNames = typesNames[:typesNumbers]
-    gehValues =     [str(round(row[0].value,1)) for row in ws[listSlices[0]]][:typesNumbers]
+    gehValues = [str(round(row[0].value,1)) for row in ws[listSlices[0]] if type(row[0].value) == float or type(row[0].value) == int][:typesNumbers]
     try:
         criterion1_1 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[1]]][:typesNumbers]
         criterion1_2 =  ["{:.0%}".format(row[0].value) for row in ws[listSlices[2]]][:typesNumbers]

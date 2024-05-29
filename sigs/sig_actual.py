@@ -76,7 +76,7 @@ def get_sigs_actual(subareaPath) -> None:
     for code, dictTurns in dictCode.items():
         for turno in ["Mañana", "Tarde", "Noche"]:
             text, pathImg = dictTurns[turno]
-            doc_template = DocxTemplate("./templates/template_tablas.docx")
+            doc_template = DocxTemplate("./templates/template_imagenes.docx")
             newImage = InlineImage(doc_template, pathImg, width=Inches(6))
             doc_template.render({"texto": text, "tabla": newImage})
             turno_text = unidecode(turno)

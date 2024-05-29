@@ -196,7 +196,7 @@ def generate_results(subareaPath) -> None:
                 nodeResultPathRef, pedestrianResultPathRef, vehicularResultPathRef = read_json(jsonPathActual, subareaPath, scenario, textTipicidad)
                 listWords.extend([nodeResultPathRef, pedestrianResultPathRef, vehicularResultPathRef])
 
-    resultTablesPath = os.path.join(subareaPath, "Tablas", "resultTables.docx")
+    resultTablesPath = os.path.join(subareaPath, "Tablas", "0_resultTables.docx")
     filePathMaster = listWords[0]
     filePathList = listWords[1:]
     _combine_all_docx(filePathMaster, filePathList, resultTablesPath)
