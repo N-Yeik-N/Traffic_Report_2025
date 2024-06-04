@@ -44,32 +44,40 @@ def location(path_subarea) -> list[dict, list]:
         presinter2 = "las intersecciones"
 
     texto = ""
-    for i, nombre_inter in enumerate(intersecciones):
-        if i == len(intersecciones)-1:
-            texto += ' y ' + nombre_inter
-        elif i == len(intersecciones)-2:
-            texto += nombre_inter
-        else:
-            texto += nombre_inter +', '
+    if len(intersecciones) == 1:
+        nominterseccion = intersecciones[0]
+        presinter3 = "El nodo de la intersección"
+    else:
+        presinter3 = "Todos los nodos de las intersecciones"
+        for i, nombre_inter in enumerate(intersecciones):
+            if i == len(intersecciones)-1:
+                texto += ' y ' + nombre_inter
+            elif i == len(intersecciones)-2:
+                texto += nombre_inter
+            else:
+                texto += nombre_inter +', '
 
-    nominterseccion = texto
+        nominterseccion = texto
 
     texto = ""
-    for i, code_inter in enumerate(codintersecciones):
-        if i == len(codintersecciones)-1:
-            texto += ' y ' + code_inter
-        elif i == len(codintersecciones)-2:
-            texto += code_inter
-        else:
-            texto += code_inter+', '
-    codinterseccion = texto
+    if len(codintersecciones) == 1:
+        codinterseccion = codintersecciones[0]
+    else:
+        for i, code_inter in enumerate(codintersecciones):
+            if i == len(codintersecciones)-1:
+                texto += ' y ' + code_inter
+            elif i == len(codintersecciones)-2:
+                texto += code_inter
+            else:
+                texto += code_inter+', '
+        codinterseccion = texto
 
     if len(intersecciones) > 1:
         descsubarea = "las intersecciones pertenecientes"
-        prestablas = "las tablas"
+        prestablas = "las siguientes tablas"
     else:
         descsubarea = "la intersección perteneciente"
-        prestablas = "la tabla"
+        prestablas = "la siguiente tabla"
 
     VARIABLES = {
         "numsubarea": numsubarea,
@@ -80,7 +88,8 @@ def location(path_subarea) -> list[dict, list]:
         "codinterseccion": codinterseccion,
         "descsubarea": descsubarea,
         "presinter2": presinter2,
-        "prestablas": prestablas
+        "prestablas": prestablas,
+        "presinter3": presinter3,
     }
 
     return VARIABLES, codintersecciones

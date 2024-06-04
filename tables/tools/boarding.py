@@ -37,7 +37,6 @@ def board_by_excel(path) -> tuple[str, list]:
     accesos = df["Acceso"].unique().tolist()
 
     tableList = []
-
     for turno in turnos:
         for sentido in sentidos:
             for acceso in accesos:

@@ -39,34 +39,28 @@ def _set_vertical_cell_direction(cell: _Cell, direction: str) -> None:
 
 def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, subareaPath):
     doc = Document()
-    table = doc.add_table(rows = 2+len(ORIGINS), cols = 2+len(DESTINYS))
+    table = doc.add_table(rows = 1+len(ORIGINS), cols = 1+len(DESTINYS))
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    table.cell(0,2).text = "Destino"
-    table.cell(0,2).merge(table.cell(0,1+len(DESTINYS)))
-    for elem in DESTINYS:
-        table.cell(1,2+DESTINYS.index(elem)).text = elem
+    for i, elem in enumerate(DESTINYS):
+        table.cell(0,i+1).text = str(elem)
 
-    table.cell(2,0).text = "Origen"
-    table.cell(2,0).merge(table.cell(1+len(ORIGINS),0))
-
-    for elem in ORIGINS:
-        table.cell(2+ORIGINS.index(elem),1).text = elem
+    for i, elem in enumerate(ORIGINS):
+        table.cell(i+1,0).text = str(elem)
 
     for i, row in enumerate(MATRIX):
         for j, elem in enumerate(row):
-            table.cell(i+2,j+2).text = elem
+            table.cell(i+1,j+1).text = elem
 
-    #Format
-    table.cell(2,0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    _set_vertical_cell_direction(
-        table.cell(2,0),
-        "btLr",
-    )
+    # #Format
+    # table.cell(2,0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    # _set_vertical_cell_direction(
+    #     table.cell(2,0),
+    #     "btLr",
+    # )
 
     #Filling blank spaces:
     table.cell(0,0).text = "O\D"
-    table.cell(0,0).merge(table.cell(1,1))
 
     for selected_row in [0]:
         for cell in table.rows[selected_row].cells:
@@ -81,7 +75,6 @@ def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, subareaPa
             run.font.bold = True
     
     for i in range(len(table.columns)):
-        if i < 2: continue
         cell_xml_element = table.rows[0].cells[i]._tc
         table_cell_properties = cell_xml_element.get_or_add_tcPr()
         shade_obj = OxmlElement('w:shd')
@@ -89,7 +82,6 @@ def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, subareaPa
         table_cell_properties.append(shade_obj)
 
     for i in range(len(table.rows)):
-        if i < 2: continue
         cell = table.cell(i,0)
         cell_xml_element = cell._tc
         table_cell_properties = cell_xml_element.get_or_add_tcPr()

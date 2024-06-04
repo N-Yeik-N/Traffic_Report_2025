@@ -106,7 +106,7 @@ def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Pat
     listWords = []
     for code, imagePath in resultList:
         doc = DocxTemplate(PATH_TEMPLATE)
-        texto = f"Flujograma peatonal de laintersección {code} HPM día típico"
+        texto = f"Flujograma peatonal de la intersección {code} HPM día típico"
         image = InlineImage(doc, imagePath, width=Inches(6))
 
         variables = {

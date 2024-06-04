@@ -177,7 +177,7 @@ def create_table8(path_subarea):
     for i, turno in enumerate(["Mañana", "Tarde", "Noche"]*2):
         table.cell(i+1,3).text = turno
 
-    for i, tipicidad in enumerate(["Tipico", "Atipico"]*3):	
+    for i, tipicidad in enumerate(["Típico", "Típico", "Típico", "Atípico", "Atípico", "Atípico"]):	
         table.cell(i+1,2).text = tipicidad
 
     for i, horario in enumerate([

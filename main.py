@@ -54,6 +54,11 @@ class MyWindow(QMainWindow, Ui_Form):
             LOGGER.addHandler(fh)
 
     def start(self):
+        nameSubArea = os.path.split(self.path_subarea)[1]
+        print(f"##{'#'*len(nameSubArea)}##")
+        print(f"# {nameSubArea} #")
+        print(f"##{'#'*len(nameSubArea)}##")
+
         doc = DocxTemplate("templates/template.docx")
 
         #Location
@@ -86,16 +91,27 @@ class MyWindow(QMainWindow, Ui_Form):
         try:
             table4_path, table5_path = create_table4n5(self.path_subarea)
             table4 = doc.new_subdoc(table4_path)
-            table5 = doc.new_subdoc(table5_path)
-            VARIABLES.update({"tabla4": table4, "tabla5": table5})
+            VARIABLES.update({"tabla4": table4})
             print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
-            print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
         except FileNotFoundError as e:
-            print("Tabla 4 o 5\tError\tNo existen archivos de colas")
+            print("Tabla 4\t\tERROR\tNo existen archivos de colas")
         except Exception as e:
             print("Tabla 4\t\tERROR\tFechas de toma de longitud de cola")
+            LOGGER.warning("Error Tabla 4")
+            LOGGER.warning(str(e))
+
+        try:
+            table5 = doc.new_subdoc(table5_path)
+            VARIABLES.update({"tabla5": table5})
+            print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
+        except FileNotFoundError as e:
+            print("Tabla 5\tError\tNo existen archivos de colas")
+        except IndexError as e:
+            print("Tabla 5\t\tError\tDebes pegar la tabla manualmente:")
+            print(table5_path)
+        except Exception as e:
             print("Tabla 5\t\tERROR\tDatos estadísticas de longitud de cola")
-            LOGGER.warning("Error Tabla 4 o 5")
+            LOGGER.warning("Error Tabla 5")
             LOGGER.warning(str(e))
 
         try:
@@ -113,6 +129,8 @@ class MyWindow(QMainWindow, Ui_Form):
             table7 = doc.new_subdoc(table7_path)
             VARIABLES.update({"tabla7": table7})
             print("Tabla 7\t\tOK\tDatos estadísticas de embarque y desembarque")
+        except AttributeError as e:
+            print("Tabla 7\t\tError\tHay un dato en blanco en algunos de los excels")
         except Exception as e:
             print("Tabla 7\t\tERROR\tDatos estadísticas de embarque y desembarque")
             LOGGER.warning("Error Tabla 7")
@@ -173,7 +191,7 @@ class MyWindow(QMainWindow, Ui_Form):
             table14 = doc.new_subdoc(table14_path)
             VARIABLES.update({"tabla14": table14})
             VARIABLES.update(VARIABLES_OD)
-            print("Tabla 14\tOK\tTabla de orígenes y destinos de situación actual")
+            print("Tabla 14\tOK\tTabla de OD de situación actual")
         except Exception as e:
             print("Tabla 14\tERROR\tTabla de orígenes y destinos de situación actual")
             LOGGER.warning("Error Tabla 14")
@@ -219,12 +237,14 @@ class MyWindow(QMainWindow, Ui_Form):
             LOGGER.warning("Error Tabla 19")
             LOGGER.warning(str(e))
 
+
+        SEND_MESSAGE = False
         try:
             table20_path = generate_results(self.path_subarea)
             #table20 = doc.new_subdoc(table20_path)
             #VARIABLES.update({"tabla20": table20})
+            SEND_MESSAGE = True
             print("Tabla 20\tOK\tTablas de resultados peatonales, vehiculares y de nodos")
-            print("Copiar contenido del siguiente path:\n",table20_path)
         except Exception as e:
             print("Tabla 20\tERROR\tTablas de resultados peatonales, vehiculares y de nodos")
             LOGGER.warning("Error Tabla 20")
@@ -245,9 +265,9 @@ class MyWindow(QMainWindow, Ui_Form):
             cambios_path = cambios_variable(self.path_subarea, codintersecciones)
             cambioParagraph = doc.new_subdoc(cambios_path)
             VARIABLES.update({"cambios": cambioParagraph})
-            print("Párrafos\t\t\tOK\tCreación de párrafos")
+            print("Párrafos\tOK\tCreación de párrafos")
         except Exception as e:
-            print("Párrafos\t\t\tERROR\tCreación de párrafos")
+            print("Párrafos\tERROR\tCreación de párrafos")
             LOGGER.warning("Error de creación de párrafos")
             LOGGER.warning(str(e))
 
@@ -256,9 +276,9 @@ class MyWindow(QMainWindow, Ui_Form):
             histograma_path = histogramas(self.path_subarea)
             histograma = doc.new_subdoc(histograma_path)
             VARIABLES.update({"histogramas": histograma})
-            print("Histogramas\t\t\tOK\tCreación de histogramas")
+            print("Histograma\tOK\tCreación de histogramas")
         except Exception as e:
-            print("Histogramas\t\t\tERROR\tCreación de histogramas")
+            print("Histograma\tERROR\tCreación de histogramas")
             LOGGER.warning("Errores de histogramas")
             LOGGER.warning(str(e))
 
@@ -266,9 +286,9 @@ class MyWindow(QMainWindow, Ui_Form):
             flujograma_vehicular_path = flujogramas_vehiculares(self.path_subarea)
             flujograma_vehicular = doc.new_subdoc(flujograma_vehicular_path)
             VARIABLES.update({"flujogvmt": flujograma_vehicular}) 
-            print("Flujogramas vehiculares\t\tOK")
+            print("Vehiculos\tOK\tFlujogramas")
         except Exception as e:
-            print("Flujogramas vehiculares\t\tERROR")
+            print("Vehiculos\tERROR\tFlujogramas")
             LOGGER.warning("Flujogramas vehiculares")
             LOGGER.warning(str(e))
 
@@ -276,9 +296,9 @@ class MyWindow(QMainWindow, Ui_Form):
             flujograma_peatonal_path = flujogramas_peatonales(self.path_subarea)
             flujograma_peatonal = doc.new_subdoc(flujograma_peatonal_path)
             VARIABLES.update({"flujogpmt": flujograma_peatonal})
-            print("Flujogramas peatonales\t\tOK")
+            print("Peatones\tOK\tFlujogramas")
         except Exception as e:
-            print("Flujogramas peatonales\t\tERROR")
+            print("Peatones\tERROR\tFlujogramas")
             LOGGER.warning("Flujogramas peatonales")
             LOGGER.warning(str(e))
 
@@ -286,13 +306,18 @@ class MyWindow(QMainWindow, Ui_Form):
             sigActual_path = get_sigs_actual(self.path_subarea)
             sigActual = doc.new_subdoc(sigActual_path)
             VARIABLES.update({"sigactual": sigActual})
-            print("Sigs actual\t\t\tOK")
+            print("Sigs actual\tOK")
         except Exception as e:
-            print("Sigs actual\t\t\tERROR")
+            print("Sigs actual\tERROR")
             LOGGER.warning("Sigs actual")
             LOGGER.warning(str(e))
 
         doc.render(VARIABLES)
+
+        if SEND_MESSAGE:
+            print("\n############################### MENSAJE IMPORTANTE ###############################\n")
+            print("Copiar contenido en el capítulo 3.1 RESULTADOS DEL MODELO después de la tabla de niveles de servicio.\n",table20_path)
+            print("\n############################### MENSAJE IMPORTANTE ###############################")
 
         #Getting name of subarea
         subareaName = os.path.split(self.path_subarea)[1]
@@ -300,7 +325,7 @@ class MyWindow(QMainWindow, Ui_Form):
         informePath = Path(self.path_subarea) / f"Informe de transito {subareaName}.docx"
         doc.save(informePath)
 
-        print("STATE: Report created sucessfully.")
+        print("\n****STATE: Report created sucessfully****")
         return self.ui.stateLabel.setText("STATE: Report created successfully!")
 
 def main():

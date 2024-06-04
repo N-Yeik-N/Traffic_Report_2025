@@ -150,7 +150,11 @@ def create_table4n5(path_subarea):
                     new_row = table.add_row().cells
                     for j in range(len(df.columns)):
                         if j == 0: continue
-                        new_row[j].text = str(df.iloc[i,j])
+                        try:
+                            valor = str(round(df.iloc[i,j],2))
+                        except:
+                            valor = str(df.iloc[i,j])
+                        new_row[j].text = valor
 
                 list_elem  = df['Turn'].value_counts()
                 numbers_of_row = []
