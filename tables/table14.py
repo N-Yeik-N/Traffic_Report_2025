@@ -3,6 +3,8 @@ from pathlib import Path
 import re
 from tables.tools.matrix import read_matrix
 import pandas as pd
+import xml.etree.ElementTree as ET
+import numpy as np
 #docx
 from docxcompose.composer import Composer
 from docxtpl import DocxTemplate
@@ -102,11 +104,14 @@ def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, subareaPa
     for row in table.rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
-                run.font.name = 'Arial Narrow'
-                run.font.size = Pt(11)
-                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                try:
+                    run = paragraph.runs[0]
+                    run.font.name = 'Arial Narrow'
+                    run.font.size = Pt(11)
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                except IndexError:
+                    pass
 
     cell_exceptions = [(0,0),(0,1),(1,0),(1,1)]
     for i, row in enumerate(table.rows):
@@ -173,6 +178,7 @@ def create_table14(path_subarea):
     
     listPathsByTipicidad = []
     pattern = r'Matriz-OD_([A-Z]+).xlsx'
+    count = 1
     for tipicidad, listExcels in matrixes_by_tipicidad.items():
         for excel in listExcels:
             nameExcel = os.path.split(excel)[-1]
@@ -185,6 +191,8 @@ def create_table14(path_subarea):
             try:
                 ORIGINS, DESTINYS, MATRIX = read_matrix(excel)
                 tablePath = table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, path_subarea)
+                count += 1
+                #print(f"Procesado tabla Nro. {count-1}")
             except Exception as inst:
                 raise inst
             
@@ -193,7 +201,7 @@ def create_table14(path_subarea):
                     selectedInformation = [ORIGINS, DESTINYS, MATRIX]
 
             doc_template = DocxTemplate("./templates/template_tablas2.docx")
-            texto = f"Orígenes - Destinos de la subárea {subareaID} {nameScenario} día {tipicidad.lower()}"
+            texto = f"Matriz OD de la subárea {subareaID} {nameScenario} día {tipicidad.lower()}"
             new_table = doc_template.new_subdoc(tablePath)
             VARIABLES = {
                 'texto': texto,
@@ -215,17 +223,33 @@ def create_table14(path_subarea):
 
     #Information about maximums value of calibrated matrix
     dataframeMatrix = pd.DataFrame(selectedInformation[2])
-    #max_value = dataframeMatrix.max().max()
-    rowMax, colMax = dataframeMatrix.stack().idxmax()
+    dataframeMatrix.replace('-', np.nan, inplace=True)
+    dataframeMatrix = dataframeMatrix.apply(pd.to_numeric, errors='coerce')
 
-    originMax = selectedInformation[0][rowMax]
-    destinationMax = selectedInformation[1][colMax]
+    max_value = dataframeMatrix.max().max()
+    max_position = np.where(dataframeMatrix == max_value)
+    rowMax, colMax = max_position[0][0], max_position[1][0]
+
+    #New variables for the paragraph
+    vissimFile = os.listdir(path_subarea)
+    vissimFile = [file for file in vissimFile if file.endswith(".inpx")][0]
+    vissimPath = os.path.join(path_subarea, vissimFile)
+    tree = ET.parse(vissimPath)
+    network_tag = tree.getroot()
+
+    numberNodes = len(network_tag.findall("./nodes/node"))
+
+    if numberNodes > 1:
+        joinExplanation = "Las uniones de las intersecciones también son consideradas como centroides de OD. "
+    else:
+        joinExplanation = ""
 
     VARIABLES = {
-        'numorig': str(len(selectedInformation[0])),
+        'numorig': str(len( [0])),
         'numdesti': str(len(selectedInformation[1])),
-        'numorigmax': str(originMax),
-        'numdestimax': str(destinationMax),
+        'numorigmax': str(rowMax),
+        'numdestimax': str(colMax),
+        'joinExplanation': joinExplanation
     }
 
     #TODO: Anteriormente estaban las variables orig y desti, en los que se necesitaba

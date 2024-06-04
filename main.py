@@ -67,8 +67,8 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 1\t\tOK\tDatos generales de intersecciones y códigos")
         except Exception as e:
             print("Tabla 1:\t\tERROR\tDatos generales de intersecciones y códigos")
+            LOGGER.warning("Error Tabla 1")
             LOGGER.warning(str(e))
-            raise e
 
         try:
             table2_path, table3_path, dcontet, dcontea = create_table2n3(self.path_subarea)
@@ -78,8 +78,9 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 2\t\tOK\tTabla de las horas puntas")
             print("Tabla 3\t\tOK\tTabla de fechas de conteos")
         except Exception as e:
-            print("Tabla 2:\t\tERROR\tTabla de las horas puntas")
-            print("Tabla 3:\t\tERROR\tTabla de fechas de conteos")
+            print("Tabla 2\t\tERROR\tTabla de las horas puntas")
+            print("Tabla 3\t\tERROR\tTabla de fechas de conteos")
+            LOGGER.warning("Error Tabla 2 o 3")
             LOGGER.warning(str(e))
 
         try:
@@ -89,9 +90,12 @@ class MyWindow(QMainWindow, Ui_Form):
             VARIABLES.update({"tabla4": table4, "tabla5": table5})
             print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
             print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
+        except FileNotFoundError as e:
+            print("Tabla 4 o 5\tError\tNo existen archivos de colas")
         except Exception as e:
-            print("Tabla 4:\t\tERROR\tFechas de toma de longitud de cola")
-            print("Tabla 5:\t\tERROR\tDatos estadísticas de longitud de cola")
+            print("Tabla 4\t\tERROR\tFechas de toma de longitud de cola")
+            print("Tabla 5\t\tERROR\tDatos estadísticas de longitud de cola")
+            LOGGER.warning("Error Tabla 4 o 5")
             LOGGER.warning(str(e))
 
         try:
@@ -101,6 +105,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 6\t\tOK\tTabla de tiempos de embarque y desembarque")
         except Exception as e:
             print("Tabla 6\t\tERROR\tTabla de tiempos de embarque y desembarque")
+            LOGGER.warning("Error Tabla 6")
             LOGGER.warning(str(e))
 
         try:
@@ -110,6 +115,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 7\t\tOK\tDatos estadísticas de embarque y desembarque")
         except Exception as e:
             print("Tabla 7\t\tERROR\tDatos estadísticas de embarque y desembarque")
+            LOGGER.warning("Error Tabla 7")
             LOGGER.warning(str(e))
 
         try:
@@ -119,6 +125,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 8\t\tOK\tTabla de fechas de tiempos de ciclo y fases")
         except Exception as e:
             print("Tabla 8:\t\tERROR\tTabla de fechas de tiempos de ciclo y fases")
+            LOGGER.warning("Error Tabla 8")
             LOGGER.warning(str(e))
 
         try:    
@@ -128,6 +135,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 9\t\tOK\tGráficas de programaciones semafóricas")
         except Exception as e:
             print("Tabla 9\t\tERROR\tGráficas de programaciones semafóricas")
+            LOGGER.warning("Error Tabla 9")
             LOGGER.warning(str(e))
 
         try:
@@ -137,6 +145,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 10\tOK\tDatos del Webster")
         except Exception as e:
             print("Tabla 10\tERROR\tDatos del Webster")
+            LOGGER.warning("Error Tabla 10")
             LOGGER.warning(str(e))
 
         try:
@@ -146,6 +155,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 11\tOK\tTabla de fases semafóricas propuestas")
         except Exception as e:
             print("Tabla 11\tERROR\tTabla de fases semafóricas propuestas")
+            LOGGER.warning("Error Tabla 11")
             LOGGER.warning(str(e))
 
         try:
@@ -155,6 +165,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 12\tOK\tTabla para ser llenada de interacciones peatonales")
         except Exception as e:
             print("Tabla 12\tERROR\tTabla para ser llenada de interacciones peatonales")
+            LOGGER.warning("Error Tabla 12")
             LOGGER.warning(str(e))
 
         try:
@@ -165,6 +176,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 14\tOK\tTabla de orígenes y destinos de situación actual")
         except Exception as e:
             print("Tabla 14\tERROR\tTabla de orígenes y destinos de situación actual")
+            LOGGER.warning("Error Tabla 14")
             LOGGER.warning(str(e))
 
         try:
@@ -174,6 +186,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 16\tOK\tImágenes de GEH y R2")
         except Exception as e:
             print("Tabla 16\tERROR\tImágenes de GEH y R2")
+            LOGGER.warning("Error Tabla 16")
             LOGGER.warning(str(e))
 
         try:
@@ -183,6 +196,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 17\tOK\tResultados del GEH-R2")
         except Exception as e:
             print("Tabla 17\tERROR\tResultados del GEH-R2")
+            LOGGER.warning("Error Tabla 17")
             LOGGER.warning(str(e))
 
         try:
@@ -192,6 +206,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 18\tOK\tGráficas de sigs Output - base")
         except Exception as e:
             print("Tabla 18\tERROR\tGráficas de sigs Output - base")
+            LOGGER.warning("Error Tabla 18")
             LOGGER.warning(str(e))
 
         try:
@@ -201,6 +216,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 19\tOK\tGráficas de sigs Output - 1 año")
         except Exception as e:
             print("Tabla 19\tERROR\tGráficas de sigs Output - 1 año")
+            LOGGER.warning("Error Tabla 19")
             LOGGER.warning(str(e))
 
         try:
@@ -211,6 +227,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Copiar contenido del siguiente path:\n",table20_path)
         except Exception as e:
             print("Tabla 20\tERROR\tTablas de resultados peatonales, vehiculares y de nodos")
+            LOGGER.warning("Error Tabla 20")
             LOGGER.warning(str(e))
 
         try:
@@ -220,6 +237,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Tabla 23\tOK\tTabla resumen de resultados")
         except Exception as e:
             print("Tabla 23\tERROR\tTabla resumen de resultados")
+            LOGGER.warning("Error Tabla 23")
             LOGGER.warning(str(e))
 
         #Paragraphs:
@@ -230,6 +248,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Párrafos\t\t\tOK\tCreación de párrafos")
         except Exception as e:
             print("Párrafos\t\t\tERROR\tCreación de párrafos")
+            LOGGER.warning("Error de creación de párrafos")
             LOGGER.warning(str(e))
 
         #Image paths:
@@ -240,15 +259,17 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Histogramas\t\t\tOK\tCreación de histogramas")
         except Exception as e:
             print("Histogramas\t\t\tERROR\tCreación de histogramas")
+            LOGGER.warning("Errores de histogramas")
             LOGGER.warning(str(e))
 
         try:
             flujograma_vehicular_path = flujogramas_vehiculares(self.path_subarea)
             flujograma_vehicular = doc.new_subdoc(flujograma_vehicular_path)
             VARIABLES.update({"flujogvmt": flujograma_vehicular}) 
-            print("Flujogramas vehbiculares\tOK")
+            print("Flujogramas vehiculares\t\tOK")
         except Exception as e:
-            print("Flujogramas vehbiculares\tERROR")
+            print("Flujogramas vehiculares\t\tERROR")
+            LOGGER.warning("Flujogramas vehiculares")
             LOGGER.warning(str(e))
 
         try:
@@ -258,6 +279,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Flujogramas peatonales\t\tOK")
         except Exception as e:
             print("Flujogramas peatonales\t\tERROR")
+            LOGGER.warning("Flujogramas peatonales")
             LOGGER.warning(str(e))
 
         try:
@@ -267,6 +289,7 @@ class MyWindow(QMainWindow, Ui_Form):
             print("Sigs actual\t\t\tOK")
         except Exception as e:
             print("Sigs actual\t\t\tERROR")
+            LOGGER.warning("Sigs actual")
             LOGGER.warning(str(e))
 
         doc.render(VARIABLES)

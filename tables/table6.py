@@ -29,10 +29,16 @@ def create_table6(path_subarea):
     dema_list = []
     for code in code_by_subarea:
         demt = df_board[df_board['Código'] == code]['Día Típico'].unique()[0]
-        demt = demt.strftime('%d/%m/%Y')
+        try:
+            demt = demt.strftime('%d/%m/%Y')
+        except AttributeError:
+            demt = "No existen"
         demt_list.append(demt)
         dema = df_board[df_board['Código'] == code]['Día Atípico'].unique()[0]
-        dema = dema.strftime('%d/%m/%Y')
+        try:
+            dema = dema.strftime('%d/%m/%Y')
+        except AttributeError:
+            dema = "No existen"
         dema_list.append(dema)
     
     ####################

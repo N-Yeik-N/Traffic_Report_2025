@@ -45,14 +45,15 @@ def create_table7(path_subarea) -> None:
                 count += 1
 
     doc_target = Document(list_REF[0])
+    table7_path = Path(path_subarea) / "Tablas" / "table7.docx"
     for i in range(len(list_REF)):
-        if i == 0: continue
+        if i == 0:
+            continue
         doc_source = Document(list_REF[i])
         append_document_content(doc_source, doc_target)
-        table7_path = Path(path_subarea) / "Tablas" / "table7.docx"
+        
         doc_target.save(table7_path)
         doc_target = Document(table7_path)
 
     doc_target.save(table7_path)
     return table7_path
-    

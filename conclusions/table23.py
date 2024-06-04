@@ -70,7 +70,10 @@ def create_table23(subareaPath):
                         if "table.json" in scenarioContent:
                             jsonFile = os.path.join(scenarioPath, "table.json")
                             listJSONPaths.append(jsonFile)
-                            listNames.append(scenarioName)      
+                            listNames.append(scenarioName)
+    
+    # for elem in listJSONPaths:
+    #     print(elem)
 
     doc = Document()
     table = doc.add_table(rows = 1, cols = 9)
@@ -104,11 +107,11 @@ def create_table23(subareaPath):
     table.cell(numberNodes*8+1,0).merge(table.cell(numberNodes*13,0))
 
     indexNames = 0
-    for i in range(1, numberNodes*13+1, 2):
+    for i in range(1, numberNodes*13+1, numberNodes):
         table.cell(i,1).text = 'Actual'
-        table.cell(i,1).merge(table.cell(i+1,1))
+        table.cell(i,1).merge(table.cell(i+numberNodes-1,1))
         table.cell(i,2).text = listNames[indexNames]
-        table.cell(i,2).merge(table.cell(i+1,2))
+        table.cell(i,2).merge(table.cell(i+numberNodes-1,2))
         indexNames += 1
 
     _align_content(table)

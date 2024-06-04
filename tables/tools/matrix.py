@@ -5,14 +5,14 @@ def read_matrix(excel_path):
     wb = load_workbook(excel_path, read_only=True, data_only=True)
     ws = wb.active
     
-    sliceOrigin = slice("B1","AZ1") #Maximum 50 origins
-    sliceDestiny = slice("A2", "A51") #Maximum 50 detinys
+    sliceDestiny = slice("B1","AZ1") #Maximum 50 origins
+    sliceOrigin = slice("A2", "A51") #Maximum 50 detinys
 
     origins = ['O'+str(elem.value) for row in ws[sliceOrigin] for elem in row if elem.value != None]
-    destinys = ['D'+str(row[0].value) for row in ws[sliceDestiny]]
+    destinys = ['D'+str(row[0].value) for row in ws[sliceDestiny] for elem in row if elem.value != None]
 
-    numCols = len(origins)
-    numRows = len(destinys)
+    numCols = len(destinys)
+    numRows = len(origins)
 
     MATRIX = []
     for row in range(2,numRows+2):

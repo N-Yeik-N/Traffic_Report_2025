@@ -75,7 +75,11 @@ def get_sigs_actual(subareaPath) -> None:
     listWordPaths = []
     for code, dictTurns in dictCode.items():
         for turno in ["Mañana", "Tarde", "Noche"]:
-            text, pathImg = dictTurns[turno]
+            try:
+                text, pathImg = dictTurns[turno]
+            except KeyError as e:
+                #No existen datos para un turno en específico de una intersección específica.
+                continue
             doc_template = DocxTemplate("./templates/template_imagenes.docx")
             newImage = InlineImage(doc_template, pathImg, width=Inches(6))
             doc_template.render({"texto": text, "tabla": newImage})
