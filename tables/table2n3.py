@@ -12,9 +12,9 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 def create_table2n3(path_subarea):
-    path_parts = path_subarea.split("/") #<--- Linux...
+    path_parts = path_subarea.split("/")
     subarea_id = path_parts[-1]
-    proyect_folder = '/'.join(path_parts[:-2]) #<--- Linux...
+    proyect_folder = '/'.join(path_parts[:-2])
     field_data = Path(proyect_folder) / "7. Informacion de Campo" / subarea_id / "Vehicular"
 
     excel_tipicidades = {}

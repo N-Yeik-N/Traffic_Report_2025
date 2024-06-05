@@ -39,8 +39,11 @@ def _r2_figure(CAMPO, MODELO, vehicularType, PATH) -> None:
     plt.ylabel('Volumen modelo', fontweight='bold', fontsize = '14')
     plt.title(f'R2: Volumen "{vehicularType}"', fontweight='bold', fontsize = '16')
     r_value_str = str(r_value)
-    entero, decimal = r_value_str.split('.')
-    r_value_show = f'{entero}.{decimal[:2]}'
+    try:
+        entero, decimal = r_value_str.split('.')
+        r_value_show = f'{entero}.{decimal[:2]}'
+    except ValueError as inst:
+        r_value_show = r_value_str
     plt.text(0.8, 0.1, f'$R^2 = {r_value_show}$\ny={slope:.2f}x+({intercept:.2f})', ha='center', va='center', transform=plt.gca().transAxes, bbox=dict(facecolor="white", alpha=0.5))
 
     plt.legend()

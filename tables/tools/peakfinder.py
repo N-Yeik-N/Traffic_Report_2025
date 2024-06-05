@@ -49,16 +49,19 @@ def peakhour_finder(path) -> Hours:
     wb.close()
 
     peakhour_morning = max(SUM_HOUR[6*4:12*4])
-    index_morning = SUM_HOUR.index(peakhour_morning)
-    volume_morning = SUM_HOUR[index_morning]
+    index_morning = SUM_HOUR.index(peakhour_morning)-3
+    volume_morning = SUM_HOUR[index_morning+3]
     
     peakhour_evening = max(SUM_HOUR[12*4:17*4])
-    index_evening = SUM_HOUR.index(peakhour_evening)
-    volume_evening = SUM_HOUR[index_evening]
+    index_evening = SUM_HOUR.index(peakhour_evening)-3
+    volume_evening = SUM_HOUR[index_evening+3]
 
     peakhour_night = max(SUM_HOUR[17*4:24*4])
-    index_night = SUM_HOUR.index(peakhour_night)
-    volume_night = SUM_HOUR[index_night]
+    index_night = SUM_HOUR.index(peakhour_night)-3
+    volume_night = SUM_HOUR[index_night+3]
+    #print("PK Morning:\t", peakhour_morning, "\t", index_morning)
+    #print("PK Evening:\t", peakhour_evening, "\t", index_evening)
+    #print("PK Night:\t", peakhour_night, "\t", index_night)
 
     excel_hours_info = Hours(
         name = intersection_name,

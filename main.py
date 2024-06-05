@@ -21,7 +21,6 @@ from conclusions.table23 import create_table23
 
 import logging
 
-
 #Interface
 from ui.interface import Ui_Form
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
@@ -312,12 +311,12 @@ class MyWindow(QMainWindow, Ui_Form):
             LOGGER.warning("Sigs actual")
             LOGGER.warning(str(e))
 
-        doc.render(VARIABLES)
-
         if SEND_MESSAGE:
             print("\n############################### MENSAJE IMPORTANTE ###############################\n")
             print("Copiar contenido en el capítulo 3.1 RESULTADOS DEL MODELO después de la tabla de niveles de servicio.\n",table20_path)
             print("\n############################### MENSAJE IMPORTANTE ###############################")
+
+        doc.render(VARIABLES)
 
         #Getting name of subarea
         subareaName = os.path.split(self.path_subarea)[1]

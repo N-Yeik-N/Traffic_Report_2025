@@ -44,7 +44,7 @@ def create_resultados_images(subareaPath) -> str:
     try:
         create_dianas(excelPath)
     except TypeError as e:
-        print("Tabla 16\tError\tNo se tiene resultados en .json del estado Actual")
+        print("Tabla 16\tError\tNo se tiene resultados en .json del estado Actual o faltan más intersecciones en el excel de GEH-R2")
     except Exception as e:
         raise e
 
