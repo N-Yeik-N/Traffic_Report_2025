@@ -118,7 +118,6 @@ def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Pat
         final_path = Path(path_subarea) / "Tablas" / f"flujograma_peatonal_{code}.docx"
         doc.save(final_path)
         listWords.append(final_path)
-        listWords.append(final_path)
 
     flujograma_path = os.path.join(path_subarea, "Tablas", "flujogramas_peatonales.docx")
     filePathMaster = listWords[0]

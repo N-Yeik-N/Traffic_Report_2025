@@ -240,19 +240,34 @@ def flujogramas_peatonales(path_subarea) -> str:
             if "Turno 01_T" in pdf:
                 listSelectedPDF.append((code, os.path.join(folderPeatonal, pdf)))
                 listCodes.append(code)
+    listCodes = list(set(listCodes))
 
-    listPathImages = []
-    for code, pdf_path in listSelectedPDF:
-        if pdf_path.endswith('.png'):
-            #print("Ya existe el PDF en .png, si hay correcciones, borrar:\n", pdf_path)
-            continue
-        namePDF = os.path.split(pdf_path)[1]
-        namePDF = namePDF[:-4]
-        listPathImages.append(convert_pdf_to_image(pdf_path, folderPeatonal, namePDF))
+    listPathImages = {}
 
+    for code in listCodes:
+        listPathImages[code] = []
+
+    #Checking if there are images
+    for code in listCodes:
+        for codePath, pdfPath in listSelectedPDF:
+            if code == codePath:
+                if pdfPath.endswith('.png'):
+                    listPathImages[code].append(pdfPath)
+                    break
+
+    #In case there are no .png files
+    listPngImages = listPathImages.copy()
+    for code, listDocuments in listPngImages.items():
+        if len(listDocuments) == 0: #There is no .pngs
+            for codePDF, pdfPath in listSelectedPDF:
+                if code == codePDF:
+                    namePDF = os.path.split(pdfPath)[1]
+                    namePDF = namePDF[:-4]
+                    listPathImages[code] = convert_pdf_to_image(pdfPath, folderPeatonal, namePDF)
+    
     resultList = []
-    for code, imagePath in zip(listCodes, listPathImages):
-        resultList.append((code, imagePath))    
+    for code, imagePath in listPathImages.items():
+        resultList.append((code, imagePath[0]))
 
     flujograma_path = create_flujograma_peatonal_subdocs(resultList, path_subarea)
 
