@@ -216,7 +216,7 @@ class MyWindow(QMainWindow, Ui_Form):
             LOGGER.warning("Error Tabla 17")
             LOGGER.warning(str(e))
 
-        try:
+        try: #Cambiar a solo horas punta
             table18_path = create_table18(self.path_subarea)
             table18 = doc.new_subdoc(table18_path)
             VARIABLES.update({"tabla18": table18})
@@ -226,7 +226,7 @@ class MyWindow(QMainWindow, Ui_Form):
             LOGGER.warning("Error Tabla 18")
             LOGGER.warning(str(e))
 
-        try:
+        try: #Cambiar a solo horas punta
             table19_path = create_table19(self.path_subarea)
             table19 = doc.new_subdoc(table19_path)
             VARIABLES.update({"tabla19": table19})
@@ -238,7 +238,7 @@ class MyWindow(QMainWindow, Ui_Form):
 
 
         SEND_MESSAGE = False
-        try:
+        try: #Cambiar solo a horas punta
             table20_path = generate_results(self.path_subarea)
             #table20 = doc.new_subdoc(table20_path)
             #VARIABLES.update({"tabla20": table20})
@@ -249,7 +249,7 @@ class MyWindow(QMainWindow, Ui_Form):
             LOGGER.warning("Error Tabla 20")
             LOGGER.warning(str(e))
 
-        try:
+        try: #Cambiar a solo horas punta
             table23_path = create_table23(self.path_subarea)
             table23 = doc.new_subdoc(table23_path)
             VARIABLES.update({"tabla23": table23})

@@ -1,7 +1,8 @@
 import json
 from docx import Document
 from docx.enum.section import WD_ORIENT
-from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt, Cm
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_ALIGN_VERTICAL
 import os
@@ -59,8 +60,6 @@ def _align_content(table) -> None:
         shade_obj = OxmlElement('w:shd')
         shade_obj.set(qn('w:fill'),'B4C6E7')
         table_cell_properties.append(shade_obj)
-
-    
 
 NODES_TOTRES = [
     "Nodo",
@@ -144,30 +143,64 @@ def read_json(jsonPathActual, subareaPath, name, tipicidad) -> None:
     table.style = 'Table Grid'
 
     #Tabla: Resultados de rendimiento de los nodos
-    doc = Document()
-    table = doc.add_table(rows=1, cols = len(data['nodes_totres'][0])+3)
-
-    for i, elem in enumerate(NODES_TOTRES):
-        if i == 0:
-            table.cell(0,i+1).text = 'Nodo'
-        else: table.cell(0,i+1).text = f"{elem}"
-    
-    table.cell(0,len(data['nodes_totres'][0])+2).text = 'LOS'
-
     if jsonPathActual:
-        for (i, node_info), node_los in zip(enumerate(data['nodes_totres']), data['nodes_los']):
-            new_row = table.add_row()
-            new_row.cells[1].text = data['nodes_names'][i]
-            for j, elem in enumerate(node_info):
-                new_row.cells[j+2].text = f"{int(elem)}"
-                last_count_actual = j+2
-            new_row.cells[last_count_actual+1].text = node_los
-            last_row_actual = i
+        with open(jsonPathActual, 'r') as file:
+            data = json.load(file)
 
-    table.cell(0,0).text = "Escenarios"
-    table.cell(1,0).text = "Actual"
+    #Computing number of columns
+    jumpRows = []
+    nodeNames = []
+    for nodeName in data["node_results"]:
+        jumpRows.append(len(data["node_results"][nodeName]))
+        nodeNames.append(nodeName)
+    
+    doc = Document()
+    table = doc.add_table(rows = 1, cols = 8)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    table.cell(0,0).text = "Indicadores de Evaluación"
+    table.cell(0,0).merge(table.cell(0,1))
+
+    for i, indicator in enumerate(["Volumen\n(veh)", "Long. de Cola Prom.\n(m)", "Long. de Cola Máx.\n(m)", "Demora por Paradas\n(s/veh)", "Demora\n(s/veh)", "LOS\n(A-F)"]):
+        table.cell(0, i+2).text = indicator
+
+    for nodeName in data["node_results"]:
+        for _, indicatorList in data["node_results"][nodeName].items():
+            newRow = table.add_row()
+            sentido = indicatorList["Sentido"].split("-")[0]
+            nameTable = indicatorList["Nombre"]+f"\n({sentido})"
+            newRow.cells[1].text = nameTable
+            newRow.cells[2].text = str(int(float(indicatorList['Numero de Vehiculos'])))
+            newRow.cells[3].text = indicatorList['Longitud de Cola Prom.']
+            newRow.cells[4].text = indicatorList['Longitud de Cola Max.']
+            newRow.cells[5].text = indicatorList['Demora en Paradas Prom.']
+            newRow.cells[6].text = indicatorList['Demora Promedio']
+            newRow.cells[7].text = indicatorList['LOS']
+
+    rowNum = 1
+    for nodeName, jump in zip(nodeNames, jumpRows):
+        if rowNum == 1:
+            table.cell(rowNum, 0).text = nodeName
+            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
+            rowNum += jump
+        else:
+            table.cell(rowNum, 0).text = nodeName
+            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
+            rowNum += jump
+
+    #Bond
+    for i in range(len(table.columns)):
+        cell = table.cell(0,i)
+        for paragraph in cell.paragraphs:
+            run = paragraph.runs[0]
+            run.font.bold = True
+
     _align_content(table)
-    table.cell(1,0).merge(table.cell(last_row_actual+1,0))
+
+    #Width
+    for idColumn, widthColumn in zip([0, 1, 2, 6, 7], [1.2, 4.0, 1.5, 1.5, 1.5]):
+        for cell in table.columns[idColumn].cells:
+            cell.width = Cm(widthColumn)
 
     table.style = 'Table Grid'
 
@@ -187,6 +220,7 @@ def generate_results(subareaPath) -> None:
         tipicidadContent = [file for file in tipicidadContent if not file.endswith(".ini")]
 
         for scenario in tipicidadContent:
+            if not scenario in ["HPM", "HPT", "HPN"]: continue
             scenarioPath = os.path.join(tipicidadFolder, scenario)
             scenarioContent = os.listdir(scenarioPath)
             if "table.json" in scenarioContent:

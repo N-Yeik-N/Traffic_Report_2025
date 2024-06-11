@@ -48,7 +48,7 @@ def create_table23(subareaPath):
     for tipicidad in ["Tipico", "Atipico"]:
         tipicidadPath = os.path.join(actualPath, tipicidad)
         scenariosList = os.listdir(tipicidadPath)
-        scenariosList = [file for file in scenariosList if not file.endswith(".ini")]
+        scenariosList = [file for file in scenariosList if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
 
         if tipicidad == "Tipico":
             for tipicoUnit in tipicoList:
@@ -82,7 +82,7 @@ def create_table23(subareaPath):
     table.cell(0,1).text = "Escenario"
     table.cell(0,1).merge(table.cell(0,2))
 
-    for i, texto in enumerate(["Nodo", "Demora\nPromedio", "Pare\nPromedio", "Cola Máx.\nPromedio", "Número de\nVehículos", "LOS"]):
+    for i, texto in enumerate(["Nodo", "Número de\nVehículos\n(veh)", "Cola Máx.\nPromedio\n(m)", "Demora por parada\nPromedio\n(s/veh)", "Demora\nPromedio\n(s/veh)", "LOS"]):
         table.cell(0,i+3).text = texto
 
     for i, jsonPath in enumerate(listJSONPaths):
@@ -91,23 +91,23 @@ def create_table23(subareaPath):
 
         for j in range(len(data['nodes_names'])):
             new_row = table.add_row()
-            new_row.cells[3].text = data['nodes_names'][j]
-            new_row.cells[4].text = str(int(data['nodes_totres'][j][0]))
-            new_row.cells[5].text = str(int(data['nodes_totres'][j][1]))
-            new_row.cells[6].text = str(int(data['nodes_totres'][j][3]))
-            new_row.cells[7].text = str(int(data['nodes_totres'][j][4]))
+            new_row.cells[3].text = data['nodes_names'][j]                  #Nodo
+            new_row.cells[4].text = str(int(data['nodes_totres'][j][4]))    #Número de Vehículos
+            new_row.cells[5].text = str(int(data['nodes_totres'][j][3]))    #Cola Máx. Promedio
+            new_row.cells[6].text = str(int(data['nodes_totres'][j][1]))    #Pare Promedio
+            new_row.cells[7].text = str(int(data['nodes_totres'][j][0]))    #Demora Promedio
             new_row.cells[8].text = data['nodes_los'][j]
         
         if i == 0:
             numberNodes = len(data['nodes_names'])
     
     table.cell(1,0).text = "TÍPICO"
-    table.cell(1,0).merge(table.cell(numberNodes*8,0))
-    table.cell(numberNodes*8+1,0).text = "ATÍPICO"
-    table.cell(numberNodes*8+1,0).merge(table.cell(numberNodes*13,0))
+    table.cell(1,0).merge(table.cell(numberNodes*3,0)) #Solo 3 horas punta
+    table.cell(numberNodes*3+1,0).text = "ATÍPICO"
+    table.cell(numberNodes*3+1,0).merge(table.cell(numberNodes*6,0)) #Solo 3 horas punta
 
     indexNames = 0
-    for i in range(1, numberNodes*13+1, numberNodes):
+    for i in range(1, numberNodes*6+1, numberNodes):
         table.cell(i,1).text = 'Actual'
         table.cell(i,1).merge(table.cell(i+numberNodes-1,1))
         table.cell(i,2).text = listNames[indexNames]
