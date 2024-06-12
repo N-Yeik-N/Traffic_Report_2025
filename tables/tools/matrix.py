@@ -1,27 +1,16 @@
-from openpyxl import load_workbook
 import pandas as pd
+import numpy as np
 
 def read_matrix(excel_path):
-    wb = load_workbook(excel_path, read_only=True, data_only=True)
-    ws = wb.active
-    
-    #sliceDestiny = slice("B1","AZ1") #Maximum 50 origins
-    sliceOrigin = slice("A2", "A51") #Maximum 50 detinys
+    df = pd.read_excel(excel_path, header=0, index_col=0)
 
-    origins = [str(elem.value) for row in ws[sliceOrigin] for elem in row if elem.value != None]
-    destinys = [str(cell.value) for cell in ws[1][1:60]]
-    #destinys = [str(row[0].value) for row in ws[sliceDestiny] for elem in row if elem.value != None]
+    destinys = df.columns.tolist()
+    origins = df.index.tolist()
 
-    numCols = len(destinys)
-    numRows = len(origins)
+    df.replace('-', np.nan, inplace=True)
+    df.fillna(0, inplace=True)
 
-    MATRIX = []
-    for row in range(2,numRows+2):
-        ROW = []
-        for col in range(2,numCols+2):
-            cell_value = str(ws.cell(row=row, column=col).value) if ws.cell(row=row, column=col).value != None else ""
-            ROW.append(cell_value)
-        MATRIX.append(ROW)
-    wb.close()
+    df = df.loc[~(df == 0).all(axis=1)]
+    df = df.loc[:, ~(df == 0).all(axis=0)]
 
-    return origins, destinys, MATRIX
+    return origins, destinys, df

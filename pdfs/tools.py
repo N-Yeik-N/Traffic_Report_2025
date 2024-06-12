@@ -29,6 +29,7 @@ def convert_pdf_to_image(pdf_path, output_path, name) -> None:
     except AttributeError as e:
         return print("ERROR: No se pudo convertir el PDF a imagen. Si ya fue creado antes debes borrarlo primero.")
     except Exception as inst:
+        print(f"ERROR: No se puede el PDF a imagen:\n{pdf_path}")
         raise inst
 
     assert len(images) <= 1, "ERROR: PDF tiene mas de una hoja."

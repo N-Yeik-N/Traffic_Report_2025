@@ -5,6 +5,8 @@ from tables.tools.matrix import read_matrix
 import pandas as pd
 import xml.etree.ElementTree as ET
 import numpy as np
+from tqdm import tqdm
+import time
 #docx
 from docxcompose.composer import Composer
 from docxtpl import DocxTemplate
@@ -37,20 +39,27 @@ def _set_vertical_cell_direction(cell: _Cell, direction: str) -> None:
     textDirection.set(qn('w:val'), direction)
     tcPr.append(textDirection)
 
-def table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, subareaPath):
+def table_creation(MATRIX, nameScenario, tipicidad, subareaPath):
+
+    DESTINYS = MATRIX.columns.tolist()
+    ORIGINS = MATRIX.index.tolist()
+
     doc = Document()
     table = doc.add_table(rows = 1+len(ORIGINS), cols = 1+len(DESTINYS))
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
+    hdr_cells = table.rows[0].cells
     for i, elem in enumerate(DESTINYS):
-        table.cell(0,i+1).text = str(elem)
+        #table.cell(0,i+1).text = str(elem)
+        hdr_cells[i+1].text = str(elem)
 
     for i, elem in enumerate(ORIGINS):
         table.cell(i+1,0).text = str(elem)
 
-    for i, row in enumerate(MATRIX):
+    for i, row in enumerate(MATRIX.itertuples(index=False, name=None)):
         for j, elem in enumerate(row):
-            table.cell(i+1,j+1).text = elem
+            cell = table.cell(i + 1, j + 1)
+            cell.text = str(elem)
 
     # #Format
     # table.cell(2,0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER
@@ -172,7 +181,7 @@ def create_table14(path_subarea):
     pattern = r'Matriz-OD_([A-Z]+).xlsx'
     count = 1
     for tipicidad, listExcels in matrixes_by_tipicidad.items():
-        for excel in listExcels:
+        for excel in tqdm(listExcels, desc=f"Procesando matrices de {tipicidad}"):
             nameExcel = os.path.split(excel)[-1]
             coincidence = re.search(pattern, nameExcel)
             if coincidence:
@@ -182,7 +191,7 @@ def create_table14(path_subarea):
 
             try:
                 ORIGINS, DESTINYS, MATRIX = read_matrix(excel)
-                tablePath = table_creation(ORIGINS, DESTINYS, MATRIX, nameScenario, tipicidad, path_subarea)
+                tablePath = table_creation(MATRIX, nameScenario, tipicidad, path_subarea)
                 count += 1
                 #print(f"Procesado tabla Nro. {count-1}")
             except Exception as inst:
@@ -214,9 +223,10 @@ def create_table14(path_subarea):
     _combine_all_docx(filePathMaster, filePathList, table14_path)
 
     #Information about maximums value of calibrated matrix
-    dataframeMatrix = pd.DataFrame(selectedInformation[2])
-    dataframeMatrix.replace('-', np.nan, inplace=True)
-    dataframeMatrix = dataframeMatrix.apply(pd.to_numeric, errors='coerce')
+    # dataframeMatrix = pd.DataFrame(selectedInformation[2])
+    # dataframeMatrix.replace('-', np.nan, inplace=True)
+    #dataframeMatrix = dataframeMatrix.apply(pd.to_numeric, errors='coerce')
+    dataframeMatrix = selectedInformation[2]
 
     max_value = dataframeMatrix.max().max()
     max_position = np.where(dataframeMatrix == max_value)
@@ -237,7 +247,7 @@ def create_table14(path_subarea):
         joinExplanation = ""
 
     VARIABLES = {
-        'numorig': str(len( [0])),
+        'numorig': str(len(selectedInformation[0])),
         'numdesti': str(len(selectedInformation[1])),
         'numorigmax': str(rowMax),
         'numdestimax': str(colMax),
