@@ -117,9 +117,11 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
             except FileNotFoundError as e:
                 print("Tabla 4\t\tERROR\tNo existen archivos de colas")
+            except IndexError as e:
+                print("Tabla 4\t\tERROR\tNo existen archivos de colas")
             except Exception as e:
                 print("Tabla 4\t\tERROR\tFechas de toma de longitud de cola")
-                LOGGER.warning("Error Tabla 4")
+                LOGGER.warning("ERRROR Tabla 4")
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(3,0).checkState()
@@ -129,10 +131,9 @@ class MyWindow(QMainWindow, Ui_Form):
                 VARIABLES.update({"tabla5": table5})
                 print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
             except FileNotFoundError as e:
-                print("Tabla 5\tError\tNo existen archivos de colas")
-            except IndexError as e:
-                print("Tabla 5\t\tError\tDebes pegar la tabla manualmente:")
-                print(table5_path)
+                print("Tabla 5\t\tERROR\tNo existen archivos de colas")
+            except UnboundLocalError:
+                print("Tabla 5\t\tERROR\tNo existen archivos de colas")
             except Exception as e:
                 print("Tabla 5\t\tERROR\tDatos estadísticas de longitud de cola")
                 LOGGER.warning("Error Tabla 5")
@@ -160,8 +161,10 @@ class MyWindow(QMainWindow, Ui_Form):
             except AttributeError as e:
                 print("Tabla 7\t\tError\tHay un dato en blanco en algunos de los excels")
             except IndexError as e:
-                print("Tabla 7\t\tError\tDebes pegar la tabla manualmente:")
-                print(table7_path)
+                try:
+                    print(f"Tabla 7\t\tError\tDebes pegar la tabla manualmente:\n{table7_path}")
+                except:
+                    print("Tabla 7\t\tError\tNo existe datos de embarque y desembarque")
             except Exception as e:
                 print("Tabla 7\t\tERROR\tDatos estadísticas de embarque y desembarque")
                 LOGGER.warning("Error Tabla 7")
@@ -337,7 +340,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Histograma\tOK\tCreación de histogramas")
             except Exception as e:
                 print("Histograma\tERROR\tCreación de histogramas")
-                raise e
                 LOGGER.warning("Errores de histogramas")
                 LOGGER.warning(str(e))
 
@@ -372,6 +374,8 @@ class MyWindow(QMainWindow, Ui_Form):
                 sigActual = doc.new_subdoc(sigActual_path)
                 VARIABLES.update({"sigactual": sigActual})
                 print("Sigs actual\tOK")
+            except IndexError:
+                print("Sigs actual\tERROR\tNo hay sigs")
             except Exception as e:
                 print("Sigs actual\tERROR")
                 LOGGER.warning("Sigs actual")

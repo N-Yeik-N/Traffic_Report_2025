@@ -10,7 +10,7 @@ def read_matrix(excel_path):
     df.replace('-', np.nan, inplace=True)
     df.fillna(0, inplace=True)
 
-    df = df.loc[~(df == 0).all(axis=1)]
-    df = df.loc[:, ~(df == 0).all(axis=0)]
+    #df = df.loc[~(df == 0).all(axis=1)]
+    #df = df.loc[:, ~(df == 0).all(axis=0)]
 
     return origins, destinys, df
