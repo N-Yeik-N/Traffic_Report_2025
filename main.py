@@ -18,7 +18,6 @@ from sigs.sig_actual import get_sigs_actual
 from images.resultados import create_resultados_images
 from results.reading_json import generate_results
 from conclusions.table23 import create_table23
-import tqdm
 
 import logging
 
@@ -267,7 +266,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 17")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(14,0).checkState()
+        checkObject = self.ui.tableWidget.item(14,0).checkState() #TODO: CHECK
         if checkObject:
             try: #Cambiar a solo horas punta
                 table18_path = create_table18(self.path_subarea)
@@ -279,15 +278,15 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 18")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(15,0).checkState()
+        checkObject = self.ui.tableWidget.item(15,0).checkState() #TODO: CHECK
         if checkObject:
             try: #Cambiar a solo horas punta
                 table19_path = create_table19(self.path_subarea)
                 table19 = doc.new_subdoc(table19_path)
                 VARIABLES.update({"tabla19": table19})
-                print("Tabla 19\tOK\tGráficas de sigs Output - 1 año")
+                print("Tabla 19\tOK\tGráficas de sigs Output - 3 años")
             except Exception as e:
-                print("Tabla 19\tERROR\tGráficas de sigs Output - 1 año")
+                print("Tabla 19\tERROR\tGráficas de sigs Output - 3 años")
                 LOGGER.warning("Error Tabla 19")
                 LOGGER.warning(str(e))
 
