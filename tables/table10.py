@@ -16,22 +16,22 @@ def _append_document_content(source_doc, target_doc) -> None:
         target_doc.element.body.append(element)
 
 def create_table10(path_subarea):
-    listFiles = os.listdir(path_subarea)
-    listFiles = [file for file in listFiles if file.endswith(".xlsx")]
+    excelPath = os.path.join(path_subarea, "Program_Results.xlsx")
+    if not os.path.exists(excelPath):
+        print("Tabla 10\tERROR\tNo existe 'Program_Results.xlsx'")
 
-    pattern = r"WEBSTER_([A-Z]+-[0-9]+).xlsx"
+    #Getting sheets names
+    workbook = load_workbook(excelPath, data_only=True, read_only=True)
+    sheetNames = workbook.sheetnames
+    workbook.close()
 
-    websterExcels = []
-
-    for file in listFiles:
-        coincidence = re.search(pattern, file)
-        if coincidence:
-            websterExcels.append((coincidence.group(1),file))
+    #Selecting sheets
+    pattern = r"([A-Z]+-[0-9]+)"
+    sheetNames = [name for name in sheetNames if re.match(pattern, name)]
 
     dict_by_code = {}
-    for code, excel in websterExcels:
-        excelPath = os.path.join(path_subarea, excel)
-        df = pd.read_excel(excelPath, 'WEBSTER', header=0, usecols="U:AI", nrows=13)
+    for code in sheetNames:
+        df = pd.read_excel(excelPath, code, header=0, usecols="V:AJ", nrows=13)
         dict_by_code[code] = df
 
     listFinalPathRef = []
@@ -67,8 +67,8 @@ def create_table10(path_subarea):
                                    "HVMAD","HPM","HPT","HPN","HVN"]):
             table.cell(2+i, 1).text = turno
         
-        for i, hora in enumerate(["00:00 - 05:00", "05:00 - 06:30", "06:30 - 10:30", "10:30 - 12:30", "12:30 - 15:00", "15:00 - 17:00", "17:00 - 22:00", "22:00 - 00:00",
-                                  "00:00 - 06:00", "06:00 - 12:00", "12:00 - 17:00", "17:00 - 22:00", "22:00 - 00:00"]):
+        for i, hora in enumerate(["00:00-05:00", "05:00-06:30", "06:30-10:30", "10:30-12:30", "12:30-15:00", "15:00-17:00", "17:00-22:00", "22:00-00:00",
+                                  "00:00-06:00", "06:00-12:00", "12:00-17:00", "17:00-22:00", "22:00-00:00"]):
             table.cell(2+i, 2).text = hora
 
         for i, fila in df.iterrows():
@@ -82,7 +82,7 @@ def create_table10(path_subarea):
         table.cell(10, 0).text = "Atípico"
         table.cell(10, 0).merge(table.cell(14, 0))
 
-        #Astethic:
+        #Aesthetic:
         for selected_row in [0, 1]:
             for cell in table.rows[selected_row].cells:
                 for paragraph in cell.paragraphs:
@@ -106,6 +106,14 @@ def create_table10(path_subarea):
                     cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
+        for row in table.rows:
+            for i, cell in enumerate(row.cells):
+                if i != 2: continue
+                for paragraph in cell.paragraphs:
+                    run = paragraph.runs[0]
+                    run.font.name = 'Arial Narrow'
+                    run.font.size = Pt(10)
+                    
         listCols = [i for i in range(4+noPhases*3)]
         listCols = listCols[4:]
         listCols[:0] = [1,2,3]
@@ -134,12 +142,12 @@ def create_table10(path_subarea):
         doc_template.save(finalPathRef)
     
     #Join tables
+    table10_path = os.path.join(path_subarea, "Tablas", "table10.docx")
     doc_target = Document(listFinalPathRef[0])
     for i in range(len(listFinalPathRef)):
         if i == 0: continue
         doc_source = Document(listFinalPathRef[i])
         _append_document_content(doc_source, doc_target)
-        table10_path = os.path.join(path_subarea, "Tablas", "table10.docx")
         doc_target.save(table10_path)
         doc_target = Document(table10_path)
 

@@ -8,8 +8,8 @@ import os
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-tipicoList = ["HVMAD","HPMAD","HVM","HPM","HVT","HPT","HVN","HPN"]
-atipicoList = ["HVMAD", "HPM", "HPT", "HVN", "HPN"]
+tipicoList = ["HPM", "HPT", "HPN"]
+atipicoList = ["HPM", "HPT", "HPN"]
 
 def _align_content(table) -> None:
     for row in table.rows:
@@ -43,37 +43,56 @@ def _align_content(table) -> None:
 
 def create_table23(subareaPath):
     actualPath = os.path.join(subareaPath, "Actual")
-    listJSONPaths = []
+    basePath = os.path.join(subareaPath, "Output_Base")
+    listJSONPathsActual = []
+    listJSONPathsBase = []
     listNames = []
     for tipicidad in ["Tipico", "Atipico"]:
-        tipicidadPath = os.path.join(actualPath, tipicidad)
-        scenariosList = os.listdir(tipicidadPath)
-        scenariosList = [file for file in scenariosList if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
+        #Actual
+        tipicidadPathActual = os.path.join(actualPath, tipicidad)
+        scenariosListActual = os.listdir(tipicidadPathActual)
+        scenariosListActual = [file for file in scenariosListActual if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
+
+        #Output Base
+        tipicidadPathBase = os.path.join(basePath, tipicidad)
+        scenariosListBase = os.listdir(tipicidadPathBase)
+        scenariosListBase = [file for file in scenariosListBase if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
 
         if tipicidad == "Tipico":
             for tipicoUnit in tipicoList:
-                for scenarioName in scenariosList:
-                    if tipicoUnit == scenarioName:
-                        scenarioPath = os.path.join(tipicidadPath, scenarioName)
-                        scenarioContent = os.listdir(scenarioPath)
-                        if "table.json" in scenarioContent:
-                            jsonFile = os.path.join(scenarioPath, "table.json")
-                            listJSONPaths.append(jsonFile)    
-                            listNames.append(scenarioName)
+                for scenarioNameActual, scenarioNameBase in zip(scenariosListActual, scenariosListBase):
+                    if tipicoUnit == scenarioNameActual:
+
+                        scenarioPathActual = os.path.join(tipicidadPathActual, scenarioNameActual)
+                        scenarioContentActual = os.listdir(scenarioPathActual)
+                        if "table.json" in scenarioContentActual:
+                            jsonFileActual = os.path.join(scenarioPathActual, "table.json")
+                            listJSONPathsActual.append(jsonFileActual)    
+                            listNames.append(scenarioNameActual)
+
+                        scenarioPathBase = os.path.join(tipicidadPathBase, scenarioNameBase)
+                        scenarioContentBase = os.listdir(scenarioPathBase)
+                        if "table.json" in scenarioContentBase:
+                            jsonFileBase = os.path.join(scenarioPathBase, "table.json")
+                            listJSONPathsBase.append(jsonFileBase)
 
         elif tipicidad == "Atipico":
-            for atipicoUnit in atipicoList:
-                for scenarioName in scenariosList:
-                    if atipicoUnit == scenarioName:
-                        scenarioPath = os.path.join(tipicidadPath, scenarioName)
-                        scenarioContent = os.listdir(scenarioPath)
-                        if "table.json" in scenarioContent:
-                            jsonFile = os.path.join(scenarioPath, "table.json")
-                            listJSONPaths.append(jsonFile)
-                            listNames.append(scenarioName)
-    
-    # for elem in listJSONPaths:
-    #     print(elem)
+            for tipicoUnit in tipicoList:
+                for scenarioNameActual, scenarioNameBase in zip(scenariosListActual, scenariosListBase):
+                    if tipicoUnit == scenarioNameActual:
+                        
+                        scenarioPathActual = os.path.join(tipicidadPathActual, scenarioNameActual)
+                        scenarioContentActual = os.listdir(scenarioPathActual)
+                        if "table.json" in scenarioContentActual:
+                            jsonFileActual = os.path.join(scenarioPathActual, "table.json")
+                            listJSONPathsActual.append(jsonFileActual)    
+                            listNames.append(scenarioNameActual)
+
+                        scenarioPathBase = os.path.join(tipicidadPathBase, scenarioNameBase)
+                        scenarioContentBase = os.listdir(scenarioPathBase)
+                        if "table.json" in scenarioContentBase:
+                            jsonFileBase = os.path.join(scenarioPathBase, "table.json")
+                            listJSONPathsBase.append(jsonFileBase)
 
     doc = Document()
     table = doc.add_table(rows = 1, cols = 9)
@@ -82,37 +101,67 @@ def create_table23(subareaPath):
     table.cell(0,1).text = "Escenario"
     table.cell(0,1).merge(table.cell(0,2))
 
+    #Creating Headers
     for i, texto in enumerate(["Nodo", "Número de\nVehículos\n(veh)", "Cola Máx.\nPromedio\n(m)", "Demora por parada\nPromedio\n(s/veh)", "Demora\nPromedio\n(s/veh)", "LOS"]):
         table.cell(0,i+3).text = texto
 
-    for i, jsonPath in enumerate(listJSONPaths):
-        with open(jsonPath, 'r') as file:
+    nroRow = 1
+
+    for i, jsonPathActual in enumerate(listJSONPathsActual):
+        with open(jsonPathActual, 'r') as file:
             data = json.load(file)
 
-        for j in range(len(data['nodes_names'])):
+        with open(listJSONPathsBase[i], 'r') as file2:
+            data2 = json.load(file2)
+        
+        for j in range(len(data['nodes_names'])): #NOTE: Estoy considerando que son del mismo tamaño, puede que no sea así siempre.
+            #Actual
             new_row = table.add_row()
+            new_row.cells[2].text = "Actual"
+            #new_row.cells[2].text = listNames[idScenario]
             new_row.cells[3].text = data['nodes_names'][j]                  #Nodo
             new_row.cells[4].text = str(int(data['nodes_totres'][j][4]))    #Número de Vehículos
             new_row.cells[5].text = str(int(data['nodes_totres'][j][3]))    #Cola Máx. Promedio
             new_row.cells[6].text = str(int(data['nodes_totres'][j][1]))    #Pare Promedio
             new_row.cells[7].text = str(int(data['nodes_totres'][j][0]))    #Demora Promedio
             new_row.cells[8].text = data['nodes_los'][j]
-        
+            nroRow += 1
+
+            #Base
+            new_row = table.add_row()
+            table.cell(nroRow-1,3).merge(table.cell(nroRow,3))
+            #table.cell(nroRow-1,2).merge(table.cell(nroRow,2))
+            new_row.cells[2].text = "Propuesto"
+            #new_row.cells[3].text = data2['nodes_names'][j]                 #Nodo
+            new_row.cells[4].text = str(int(data2['nodes_totres'][j][4]))    #Número de Vehículos
+            new_row.cells[5].text = str(int(data2['nodes_totres'][j][3]))    #Cola Máx. Promedio
+            new_row.cells[6].text = str(int(data2['nodes_totres'][j][1]))    #Pare Promedio
+            new_row.cells[7].text = str(int(data2['nodes_totres'][j][0]))    #Demora Promedio
+            new_row.cells[8].text = data2['nodes_los'][j]
+            nroRow += 1
+
         if i == 0:
             numberNodes = len(data['nodes_names'])
-    
-    table.cell(1,0).text = "TÍPICO"
-    table.cell(1,0).merge(table.cell(numberNodes*3,0)) #Solo 3 horas punta
-    table.cell(numberNodes*3+1,0).text = "ATÍPICO"
-    table.cell(numberNodes*3+1,0).merge(table.cell(numberNodes*6,0)) #Solo 3 horas punta
 
-    indexNames = 0
-    for i in range(1, numberNodes*6+1, numberNodes):
-        table.cell(i,1).text = 'Actual'
-        table.cell(i,1).merge(table.cell(i+numberNodes-1,1))
-        table.cell(i,2).text = listNames[indexNames]
-        table.cell(i,2).merge(table.cell(i+numberNodes-1,2))
-        indexNames += 1
+    idScenario = 0
+    for j in range(1, len(table.rows), len(data['nodes_names'])*2):
+        if idScenario >= 3: idScenario = 0
+        table.cell(j,1).text = listNames[idScenario]
+        if j == 1:
+            beforeRow = j
+            idScenario += 1
+            continue
+        table.cell(beforeRow,1).merge(table.cell(beforeRow+len(data['nodes_names'])*2-1,1))
+        beforeRow = j
+        idScenario += 1
+
+    table.cell(beforeRow,1).merge(table.cell(beforeRow+len(data['nodes_names'])*2-1,1))
+    
+    #Tipicidad
+    table.cell(1,0).text = "TÍPICO"
+    table.cell(1,0).merge(table.cell(numberNodes*3*2,0)) #Solo 3 horas punta por propuesto y actual
+    table.cell(numberNodes*3*2+1,0).text = "ATÍPICO"
+    table.cell(numberNodes*3*2+1,0).merge(table.cell(numberNodes*3*2*2,0)) #Solo 3 horas puntas
 
     _align_content(table)
 

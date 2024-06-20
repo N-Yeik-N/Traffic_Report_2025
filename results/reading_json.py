@@ -71,20 +71,29 @@ NODES_TOTRES = [
     "LOS Value\n(Avg,Total,All)",
 ]
 
-def read_json(jsonPathActual, subareaPath, name, tipicidad) -> None:
+def read_json(jsonPathActual, jsonPathOutputBase, subareaPath, name, tipicidad) -> None:
 
     if jsonPathActual:
         with open(jsonPathActual, 'r') as file:
             data = json.load(file)
 
-    #Tabla: resultados vehiculares RED
+    if jsonPathOutputBase:
+        with open(jsonPathOutputBase, 'r') as file2:
+            data2 = json.load(file2)
+
+    #################################
+    # Resultados vehiculares global #
+    #################################
+
     doc = Document()
     table = doc.add_table(rows = 1, cols = len(data['vehicle_performance']['Avg'])+1+1)
 
+    #Writing headers
     table.cell(0,1).text = "SimRun"
     for i, elem in enumerate(data['vehicle_performance']['Avg']):
         table.cell(0,i+2).text = f'{elem}'
 
+    #Actual
     if jsonPathActual:
         for i,num_runs in enumerate(data['vehicle_performance']): #Start row = 1
             new_row  = table.add_row()
@@ -96,9 +105,27 @@ def read_json(jsonPathActual, subareaPath, name, tipicidad) -> None:
                     new_row.cells[j+2].text = str(0)
             last_row_actual = i
 
+    #Output Base
+    if jsonPathOutputBase:
+        for i,num_runs in enumerate(data2['vehicle_performance']): #Start row = 1
+            new_row  = table.add_row()
+            new_row.cells[1].text = num_runs
+            for j,attribute in enumerate(data2['vehicle_performance'][num_runs]):
+                try:
+                    new_row.cells[j+2].text = str(int(data2['vehicle_performance'][num_runs][attribute]))
+                except TypeError:
+                    new_row.cells[j+2].text = str(0)
+            last_row_base = i
+
+    last_row_base += last_row_actual
+
     table.cell(0,0).text = "Escenarios"
+    #Actual
     table.cell(1,0).text = "Actual"
     table.cell(1,0).merge(table.cell(last_row_actual+1,0))
+    #Output Base
+    table.cell(last_row_actual+2,0).text = "Propuesto Base"
+    table.cell(last_row_actual+2,0).merge(table.cell(last_row_base+2,0))
 
     _align_content(table)
 
@@ -109,14 +136,19 @@ def read_json(jsonPathActual, subareaPath, name, tipicidad) -> None:
     new_text = f"Rendimiento de vehículos de la red en la {dictNames[name]} día {tipicidad.lower()}"
     vehicularResultPathRef = _generate_table_ref(vehicularResultPath, new_text)
 
-    #Tabla: resultados peatonales RED
+    ################################
+    # Resultados peatonales global #
+    ################################
+
     doc = Document()
     table = doc.add_table(rows=1, cols=len(data['pedestrian_performance']['Avg'])+1+1)
 
+    #Writing headers
     table.cell(0,1).text = "SimRun"
     for i, elem in enumerate(data['pedestrian_performance']['Avg']):
         table.cell(0,i+2).text = f'{elem}'
     
+    #Actual
     if jsonPathActual:
         for i, num_runs in enumerate(data['pedestrian_performance']):
             new_row = table.add_row()
@@ -128,9 +160,27 @@ def read_json(jsonPathActual, subareaPath, name, tipicidad) -> None:
                     new_row.cells[j+2].text = str(0)
             last_row_actual = i
 
+    #Output Base
+    if jsonPathOutputBase:
+        for i, num_runs in enumerate(data2['pedestrian_performance']):
+            new_row = table.add_row()
+            new_row.cells[1].text = num_runs
+            for j, attribute in enumerate(data2['pedestrian_performance'][num_runs]):
+                try:
+                    new_row.cells[j+2].text = str(round(float(data2['pedestrian_performance'][num_runs][attribute]),4))
+                except TypeError:
+                    new_row.cells[j+2].text = str(0)
+            last_row_base = i
+
+    last_row_base += last_row_actual
+
     table.cell(0,0).text = "Escenarios"
+    #Actual
     table.cell(1,0).text = "Actual"
     table.cell(1,0).merge(table.cell(last_row_actual+1, 0))
+    #Output Base
+    table.cell(last_row_actual+2,0).text = "Propuesto Base"
+    table.cell(last_row_actual+2,0).merge(table.cell(last_row_base+2,0))
 
     _align_content(table)
 
@@ -142,10 +192,13 @@ def read_json(jsonPathActual, subareaPath, name, tipicidad) -> None:
 
     table.style = 'Table Grid'
 
-    #Tabla: Resultados de rendimiento de los nodos
-    if jsonPathActual:
-        with open(jsonPathActual, 'r') as file:
-            data = json.load(file)
+    ##########################################
+    # Resultados de rendimiento de los nodos #
+    ##########################################
+
+    # if jsonPathActual:
+    #     with open(jsonPathActual, 'r') as file:
+    #         data = json.load(file)
 
     #Computing number of columns
     jumpRows = []
@@ -204,31 +257,118 @@ def read_json(jsonPathActual, subareaPath, name, tipicidad) -> None:
 
     table.style = 'Table Grid'
 
-    nodeResultPath = os.path.join(subareaPath, "Tablas", f"nodeResults_{name}_{unidecode(tipicidad)}.docx")
-    doc.save(nodeResultPath)
-    new_text = f"Resultados de los nodos en la {dictNames[name]} día {tipicidad.lower()}"
-    nodeResultPathRef = _generate_table_ref(nodeResultPath, new_text)
+    nodeResultActualPath = os.path.join(subareaPath, "Tablas", f"nodeResults_{name}_{unidecode(tipicidad)}_actual.docx")
+    doc.save(nodeResultActualPath)
+    new_text = f"Resultados actuales de los nodos en la {dictNames[name]} del día {tipicidad.lower()}"
+    nodeResultActualPathRef = _generate_table_ref(nodeResultActualPath, new_text)
 
-    return nodeResultPathRef, pedestrianResultPathRef, vehicularResultPathRef
+    #Computing number of columns
+    jumpRows = []
+    nodeNames = []
+    for nodeName in data2["node_results"]:
+        jumpRows.append(len(data2["node_results"][nodeName]))
+        nodeNames.append(nodeName)
+    
+    doc = Document()
+    table = doc.add_table(rows = 1, cols = 8)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    table.cell(0,0).text = "Indicadores de Evaluación"
+    table.cell(0,0).merge(table.cell(0,1))
+
+    for i, indicator in enumerate(["Volumen\n(veh)", "Long. de Cola Prom.\n(m)", "Long. de Cola Máx.\n(m)", "Demora por Paradas\n(s/veh)", "Demora\n(s/veh)", "LOS\n(A-F)"]):
+        table.cell(0, i+2).text = indicator
+
+    for nodeName in data2["node_results"]:
+        for _, indicatorList in data2["node_results"][nodeName].items():
+            newRow = table.add_row()
+            sentido = indicatorList["Sentido"].split("-")[0]
+            nameTable = indicatorList["Nombre"]+f"\n({sentido})"
+            newRow.cells[1].text = nameTable
+            newRow.cells[2].text = str(int(float(indicatorList['Numero de Vehiculos'])))
+            newRow.cells[3].text = indicatorList['Longitud de Cola Prom.']
+            newRow.cells[4].text = indicatorList['Longitud de Cola Max.']
+            newRow.cells[5].text = indicatorList['Demora en Paradas Prom.']
+            newRow.cells[6].text = indicatorList['Demora Promedio']
+            newRow.cells[7].text = indicatorList['LOS']
+
+    rowNum = 1
+    for nodeName, jump in zip(nodeNames, jumpRows):
+        if rowNum == 1:
+            table.cell(rowNum, 0).text = nodeName
+            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
+            rowNum += jump
+        else:
+            table.cell(rowNum, 0).text = nodeName
+            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
+            rowNum += jump
+
+    #Bond
+    for i in range(len(table.columns)):
+        cell = table.cell(0,i)
+        for paragraph in cell.paragraphs:
+            run = paragraph.runs[0]
+            run.font.bold = True
+
+    _align_content(table)
+
+    #Width
+    for idColumn, widthColumn in zip([0, 1, 2, 6, 7], [1.2, 4.0, 1.5, 1.5, 1.5]):
+        for cell in table.columns[idColumn].cells:
+            cell.width = Cm(widthColumn)
+
+    table.style = 'Table Grid'
+
+    nodeResultBasePath = os.path.join(subareaPath, "Tablas", f"nodeResults_{name}_{unidecode(tipicidad)}_base.docx")
+    doc.save(nodeResultBasePath)
+    new_text = f"Resultados propuestos base de los nodos en la {dictNames[name]} del día {tipicidad.lower()}"
+    nodeResultBasePathRef = _generate_table_ref(nodeResultBasePath, new_text)
+
+    return nodeResultActualPathRef, nodeResultBasePathRef, pedestrianResultPathRef, vehicularResultPathRef
 
 def generate_results(subareaPath) -> None:
     actualPath = os.path.join(subareaPath, "Actual")
+    outputBasePath = os.path.join(subareaPath, "Output_Base")
     listWords = []
     for tipicidad in ["Tipico", "Atipico"]:
-        tipicidadFolder = os.path.join(actualPath, tipicidad)
-        tipicidadContent = os.listdir(tipicidadFolder)
-        tipicidadContent = [file for file in tipicidadContent if not file.endswith(".ini")]
+        #Actual
+        tipicidadFolderActual = os.path.join(actualPath, tipicidad)
+        tipicidadContentActual = os.listdir(tipicidadFolderActual)
+        tipicidadContentActual = [file for file in tipicidadContentActual if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
 
-        for scenario in tipicidadContent:
-            if not scenario in ["HPM", "HPT", "HPN"]: continue
-            scenarioPath = os.path.join(tipicidadFolder, scenario)
-            scenarioContent = os.listdir(scenarioPath)
-            if "table.json" in scenarioContent:
-                jsonPathActual = os.path.join(scenarioPath, "table.json")
+        #Output Base
+        tipicidadFolderOutputBase = os.path.join(outputBasePath, tipicidad)
+        tipicidadContentOutputBase = os.listdir(tipicidadFolderOutputBase)
+        tipicidadContentOutputBase = [file for file in tipicidadContentOutputBase if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
+
+        for scenarioActual, scenarioOutputBase in zip(tipicidadContentActual, tipicidadContentOutputBase):
+            checkActual = False
+            checkOutputBase = False
+            #Actual
+            scenarioPathActual = os.path.join(tipicidadFolderActual, scenarioActual)
+            scenarioContentActual = os.listdir(scenarioPathActual)
+            if "table.json" in scenarioContentActual:
+                jsonPathActual = os.path.join(scenarioPathActual, "table.json")
+                checkActual = True
+
+            #Output Base
+            scenarioPathOutputBase = os.path.join(tipicidadFolderOutputBase, scenarioOutputBase)
+            scenarioContentOutputBase = os.listdir(scenarioPathOutputBase)
+            if "table.json" in scenarioContentOutputBase:
+                jsonPathOutputBase = os.path.join(scenarioPathOutputBase, "table.json")
+                checkOutputBase = True
+
+            if checkActual and checkOutputBase:
                 if tipicidad == "Tipico": textTipicidad = "típico"
                 elif tipicidad == "Atipico": textTipicidad = "atípico"
-                nodeResultPathRef, pedestrianResultPathRef, vehicularResultPathRef = read_json(jsonPathActual, subareaPath, scenario, textTipicidad)
-                listWords.extend([nodeResultPathRef, pedestrianResultPathRef, vehicularResultPathRef])
+                nodeResultActualPathRef, nodeResultBasePathRef, pedestrianResultPathRef, vehicularResultPathRef = read_json(
+                    jsonPathActual,
+                    jsonPathOutputBase,
+                    subareaPath,
+                    scenarioActual,
+                    textTipicidad)
+                #Output Base
+                listWords.extend([nodeResultActualPathRef, nodeResultBasePathRef, pedestrianResultPathRef, vehicularResultPathRef])
 
     resultTablesPath = os.path.join(subareaPath, "Tablas", "0_resultTables.docx")
     filePathMaster = listWords[0]
