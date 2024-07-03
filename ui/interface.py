@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './ui/interface.ui'
+# Form implementation generated from reading ui file '.\ui\interface.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -295,11 +295,14 @@ class Ui_Form(object):
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.tableWidget.verticalHeader().setStretchLastSection(False)
         self.pushButtonChecked = QtWidgets.QPushButton(Form)
-        self.pushButtonChecked.setGeometry(QtCore.QRect(120, 320, 91, 31))
+        self.pushButtonChecked.setGeometry(QtCore.QRect(230, 320, 91, 31))
         self.pushButtonChecked.setObjectName("pushButtonChecked")
         self.pushButtonUnchecked = QtWidgets.QPushButton(Form)
-        self.pushButtonUnchecked.setGeometry(QtCore.QRect(230, 320, 91, 31))
+        self.pushButtonUnchecked.setGeometry(QtCore.QRect(340, 320, 91, 31))
         self.pushButtonUnchecked.setObjectName("pushButtonUnchecked")
+        self.pushButtonPeakhour = QtWidgets.QPushButton(Form)
+        self.pushButtonPeakhour.setGeometry(QtCore.QRect(10, 320, 91, 31))
+        self.pushButtonPeakhour.setObjectName("pushButtonPeakhour")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -410,3 +413,4 @@ class Ui_Form(object):
         self.tableWidget.setSortingEnabled(__sortingEnabled)
         self.pushButtonChecked.setText(_translate("Form", "All Checked"))
         self.pushButtonUnchecked.setText(_translate("Form", "All Unchecked"))
+        self.pushButtonPeakhour.setText(_translate("Form", "PeakHourCheck"))

@@ -76,7 +76,7 @@ def _create_data(sig_path) -> dict:
     for interstageProg in sc_tag.findall("./interstageProgs/interstageProg"):
         cycle_interstages.append(int(interstageProg.attrib['cycletime'])//1000)
 
-    min_reds = [x-y-z for x,y,z in zip(cycle_interstages, min_ambars, min_greens)]
+    min_reds = [x-y-z for x,y,z in zip(cycle_interstages, min_ambars, min_greens)] #NOTE: Aquí esta la razón por la que sale negativo, revisar.
 
     filtered_green = []
     for (i, green), ambar, red in zip(enumerate(greens),min_ambars,min_reds):
@@ -165,7 +165,7 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
 def create_table18(subarea_path) -> None:
     #Reading each folder
     tablasPath = os.path.join(subarea_path, "Tablas")
-    output_folder = Path(subarea_path) / "Output - base"
+    output_folder = Path(subarea_path) / "Output_Base"
     tipicidades = ["Tipico", "Atipico"]
 
     listData = []
@@ -173,7 +173,7 @@ def create_table18(subarea_path) -> None:
         scenarios = os.listdir(output_folder / tipicidad)
         
         for i, scenario in enumerate(scenarios):
-            if i == 0:
+            if i == 0: #What the hell is this for?
                 scenario_path = output_folder / tipicidad / scenario
                 sig_files = os.listdir(scenario_path)
                 sig_files = [file for file in sig_files if file.endswith(".sig")]

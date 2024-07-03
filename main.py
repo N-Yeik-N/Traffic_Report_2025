@@ -14,12 +14,16 @@ from tables.table18 import create_table18
 from tables.table19 import create_table19
 from parrafos.paragraphs import cambios_variable
 from src.call_functions import *
+from src.changer_dates import change_peakhours
 from sigs.sig_actual import get_sigs_actual
 from images.resultados import create_resultados_images
 from results.reading_json import generate_results
 from conclusions.table23 import create_table23
 
 import logging
+from pathlib import Path
+import win32com.client as com
+from tqdm import tqdm
 
 #Interface
 from ui.interface import Ui_Form
@@ -40,6 +44,7 @@ class MyWindow(QMainWindow, Ui_Form):
         self.ui.startPushButton.clicked.connect(self.start)
         self.ui.pushButtonChecked.clicked.connect(self.check_all_items)
         self.ui.pushButtonUnchecked.clicked.connect(self.uncheck_all_items)
+        self.ui.pushButtonPeakhour.clicked.connect(self.changer_hours)
     
     def open_file(self):
         self.path_subarea = QFileDialog.getExistingDirectory(self, 'Open File')
@@ -55,6 +60,32 @@ class MyWindow(QMainWindow, Ui_Form):
             fh.setFormatter(f)
             LOGGER.addHandler(fh)
 
+    def changer_hours(self):
+        pathParts = list(Path(self.path_subarea).parts)
+        subarea = pathParts[-1]
+        projectPath = Path(*pathParts[:-2])
+        vehicularFieldDataPath = projectPath / "7. Informacion de Campo" / subarea / "Vehicular"
+        excel = com.Dispatch('Excel.Application')
+        excel.Visible = False
+
+        for tipicidad in ["Tipico", "Atipico"]:
+            typicallyPath = vehicularFieldDataPath / tipicidad
+            listExcels = os.listdir(typicallyPath)
+            listExcels = [file for file in listExcels if file.endswith(".xlsm") and not file.startswith("~$")]
+            print(f"{f' Abriendo {tipicidad} ':#^{50}}")
+
+            for excelFile in tqdm(listExcels, f"{tipicidad}"):
+                excelPath = typicallyPath / excelFile
+                try:
+                    change_peakhours(excel, excelPath)
+                except Exception as inst:
+                    print("Error: ", inst)
+                    print("Excel: ", excelFile)
+                    continue
+
+        excel.Quit()
+        print(f"{f' FINALIZADO ':#^{50}}")
+                    
     def check_all_items(self):
         row_count = self.ui.tableWidget.rowCount()
         for row in range(row_count):
@@ -111,6 +142,7 @@ class MyWindow(QMainWindow, Ui_Form):
         if checkObject:
             try:
                 table4_path, table5_path = create_table4n5(self.path_subarea)
+                print(table5_path)
                 table4 = doc.new_subdoc(table4_path)
                 VARIABLES.update({"tabla4": table4})
                 print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
@@ -131,7 +163,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
             except FileNotFoundError as e:
                 print("Tabla 5\t\tERROR\tNo existen archivos de colas")
-            except UnboundLocalError:
+            except UnboundLocalError as e:
                 print("Tabla 5\t\tERROR\tNo existen archivos de colas")
             except Exception as e:
                 print("Tabla 5\t\tERROR\tDatos estadísticas de longitud de cola")

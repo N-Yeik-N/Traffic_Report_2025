@@ -166,7 +166,7 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
 def create_table19(subarea_path) -> None:
     #Reading each folder
     tablasPath = os.path.join(subarea_path, "Tablas")
-    output_folder = Path(subarea_path) / "Output - 1 año"
+    output_folder = Path(subarea_path) / "Output_Proyectado"
     tipicidades = ["Tipico", "Atipico"]
 
     listData = []
