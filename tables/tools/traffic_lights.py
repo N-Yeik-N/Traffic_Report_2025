@@ -4,17 +4,23 @@ from dataclasses import dataclass
 
 @dataclass
 class cycleTime:
-    tipicidad: str
     codigo: str
     nombre: str
-    cycletime: int
-    phases: list
+    cycleTimeData: list
+    phasesData: list
 
-""" 
-Solo se extraerá información para los tiempos de ciclo en el turno mañana.
-"""
+def _get_phases(worksheet: object): #i: 0 = mañana, 1 = tarde, 2 = noche
+    cycleTimes = []
+    phasesList = []
+    for i in [10,11,12,18,19,20]:
+        cycleTimes.append(int(worksheet[f'E{i}'].value))
+        numPhases = [[elem.value for elem in row] for row in worksheet[slice(f"H{i}", f"AK{i}")]][0].index(None)//3
+        phases = [[elem.value for elem in row] for row in worksheet[slice(f"H{i}", f"AK{i}")]][0][:numPhases*3]
+        phasesList.append([phases[i:i+3] for i in range(0, len(phases), 3)])
 
-def get_info(path, tipicidad):
+    return cycleTimes, phasesList
+
+def get_info(path):
     wb = load_workbook(path, read_only=True, data_only=True)
     ws = wb.active
     codigo = ws['D3'].value
@@ -33,25 +39,15 @@ def get_info(path, tipicidad):
     parts = nominterseccion.split(":")
     nominterseccion = parts[1].strip()
 
-    if tipicidad == "Tipico":
-        tc = int(ws['E10'].value)
-        numfase = [[elem.value for elem in row] for row in ws[slice("H10","AK10")]][0].index(None)//3
-        phases = [[elem.value for elem in row] for row in ws[slice("H10","AK10")]][0][:numfase*3]
-        phases = [phases[i:i+3] for i in range(0, len(phases),3)]
-    elif tipicidad == "Atipico":
-        tc = int(ws['E18'].value)
-        numfase = [[elem.value for elem in row] for row in ws[slice("H18","AK18")]][0].index(None)//3
-        phases = [[elem.value for elem in row] for row in ws[slice("H18","AK18")]][0][:numfase*3]
-        phases = [phases[i:i+3] for i in range(0, len(phases),3)]
+    cycleTimes, phasesList = _get_phases(ws)
 
     wb.close()
 
     data = cycleTime(
-        tipicidad = tipicidad,
         codigo = codinterseccion,
         nombre = nominterseccion,
-        cycletime = tc,
-        phases = phases,
+        cycleTimeData = cycleTimes,
+        phasesData = phasesList,
     )
 
     return data

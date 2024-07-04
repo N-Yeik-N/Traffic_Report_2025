@@ -1,8 +1,8 @@
 import os
-from tables.tools.traffic_lights import get_info
 import pandas as pd
-from tables.tools.cycles import get_dates_cycles
 from pathlib import Path
+from tables.tools.traffic_lights import get_info
+from tables.tools.cycles import get_dates_cycles
 
 #docx
 from docxtpl import DocxTemplate
@@ -14,9 +14,9 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 def create_table9(path_subarea):
-    path_parts = path_subarea.split("/") #<--- LINUX
+    path_parts = path_subarea.split("/")
     subarea_id = path_parts[-1]
-    proyect_folder = '/'.join(path_parts[:-2]) #<--- LINUX
+    proyect_folder = '/'.join(path_parts[:-2])
 
     field_data = os.path.join(
         proyect_folder,
@@ -31,52 +31,65 @@ def create_table9(path_subarea):
 
     phasesList = []
     for excel in list_excels:
-        phasesData = get_info(excel, "Tipico")
+        phasesData = get_info(excel)
         phasesList.append(phasesData)
 
-    #Número de filas:
-    number_rows = []
-    for phaseData in phasesList:
-        number_rows.append(len(phaseData.phases))
-
     doc = Document()
-    table = doc.add_table(rows=sum(number_rows)+1, cols=7)
+
+    #Típico table
+    table = doc.add_table(rows=1, cols=8)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for i, texto in enumerate([
-            "Código", "Intersección", "Tiempo de Ciclo", "Fases", "Verde", "Ámbar", "Rojo"
-        ]):
-            table.cell(0, i).text = texto
-    row_no = 1
+    for i, txt in enumerate(["Código", "Intersección", "Turno", "T.C.\n(s)", "Fase", "Verde\n(s)", "Ámbar\n(s)", "Rojo\n(s)"]):
+        table.cell(0,i).text = txt
 
+    turn = ["HPM", "HPT", "HPN"]
     codeList = []
-    for phase in phasesList:
-        table.cell(row_no, 0).text = phase.codigo
-        codeList.append(phase.codigo)
-        table.cell(row_no, 0).merge(table.cell(row_no+len(phaseData.phases)-1, 0))
 
-        table.cell(row_no, 1).text = phase.nombre
-        table.cell(row_no, 1).merge(table.cell(row_no+len(phaseData.phases)-1, 1))
+    rowCount = 1
+    for i, excelData in enumerate(phasesList):
+        listTipico = excelData.phasesData[:3]
+        listCycleTipico = excelData.cycleTimeData[:3]
+        startRow = rowCount
+        checkFirst = True
+        turnCount = 0
+        for turnList, cycleTime in zip(listTipico, listCycleTipico): #turnList = [ [120,3,2], [50,3,2]]
+            startRowCycle = rowCount
+            for faseID, (verde, ambar, rojo) in enumerate(turnList): #[120, 3, 2]
+                newRow = table.add_row().cells
+                if faseID == 0:
+                    if checkFirst == True:
+                        newRow[0].text = excelData.codigo
+                        codeList.append(excelData.codigo)
+                        newRow[1].text = excelData.nombre
+                        checkFirst = False
+                    newRow[2].text = turn[turnCount]
+                    turnCount += 1
+                    if turnCount == 3: turnCount = 0
+                    newRow[3].text = str(cycleTime)
 
-        table.cell(row_no, 2).text = str(phase.cycletime)+' segundos'
-        table.cell(row_no, 2).merge(table.cell(row_no+len(phaseData.phases)-1, 2))
+                newRow[4].text = str(faseID+1)
+                newRow[5].text = str(verde)
+                newRow[6].text = str(ambar)
+                newRow[7].text = str(rojo)
+                rowCount += 1
 
-        no_phase = 0
-        for j in range(row_no, row_no+len(phase.phases)):
-            table.cell(j, 3).text = f"Fase {no_phase+1}"
-            table.cell(j, 4).text = str(phase.phases[no_phase][0]) #Verde
-            table.cell(j, 5).text = str(phase.phases[no_phase][1]) #Ambar
-            table.cell(j, 6).text = str(phase.phases[no_phase][2]) #Rojo
-            no_phase += 1
-
-        row_no += len(phase.phases)
+            endRowCycle = rowCount-1
+            table.cell(startRowCycle, 2).merge(table.cell(endRowCycle, 2))
+            table.cell(startRowCycle, 3).merge(table.cell(endRowCycle, 3))
+        endRow = rowCount-1
+        table.cell(startRow, 0).merge(table.cell(endRow, 0))
+        table.cell(startRow, 1).merge(table.cell(endRow, 1))
+        #table.cell(startRow, 2).merge(table.cell(endRow, 2))
 
     #ESTÉTICA
 
     for selected_row in [0]:
         for cell in table.rows[selected_row].cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
-                run.font.bold = True
+                try:
+                    run = paragraph.runs[0]
+                    run.font.bold = True
+                except Exception as e: continue
 
     for i in range(len(table.columns)):
         cell_xml_element = table.rows[0].cells[i]._tc
@@ -97,17 +110,11 @@ def create_table9(path_subarea):
                 except:
                     pass
 
-    for id, x in zip([0,1,2,3,4,5,6],[0.5,2,1,0.7,0.5,0.5,0.5]):
+    for id, x in zip([0,1,4,5,6,7],[0.5,2,0.7,0.5,0.5,0.5]):
         for cell in table.columns[id].cells:
             cell.width = Inches(x)
 
     table.style = "Table Grid"
-
-    #The next code deletes the empty paragraph at the end of the table
-    """ if doc.paragraphs[-1].text == "":
-        p = doc.paragraphs[-1]._element
-        p.getparent().remove(p)
-        p._p = p._element = None #=O """
 
     table9_path = Path(path_subarea) / "Tablas" / "table9_sinREF.docx"
     doc.save(table9_path)
