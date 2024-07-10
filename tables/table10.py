@@ -15,6 +15,18 @@ def _append_document_content(source_doc, target_doc) -> None:
     for element in source_doc.element.body:
         target_doc.element.body.append(element)
 
+def _sum_numbers_only(row):
+    return sum(item for item in row if isinstance(item, int))
+
+def _process_row(row):
+    ternas= [row[i:i+3] for i in range(0, len(row), 3)]
+
+    for i, terna in enumerate(ternas):
+        if sum(terna) == 0:
+            ternas[i] = ['-'] * 3
+
+    return [item for sublist in ternas for item in sublist]
+
 def create_table10(path_subarea):
     excelPath = os.path.join(path_subarea, "Program_Results.xlsx")
     if not os.path.exists(excelPath):
@@ -35,32 +47,39 @@ def create_table10(path_subarea):
         dict_by_code[code] = df
 
     listFinalPathRef = []
-    for code, df in dict_by_code.items():
-        #Adjust number of columns of the data frame
-        firstRow = df.iloc[0].tolist()
-        ternList = [firstRow[i:i+3] for i in range(0, len(firstRow),3)]
-        noPhases = 5
-        for i, tern in enumerate(ternList):
-            if sum(tern) == 0:
-                noPhases = i
-                break
-        df = df.drop(df.columns[noPhases*3:], axis=1)
+    for code, df in dict_by_code.items(): #Each excel
+        maxPhaseNumber = 0
+        for numRow in range(df.shape[0]):
+            #Adjust number of columns of the data frame
+            firstRow = df.iloc[numRow].tolist()
+            ternList = [firstRow[i:i+3] for i in range(0, len(firstRow),3)]
+            noPhases = 5
+            for i, tern in enumerate(ternList):
+                if sum(tern) == 0:
+                    noPhases = i
+                    break
+            if noPhases > maxPhaseNumber:
+                maxPhaseNumber = noPhases
+
+        df = df.drop(df.columns[maxPhaseNumber*3:], axis=1) #NOTE: Data Frame clean
+        processedData = df.apply(_process_row, axis=1)
+        df = pd.DataFrame(processedData.values.tolist(), columns=df.columns) #TODO: Imprimir
         
         #Creating individual tables
         doc = Document()
-        table = doc.add_table(rows = 15, cols = 4+noPhases*3)
+        table = doc.add_table(rows = 15, cols = 4+maxPhaseNumber*3)
 
         for i, header in enumerate(["Tipicidad","Turno","Hora","TC"]):
             table.cell(0,i).text = header
             table.cell(0,i).merge(table.cell(1,i))
 
         noAccess = 1
-        for no in range(noPhases):
+        for no in range(maxPhaseNumber):
             table.cell(0, 4+no*3).text = f"Acceso {str(noAccess).zfill(2)}-{str(noAccess+1).zfill(2)}"
             table.cell(0, 4+no*3).merge(table.cell(0, 4+no*3+2))
             noAccess += 1
 
-        for i, texto in enumerate(["V", "A", "RR"]*noPhases):
+        for i, texto in enumerate(["V", "A", "RR"]*maxPhaseNumber):
             table.cell(1, 4+i).text = texto
 
         for i, turno in enumerate(["HVMAD","HPMAD","HPM","HVM","HPT","HVT","HPN","HVN",
@@ -71,8 +90,8 @@ def create_table10(path_subarea):
                                   "00:00-06:00", "06:00-12:00", "12:00-17:00", "17:00-22:00", "22:00-00:00"]):
             table.cell(2+i, 2).text = hora
 
-        for i, fila in df.iterrows():
-            table.cell(2+i, 3).text = str(sum(fila))
+        for i, fila in df.iterrows(): #TODO: HERE!!!!!!!!!!
+            table.cell(2+i, 3).text = str(_sum_numbers_only(fila))
             for j, elem in enumerate(fila):
                 table.cell(2+i, 4+j).text = str(elem)
 
@@ -114,10 +133,10 @@ def create_table10(path_subarea):
                     run.font.name = 'Arial Narrow'
                     run.font.size = Pt(10)
                     
-        listCols = [i for i in range(4+noPhases*3)]
+        listCols = [i for i in range(4+maxPhaseNumber*3)]
         listCols = listCols[4:]
         listCols[:0] = [1,2,3]
-        listWidths = [0.5 for _ in range(4+noPhases*3)][4:]
+        listWidths = [0.5 for _ in range(4+maxPhaseNumber*3)][4:]
         listWidths[:0] = [0.5,1.0,0.5]
 
         for id, x in zip(listCols, listWidths):
@@ -140,7 +159,7 @@ def create_table10(path_subarea):
         finalPathRef = os.path.join(path_subarea, "Tablas", f"tabla10_{code}_REF.docx")
         listFinalPathRef.append(finalPathRef)
         doc_template.save(finalPathRef)
-    
+
     #Join tables
     table10_path = os.path.join(path_subarea, "Tablas", "table10.docx")
     doc_target = Document(listFinalPathRef[0])
