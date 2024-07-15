@@ -2,242 +2,321 @@ import os
 import pandas as pd
 from pathlib import Path
 from tables.tools.peakfinder import peakhour_finder, compute_ph_system
+from tables.tools.reading import *
+import re
 
 #docx
 from docx import Document
-from docx.shared import Pt, Inches
+from docx.shared import Pt, Inches, Cm
 from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-def create_table2n3(path_subarea):
-    path_parts = path_subarea.split("/")
-    subarea_id = path_parts[-1]
-    proyect_folder = '/'.join(path_parts[:-2])
-    field_data = Path(proyect_folder) / "7. Informacion de Campo" / subarea_id / "Vehicular"
-
-    excel_tipicidades = {}
-
-    for tipicidad in ["Tipico","Atipico"]:
-        tip_data = field_data / tipicidad
-        list_excels = os.listdir(tip_data)
-        list_excels = [str(tip_data / file) for file in list_excels if file.endswith(".xlsm") and not file.startswith("~")]
-        excel_tipicidades[tipicidad] = list_excels
-
-    #################
-    # Intersections #
-    #################
-
-    tipico_info = {}
-    count_tip = 1
-    atipico_info = {}
-    count_ati = 1
-
-    system_tip = {}
-    system_ati = {}
-    count_sys_t = 1
-    count_sys_a = 1
-
-    day_tip_list = []
-    day_ati_list = []
-
-    path_excel = r"data\Cronograma Vissim.xlsx"
-    df = pd.read_excel(path_excel, sheet_name='Cronograma', header=0, usecols="A:E", skiprows=1)
-    df = df.drop(columns=["Codigo TDR", "Entregable"])
-
-    numsubarea = os.path.split(path_subarea)[1][-3:]
-    no = int(numsubarea)
-
-    code_by_subarea = df[df['Sub Area'] == no]['Codigo'].tolist()
-
-    for key, data in excel_tipicidades.items():
-        for excel in data:
-            excel_dict = peakhour_finder(excel)
-            #System level
-            if key == "Tipico":
-                system_tip[count_sys_t] = excel_dict
-                count_sys_t += 1
-                day_tip_list.append(excel_dict.fecha)
-            elif key == "Atipico":
-                system_ati[count_sys_a] = excel_dict
-                count_sys_a += 1
-                day_ati_list.append(excel_dict.fecha)
-            #Intersection level
-            hour1 = excel_dict.id_morning//4
-            hour2 = excel_dict.id_evening//4
-            hour3 = excel_dict.id_night//4
-            minutes1 = excel_dict.id_morning%4*15
-            minutes2 = excel_dict.id_evening%4*15
-            minutes3 = excel_dict.id_night%4*15
-            ph1 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hour1, minutes1, hour1+1, minutes1)
-            ph2 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hour2, minutes2, hour2+1, minutes2)
-            ph3 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hour3, minutes3, hour3+1, minutes3)
-            if key == "Tipico":
-                node = {
-                    'codinterseccion': excel_dict.codigo,
-                    'nominterseccion': excel_dict.name,
-                    'hpinterseccionmt': ph1,
-                    'hpintersecciontt': ph2,
-                    'hpinterseccionnt': ph3,
-                }
-                tipico_info[count_tip] = node
-                count_tip += 1
-
-            elif key == "Atipico":
-                node = {
-                    'codinterseccion': excel_dict.codigo,
-                    'nominterseccion': excel_dict.name,
-                    'hpinterseccionma': ph1,
-                    'hpinterseccionta': ph2,
-                    'hpinterseccionna': ph3,
-                }
-
-                atipico_info[count_ati] = node
-                count_ati += 1
-
-    #TIPICO
-
-    MORNING = []
-    EVENING = []
-    NIGHT = []
-    for key, datos in system_tip.items():
-        MORNING.append((datos.id_morning, datos.vol_morning))
-        EVENING.append((datos.id_evening, datos.vol_evening))
-        NIGHT.append((datos.id_night, datos.vol_night))
-
-    hoursystem1 = compute_ph_system(MORNING)
-    hoursystem2 = compute_ph_system(EVENING)
-    hoursystem3 = compute_ph_system(NIGHT)
-
-    phsystem1 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hoursystem1//4, hoursystem1%4*15, hoursystem1//4+1, hoursystem1%4*15)
-    phsystem2 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hoursystem2//4, hoursystem2%4*15, hoursystem2//4+1, hoursystem2%4*15)
-    phsystem3 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hoursystem3//4, hoursystem3%4*15, hoursystem3//4+1, hoursystem3%4*15)
-
-    dict_system_t = {
-        'hpsistemamt': phsystem1,
-        'hpsistematt': phsystem2,
-        'hpsistemant': phsystem3,
-    }
-
-    #ATIPICO
-
-    MORNING = []
-    EVENING = []
-    NIGHT = []
-    for key, datos in system_ati.items():
-        MORNING.append((datos.id_morning, datos.vol_morning))
-        EVENING.append((datos.id_evening, datos.vol_evening))
-        NIGHT.append((datos.id_night, datos.vol_night))
-
-    hoursystem1 = compute_ph_system(MORNING)
-    hoursystem2 = compute_ph_system(EVENING)
-    hoursystem3 = compute_ph_system(NIGHT)
-
-    phsystem1 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hoursystem1//4, hoursystem1%4*15, hoursystem1//4+1, hoursystem1%4*15)
-    phsystem2 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hoursystem2//4, hoursystem2%4*15, hoursystem2//4+1, hoursystem2%4*15)
-    phsystem3 = "{:02d}:{:02d} - {:02d}:{:02d}".format(hoursystem3//4, hoursystem3%4*15, hoursystem3//4+1, hoursystem3%4*15)
-
-    dict_system_a = {
-        'hpsistemama': phsystem1,
-        'hpsistemata': phsystem2,
-        'hpsistemana': phsystem3,
-    }
-
-    day_tip = list(set(day_tip_list))[0]
-    day_ati = list(set(day_ati_list))[0]
-    dcontet = day_tip.strftime("%d de %B del %Y") #<---
-    dcontea = day_ati.strftime("%d de %B del %Y") #<---
-
-    dconteot = day_tip.strftime("%d/%m/%Y") #<---
-    dconteoa = day_ati.strftime("%d/%m/%Y") #<---
-
-    ###################
-    # CREATING TABLE 2#
-    ###################
+def create_table2_vehicular(
+        path_subarea: str,
+        code_by_subarea: list,
+        peakHours: dict,
+        listExcelData: dict,
+        ):
 
     doc = Document()
-    table = doc.add_table(rows = 5+len(code_by_subarea)*2, cols = 5)
+    table = doc.add_table(rows = 5+len(code_by_subarea)*2+1, cols = 8)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    #Default texts
+
+    #**** Headers *****#
     table.cell(0,0).text = "Código"
     table.cell(0,1).text = 'Intersección'
-    table.cell(0,2).text = 'Hora Punta Turno Mañana'
-    table.cell(0,3).text = 'Hora Punta Turno Tarde'
-    table.cell(0,4).text = 'Hora Punta Turno Noche'
-    table.cell(1,0).text = "Día típico"
-    table.cell(1,0).merge(table.cell(1,4))
 
-    hp_row1 = 1+len(code_by_subarea)+1
+    table.cell(0,2).text = 'Turno Mañana'
+    table.cell(0,2).merge(table.cell(0,3))
+
+    table.cell(0,4).text = 'Turno Tarde'
+    table.cell(0,4).merge(table.cell(0,5))
+
+    table.cell(0,6).text = 'Turno Noche'
+    table.cell(0,6).merge(table.cell(0,7))
+
+    table.cell(0,0).merge(table.cell(1,0))
+    table.cell(0,1).merge(table.cell(1,1))
+
+    for i in range(2, 8, 2):
+        table.cell(1, i).text = 'Hora Punta'
+        table.cell(1, i+1).text = 'Vol.'
+
+    #**** Separation ****#
+    table.cell(2,0).text = "Día típico".upper()
+    table.cell(2,0).merge(table.cell(2,7))
+
+    #**** Separation of System Peak Hour Typical ****#
+    hp_row1 = 1+len(code_by_subarea)+2
     table.cell(hp_row1,0).text = "Hora Punta"
     table.cell(hp_row1,0).merge(table.cell(hp_row1,1))
-    table.cell(hp_row1,2).text = dict_system_t['hpsistemamt']
-    table.cell(hp_row1,3).text = dict_system_t['hpsistematt']
-    table.cell(hp_row1,4).text = dict_system_t['hpsistemant']
 
-    table.cell(1+len(code_by_subarea)+2,0).text = "Día Atípico"
-    table.cell(1+len(code_by_subarea)+2,0).merge(table.cell(1+len(code_by_subarea)+2,4))
+    peakHourSystem1 = str2hour(peakHours["Tipico"]["Morning"])
+    table.cell(hp_row1,2).text = peakHourSystem1
+    table.cell(hp_row1,2).merge(table.cell(hp_row1,3))
 
-    hp_row2 = 1+len(code_by_subarea)*2+3
+    peakHourSystem2 = str2hour(peakHours["Tipico"]["Evening"])
+    table.cell(hp_row1,4).text = peakHourSystem2
+    table.cell(hp_row1,4).merge(table.cell(hp_row1,5))
+
+    peakHourSystem3 = str2hour(peakHours["Tipico"]["Night"])
+    table.cell(hp_row1,6).text = peakHourSystem3
+    table.cell(hp_row1,6).merge(table.cell(hp_row1,7))
+
+    #**** Separation ****#
+    table.cell(1+len(code_by_subarea)+3,0).text = "Día Atípico".upper()
+    table.cell(1+len(code_by_subarea)+3,0).merge(table.cell(1+len(code_by_subarea)+3,7))
+
+    #**** Separation of System Peak Hour Atypical ****#
+    hp_row2 = 1+len(code_by_subarea)*2+4
     table.cell(hp_row2,0).text = "Hora Punta"
     table.cell(hp_row2,0).merge(table.cell(hp_row2,1))
-    table.cell(hp_row2,2).text = dict_system_a['hpsistemama']
-    table.cell(hp_row2,3).text = dict_system_a['hpsistemata']
-    table.cell(hp_row2,4).text = dict_system_a['hpsistemana']
 
-    start_tipico = 2
-    start_atipico = 2+len(code_by_subarea)+2
+    peakHourSystem1 = str2hour(peakHours["Atipico"]["Morning"])
+    table.cell(hp_row2,2).text = peakHourSystem1
+    table.cell(hp_row2,2).merge(table.cell(hp_row2,3))
 
-    for key, node in tipico_info.items():
-        table.cell(start_tipico+key-1,0).text = node['codinterseccion']
-        table.cell(start_tipico+key-1,1).text = node['nominterseccion']
-        table.cell(start_tipico+key-1,2).text = node['hpinterseccionmt']
-        table.cell(start_tipico+key-1,3).text = node['hpintersecciontt']
-        table.cell(start_tipico+key-1,4).text = node['hpinterseccionnt']
+    peakHourSystem2 = str2hour(peakHours["Atipico"]["Evening"])
+    table.cell(hp_row2,4).text = peakHourSystem2
+    table.cell(hp_row2,4).merge(table.cell(hp_row2,5))
+
+    peakHourSystem3 = str2hour(peakHours["Atipico"]["Night"])
+    table.cell(hp_row2,6).text = peakHourSystem3
+    table.cell(hp_row2,6).merge(table.cell(hp_row2,7))
+
+    start_tipico = 3
+    start_atipico = 2+len(code_by_subarea)+3
+
+    for i, node in enumerate(listExcelData["Tipico"]):
+        table.cell(start_tipico+i,0).text = node.codigo
+        table.cell(start_tipico+i,1).text = node.name
+
+        ph1 = str2hour(node.id_morning)
+        table.cell(start_tipico+i,2).text = ph1
+        table.cell(start_tipico+i,3).text = str(node.vol_morning)
+
+        ph2 = str2hour(node.id_evening)
+        table.cell(start_tipico+i,4).text = ph2
+        table.cell(start_tipico+i,5).text = str(node.vol_evening)
+
+        ph3 = str2hour(node.id_night)
+        table.cell(start_tipico+i,6).text = ph3
+        table.cell(start_tipico+i,7).text = str(node.vol_night)
         
-    for key, node in atipico_info.items():
-        table.cell(start_atipico+key-1,0).text = node['codinterseccion']
-        table.cell(start_atipico+key-1,1).text = node['nominterseccion']
-        table.cell(start_atipico+key-1,2).text = node['hpinterseccionma']
-        table.cell(start_atipico+key-1,3).text = node['hpinterseccionta']
-        table.cell(start_atipico+key-1,4).text = node['hpinterseccionna']
+    for i, node in enumerate(listExcelData["Atipico"]):
+        table.cell(start_atipico+i,0).text = node.codigo
+        table.cell(start_atipico+i,1).text = node.name
 
-    for selected_row in [0, 1, hp_row1, 1+len(code_by_subarea)+2, hp_row2]:
+        ph1 = str2hour(node.id_morning)
+        table.cell(start_atipico+i,2).text = ph1
+        table.cell(start_atipico+i,3).text = str(node.vol_morning)
+
+        ph2 = str2hour(node.id_evening)
+        table.cell(start_atipico+i,4).text = ph2
+        table.cell(start_atipico+i,5).text = str(node.vol_evening)
+
+        ph3 = str2hour(node.id_night)
+        table.cell(start_atipico+i,6).text = ph3
+        table.cell(start_atipico+i,7).text = str(node.vol_night)
+
+    for selected_row in [0, 1, 2, hp_row1, hp_row1+1, hp_row2]: #hp_row2, 1+len(code_by_subarea)+2
         for cell in table.rows[selected_row].cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
+                try:
+                    run = paragraph.runs[0]
+                except IndexError:
+                    continue
                 run.font.bold = True
 
-    for i in range(len(table.columns)):
-        cell_xml_element = table.rows[0].cells[i]._tc
-        table_cell_properties = cell_xml_element.get_or_add_tcPr()
-        shade_obj = OxmlElement('w:shd')
-        shade_obj.set(qn('w:fill'),'B4C6E7')
-        table_cell_properties.append(shade_obj)
+    for selectedRow in [0,1]:
+        for i in range(len(table.columns)):
+            cell_xml_element = table.rows[selectedRow].cells[i]._tc
+            table_cell_properties = cell_xml_element.get_or_add_tcPr()
+            shade_obj = OxmlElement('w:shd')
+            shade_obj.set(qn('w:fill'),'B4C6E7')
+            table_cell_properties.append(shade_obj)
 
     for row in table.rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
+                try:
+                    run = paragraph.runs[0]
+                except IndexError:
+                    continue
                 run.font.name = 'Arial Narrow'
                 run.font.size = Pt(11)
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    for id, x in zip([0,1],[0.5,3]):
+    for id, x in zip(
+        [0,1,2,3,4,5,6,7],
+        [1.48,4.06,2.66,1,2.66,1,2.66,1]):
         for cell in table.columns[id].cells:
-            cell.width = Inches(x)
+            cell.width = Cm(x)
 
     table.style = 'Table Grid'
 
-    final_path_2 = Path(path_subarea) / "Tablas" / "table2.docx"
+    finalPath2_vehicular = Path(path_subarea) / "Tablas" / "table2_vehicular.docx"
 
-    doc.save(final_path_2)
+    doc.save(finalPath2_vehicular)
 
-    ####################
-    # CREATING TABLE 3 #
-    ####################
+    return finalPath2_vehicular #-----> dconteot, dconteoa
 
+def create_table2_peatonal(
+        path_subarea: str,
+        code_by_subarea: list,
+        peakHours: dict,
+        listPeakHoursPed: list,
+) -> str:
+    
+    doc = Document()
+    table = doc.add_table(rows = 5+len(code_by_subarea)*2+1, cols = 8)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    #**** Headers *****#
+    table.cell(0,0).text = "Código"
+    table.cell(0,1).text = 'Intersección'
+
+    table.cell(0,2).text = 'Turno Mañana'
+    table.cell(0,2).merge(table.cell(0,3))
+
+    table.cell(0,4).text = 'Turno Tarde'
+    table.cell(0,4).merge(table.cell(0,5))
+
+    table.cell(0,6).text = 'Turno Noche'
+    table.cell(0,6).merge(table.cell(0,7))
+
+    table.cell(0,0).merge(table.cell(1,0))
+    table.cell(0,1).merge(table.cell(1,1))
+
+    for i in range(2, 8, 2):
+        table.cell(1, i).text = 'Hora Punta'
+        table.cell(1, i+1).text = 'Vol.'
+
+    #**** Separation ****#
+    table.cell(2,0).text = "Día típico".upper()
+    table.cell(2,0).merge(table.cell(2,7))
+
+    #**** Separation of System Peak Hour Typical ****#
+    hp_row1 = 1+len(code_by_subarea)+2
+    table.cell(hp_row1,0).text = "Hora Punta"
+    table.cell(hp_row1,0).merge(table.cell(hp_row1,1))
+
+    peakHourSystem1 = str2hour(peakHours["Tipico"]["Morning"])
+    table.cell(hp_row1,2).text = peakHourSystem1
+    table.cell(hp_row1,2).merge(table.cell(hp_row1,3))
+
+    peakHourSystem2 = str2hour(peakHours["Tipico"]["Evening"])
+    table.cell(hp_row1,4).text = peakHourSystem2
+    table.cell(hp_row1,4).merge(table.cell(hp_row1,5))
+
+    peakHourSystem3 = str2hour(peakHours["Tipico"]["Night"])
+    table.cell(hp_row1,6).text = peakHourSystem3
+    table.cell(hp_row1,6).merge(table.cell(hp_row1,7))
+
+    #**** Separation ****#
+    table.cell(1+len(code_by_subarea)+3,0).text = "Día Atípico".upper()
+    table.cell(1+len(code_by_subarea)+3,0).merge(table.cell(1+len(code_by_subarea)+3,7))
+
+    #**** Separation of System Peak Hour Atypical ****#
+    hp_row2 = 1+len(code_by_subarea)*2+4
+    table.cell(hp_row2,0).text = "Hora Punta"
+    table.cell(hp_row2,0).merge(table.cell(hp_row2,1))
+
+    peakHourSystem1 = str2hour(peakHours["Atipico"]["Morning"])
+    table.cell(hp_row2,2).text = peakHourSystem1
+    table.cell(hp_row2,2).merge(table.cell(hp_row2,3))
+
+    peakHourSystem2 = str2hour(peakHours["Atipico"]["Evening"])
+    table.cell(hp_row2,4).text = peakHourSystem2
+    table.cell(hp_row2,4).merge(table.cell(hp_row2,5))
+
+    peakHourSystem3 = str2hour(peakHours["Atipico"]["Night"])
+    table.cell(hp_row2,6).text = peakHourSystem3
+    table.cell(hp_row2,6).merge(table.cell(hp_row2,7))
+
+    start_tipico = 3
+    start_atipico = 2+len(code_by_subarea)+3
+
+    #**** Individual peak hours ****#
+    for i, node in enumerate(listPeakHoursPed["Tipico"]):
+        table.cell(start_tipico+i,0).text = node.code
+        table.cell(start_tipico+i,1).text = node.name
+
+        ph1 = str2hour(node.idMorning)
+        table.cell(start_tipico+i,2).text = ph1
+        table.cell(start_tipico+i,3).text = str(node.morningVolume)
+
+        ph2 = str2hour(node.idEvening)
+        table.cell(start_tipico+i,4).text = ph2
+        table.cell(start_tipico+i,5).text = str(node.eveningVolume)
+
+        ph3 = str2hour(node.idNight)
+        table.cell(start_tipico+i,6).text = ph3
+        table.cell(start_tipico+i,7).text = str(node.nightVolume)
+        
+    for i, node in enumerate(listPeakHoursPed["Atipico"]):
+        table.cell(start_atipico+i,0).text = node.code
+        table.cell(start_atipico+i,1).text = node.name
+
+        ph1 = str2hour(node.idMorning)
+        table.cell(start_atipico+i,2).text = ph1
+        table.cell(start_atipico+i,3).text = str(node.morningVolume)
+
+        ph2 = str2hour(node.idEvening)
+        table.cell(start_atipico+i,4).text = ph2
+        table.cell(start_atipico+i,5).text = str(node.eveningVolume)
+
+        ph3 = str2hour(node.idNight)
+        table.cell(start_atipico+i,6).text = ph3
+        table.cell(start_atipico+i,7).text = str(node.nightVolume)
+
+    for selected_row in [0, 1, 2, hp_row1, hp_row1+1, hp_row2]: #hp_row2, 1+len(code_by_subarea)+2
+        for cell in table.rows[selected_row].cells:
+            for paragraph in cell.paragraphs:
+                try:
+                    run = paragraph.runs[0]
+                except IndexError:
+                    continue
+                run.font.bold = True
+
+    for selectedRow in [0,1]:
+        for i in range(len(table.columns)):
+            cell_xml_element = table.rows[selectedRow].cells[i]._tc
+            table_cell_properties = cell_xml_element.get_or_add_tcPr()
+            shade_obj = OxmlElement('w:shd')
+            shade_obj.set(qn('w:fill'),'B4C6E7')
+            table_cell_properties.append(shade_obj)
+
+    for row in table.rows:
+        for cell in row.cells:
+            for paragraph in cell.paragraphs:
+                try:
+                    run = paragraph.runs[0]
+                except IndexError:
+                    continue
+                run.font.name = 'Arial Narrow'
+                run.font.size = Pt(11)
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    for id, x in zip(
+        [0,1,2,3,4,5,6,7],
+        [1.48,4.06,2.66,1,2.66,1,2.66,1]):
+        for cell in table.columns[id].cells:
+            cell.width = Cm(x)
+
+    table.style = 'Table Grid'
+
+    finalPath2_peatonal = Path(path_subarea) / "Tablas" / "table2_peatonal.docx"
+
+    doc.save(finalPath2_peatonal)
+
+    return finalPath2_peatonal
+
+def create_table3(path_subarea, dconteot, dconteoa, codeBySubarea):
     doc = Document()
     table = doc.add_table(rows=7 ,cols=5)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -250,11 +329,11 @@ def create_table2n3(path_subarea):
 
     #codinterseccion:
     set_codes = ""
-    for i, (key, value) in enumerate(tipico_info.items()):
-        if i == len(tipico_info)-1:
-            set_codes += value['codinterseccion']
+    for i, code in enumerate(codeBySubarea):
+        if i == len(codeBySubarea) - 1:
+            set_codes += code
         else:
-            set_codes += value['codinterseccion']+'\n'
+            set_codes += code+'\n' 
     
     table.cell(1,0).text = set_codes
     table.cell(1,0).merge(table.cell(6,0))
@@ -311,4 +390,176 @@ def create_table2n3(path_subarea):
 
     doc.save(final_path_3)
 
-    return final_path_2, final_path_3, dconteot, dconteoa
+    return final_path_3
+
+def create_tables2n3(pathSubarea: str):
+    #######################
+    # Vehicle Information #
+    #######################
+    
+    #codes by list
+    codeBySubarea = code_by_subarea(pathSubarea)
+
+    #List of excels
+    pathParts = pathSubarea.split("\\")
+    subareaID = pathParts[-1]
+    proyectFolder = '\\'.join(pathParts[:-2])
+    fieldData = Path(proyectFolder) / "7. Informacion de Campo" / subareaID / "Vehicular"
+
+    excelByTipicidad = {}
+    for tipicidad in ["Tipico", "Atipico"]:
+        typicalPath = fieldData / tipicidad
+        listExcels = os.listdir(typicalPath)
+        listExcels = [str(typicalPath / file) for file in listExcels if file.endswith(".xlsm") and not file.startswith("~")]
+        excelByTipicidad[tipicidad] = listExcels
+
+    listExcelData = {
+        "Tipico": [],
+        "Atipico": [],
+    }
+
+    dayData = {
+        "Tipico": [],
+        "Atipico": [],
+    }
+
+    for tipicidad, listExcels in excelByTipicidad.items():
+        for excelPath in listExcels:
+            excelHourInfo = peakhour_finder(excelPath)
+            listExcelData[tipicidad].append(excelHourInfo)
+            dayData[tipicidad].append(excelHourInfo.fecha)
+
+    peakHours = {
+        "Tipico": {},
+        "Atipico": {},
+    }
+    for tipicidad, listHourData in listExcelData.items():
+        #NOTE: Level: Typical o Atypical
+        MORNING = []
+        EVENING = []
+        NIGHT   = []
+        for excelHourData in listHourData:
+            MORNING.append((excelHourData.id_morning, excelHourData.vol_morning))
+            EVENING.append((excelHourData.id_evening, excelHourData.vol_evening))
+            NIGHT.append((excelHourData.id_night, excelHourData.vol_night))
+
+        hourSystem1 = compute_ph_system(MORNING)
+        hourSystem2 = compute_ph_system(EVENING)
+        hourSystem3 = compute_ph_system(NIGHT)
+
+        peakHours[tipicidad].update({
+            "Morning": hourSystem1,
+            "Evening": hourSystem2,
+            "Night": hourSystem3,
+        })
+
+    ##########################
+    # Pedestrian Information #
+    ##########################
+
+    fieldData = Path(proyectFolder) / "7. Informacion de Campo" / subareaID / "Peatonal"
+    excelByTipicidad = {}
+    for tipicidad in ["Tipico", "Atipico"]:
+        typicalPath = fieldData / tipicidad
+        listExcels = os.listdir(typicalPath)
+        listExcels = [str(typicalPath / file) for file in listExcels if file.endswith(".xlsm") and not file.startswith("~")]
+        excelByTipicidad[tipicidad] = listExcels
+
+    listPedData = {
+        "Tipico": [],
+        "Atipico": [],
+    }
+
+    pattern = r"([A-Z]+-[0-9]+)"
+
+    for tipicidad, listExcels in excelByTipicidad.items():
+        for excelPath in listExcels:
+            excelName = os.path.split(excelPath)[1][:-5]
+            excelCodigo = re.search(pattern, excelName).group(1)
+
+            columVolumes = read_ped_excel(excelPath)
+            data = PedestrianVolumes(
+                codigo = excelCodigo,
+                volTotal = columVolumes,
+            )
+            listPedData[tipicidad].append(data)
+
+    listPeakHoursPed = { #TODO: Check if this is correct
+        "Tipico": [],
+        "Atipico": [],
+    }
+
+    for tipicidad, dataPEDS in listPedData.items():
+        listExcelVeh = listExcelData[tipicidad]
+        for dataPED in dataPEDS:
+            for dataVEH in listExcelVeh:
+                if dataPED.codigo == dataVEH.codigo:
+                    data = PedestrianInfo(
+                        code = dataVEH.codigo,
+                        name = dataVEH.name,
+                        idMorning = dataVEH.id_morning,
+                        idEvening = dataVEH.id_evening,
+                        idNight = dataVEH.id_night,
+                        morningVolume = dataPED.volTotal[dataVEH.id_morning+3],
+                        eveningVolume = dataPED.volTotal[dataVEH.id_evening+3],
+                        nightVolume = dataPED.volTotal[dataVEH.id_night+3],
+                    )
+                    listPeakHoursPed[tipicidad].append(data)
+                    break
+
+    ###############################
+    # Creating table 2: vehicular #
+    ###############################
+
+    try:
+        finalPath2_vehicular = create_table2_vehicular(
+            pathSubarea,
+            codeBySubarea,
+            peakHours,
+            listExcelData,
+        )
+    except Exception as inst:
+        print("Error - HPs Vehicular: ", inst)
+        finalPath2_vehicular = None
+
+    ##############################
+    # Creating table 2: peatonal #
+    ##############################
+
+    try:
+        finalPath2_peatonal = create_table2_peatonal(
+            pathSubarea,
+            codeBySubarea,
+            peakHours,
+            listPeakHoursPed,
+        )
+    except Exception as inst:
+        print("Error - HPs Peatonal: ", inst)
+        finalPath2_peatonal = None
+
+    #################
+    # Día de conteo #
+    #################
+
+    typicalDay = list(set(dayData["Tipico"]))[0]
+    atypicalDay = list(set(dayData["Atipico"]))[0]
+
+    typicalDay = typicalDay.strftime("%d/%m/%Y")
+    atypicalDay = atypicalDay.strftime("%d/%m/%Y")
+
+    ####################
+    # Creating table 3 #
+    ####################
+
+    try:
+        finalPath3 = create_table3(
+            pathSubarea,
+            typicalDay,
+            atypicalDay,
+            codeBySubarea,
+        )
+    except Exception as inst:
+        print("Error - Fechas de conteo: ", inst)
+        finalPath3 = None
+
+    return finalPath2_vehicular, finalPath2_peatonal, finalPath3, typicalDay, atypicalDay

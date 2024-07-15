@@ -1,6 +1,6 @@
 from docxtpl import DocxTemplate
 from tables.table1 import create_table1
-from tables.table2n3 import create_table2n3
+from tables.table2n3 import create_tables2n3
 from tables.table4n5 import create_table4n5
 from tables.table6 import create_table6
 from tables.table7 import create_table7
@@ -123,13 +123,15 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 1:\t\tERROR\tDatos generales de intersecciones y códigos")
                 LOGGER.warning("Error Tabla 1")
                 LOGGER.warning(str(e))
+                
         checkObject = self.ui.tableWidget.item(1,0).checkState()
-        if checkObject:
+        if checkObject: #TODO: MISSING NEW VARIABLES IN THE NEW TEMPLATE.
             try:
-                table2_path, table3_path, dcontet, dcontea = create_table2n3(self.path_subarea)
-                table2 = doc.new_subdoc(table2_path)
+                table2_vehicular, table2_peatonal, table3_path, dcontet, dcontea = create_tables2n3(self.path_subarea)
+                table2Vehicular = doc.new_subdoc(table2_vehicular)
+                table2Peatonal = doc.new_subdoc(table2_peatonal)
                 table3 = doc.new_subdoc(table3_path)
-                VARIABLES.update({"tabla2": table2, "tabla3": table3, "dcontet": dcontet, "dcontea": dcontea})
+                VARIABLES.update({"tabla2_vehicular": table2Vehicular, "tabla2_peatonal": table2Peatonal, "tabla3": table3, "dcontet": dcontet, "dcontea": dcontea})
                 print("Tabla 2\t\tOK\tTabla de las horas puntas")
                 print("Tabla 3\t\tOK\tTabla de fechas de conteos")
             except Exception as e:

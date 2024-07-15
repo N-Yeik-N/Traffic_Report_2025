@@ -74,7 +74,6 @@ def peakhour_finder(path) -> Hours:
         vol_evening = volume_evening,
         vol_night = volume_night
     )
-
     return excel_hours_info
 
 def compute_ph_system(data):
