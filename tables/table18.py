@@ -69,7 +69,7 @@ def _create_data(sig_path) -> dict:
         min_ambars = min_ambars[:len(greens)]
         min_greens = min_greens[:len(greens)]
     except Exception as inst:
-        print("Este error es algo complejo, espero no te salga.")
+        print("Este error es algo complejo, espero no te salga mi king.")
         raise inst
 
     cycle_interstages = []

@@ -61,6 +61,17 @@ def _align_content(table) -> None:
         shade_obj.set(qn('w:fill'),'B4C6E7')
         table_cell_properties.append(shade_obj)
 
+def _create_final_tables(subareaPath, finalName, listContent):
+    resultTablesPath = os.path.join(subareaPath, "Tablas", finalName)
+    if len(listContent) > 1:
+        filePathMaster = listContent[0]
+        filePathList = listContent[1:]
+        _combine_all_docx(filePathMaster, filePathList, resultTablesPath)
+    else:
+        resultTablesPath = listContent[0]
+
+    return resultTablesPath
+
 NODES_TOTRES = [
     "Nodo",
     "VehDelay\n(Avg,Avg,All)",
@@ -433,9 +444,27 @@ def generate_results(subareaPath) -> None:
     actualPath = os.path.join(subareaPath, "Actual")
     outputBasePath = os.path.join(subareaPath, "Output_Base")
     outputProyectadoPath = os.path.join(subareaPath, "Output_Proyectado")
-    listWords = []
+    listWords = {
+        "Tipico": {
+            "Vehicular": {
+                "Nodo": [],
+                "Red": [],
+            },
+            "Peatonal": {
+                "Red": [],
+            }
+        },
+        "Atipico": {
+            "Vehicular": {
+                "Nodo": [],
+                "Red": [],
+            },
+            "Peatonal": {
+                "Red": [],
+            }
+        }
+    }
     for tipicidad in ["Tipico", "Atipico"]:
-        #---- FOLDERS ----#
         #Actual
         tipicidadFolderActual = os.path.join(actualPath, tipicidad)
         tipicidadContentActual = os.listdir(tipicidadFolderActual)
@@ -455,7 +484,6 @@ def generate_results(subareaPath) -> None:
             tipicidadContentOutputProyectado = [file for file in tipicidadContentOutputProyectado if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
         else: tipicidadContentOutputProyectado = None
 
-        #---- READING .JSON ----#
         if tipicidadContentOutputBase != None and tipicidadContentOutputProyectado != None:
             for scenarioActual, scenarioOutputBase, scenarioOutputProyectado in zip(tipicidadContentActual, tipicidadContentOutputBase, tipicidadContentOutputProyectado):
                 checkActual = False
@@ -494,7 +522,10 @@ def generate_results(subareaPath) -> None:
                         scenarioActual,
                         textTipicidad)
                     #Output Base
-                    listWords.extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef, pedestrianResultPathRef, vehicularResultPathRef])
+                    listWords[tipicidad]["Vehicular"]["Nodo"].extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef])
+                    listWords[tipicidad]["Peatonal"]["Red"].extend([pedestrianResultPathRef])
+                    listWords[tipicidad]["Vehicular"]["Red"].extend([vehicularResultPathRef])
+                    #listWords.extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef, pedestrianResultPathRef, vehicularResultPathRef])
 
 
         elif tipicidadContentOutputBase != None:
@@ -526,7 +557,10 @@ def generate_results(subareaPath) -> None:
                         scenarioActual,
                         textTipicidad)
                     #Output Base
-                    listWords.extend([nodeResultActualPathRef, nodeResultBasePathRef, pedestrianResultPathRef, vehicularResultPathRef])
+                    listWords[tipicidad]["Vehicular"]["Nodo"].extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef])
+                    listWords[tipicidad]["Peatonal"]["Red"].extend([pedestrianResultPathRef])
+                    listWords[tipicidad]["Vehicular"]["Red"].extend([vehicularResultPathRef])
+                    #listWords.extend([nodeResultActualPathRef, nodeResultBasePathRef, pedestrianResultPathRef, vehicularResultPathRef])
 
 
         else:
@@ -551,11 +585,41 @@ def generate_results(subareaPath) -> None:
                         scenarioActual,
                         textTipicidad)
                     #Output Base
-                    listWords.extend([nodeResultActualPathRef, pedestrianResultPathRef, vehicularResultPathRef])
+                    listWords[tipicidad]["Vehicular"]["Nodo"].extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef])
+                    listWords[tipicidad]["Peatonal"]["Red"].extend([pedestrianResultPathRef])
+                    listWords[tipicidad]["Vehicular"]["Red"].extend([vehicularResultPathRef])
+                    #listWords.extend([nodeResultActualPathRef, pedestrianResultPathRef, vehicularResultPathRef])
 
-    resultTablesPath = os.path.join(subareaPath, "Tablas", "0_resultTables.docx")
-    filePathMaster = listWords[0]
-    filePathList = listWords[1:]
-    _combine_all_docx(filePathMaster, filePathList, resultTablesPath)
+    resultsPaths = {
+        "Tipico": {
+            "Vehicular": {
+                "Nodo": None,
+                "Red": None,
+            },
+            "Peatonal": {
+                "Red": None,
+            }
+        },
+        "Atipico": {
+            "Vehicular": {
+                "Nodo": None,
+                "Red": None,
+            },
+            "Peatonal": {
+                "Red": None,
+            }
+        }
+    }
+    #print(listWords)
+    for tipicidad, typicalContent in listWords.items():
+        for vehicleType, vehicleContent in typicalContent.items():
+            for contentType, content in vehicleContent.items():
+                resultTablePath = _create_final_tables(subareaPath, f"results_{contentType}_{vehicleType}_{tipicidad}.docx", content)
+                resultsPaths[tipicidad][vehicleType][contentType] = resultTablePath
         
-    return resultTablesPath
+    return resultsPaths
+
+# if __name__ == "__main__":
+#     subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 001"
+#     resultsPaths = generate_results(subareaPath)
+#     print(resultsPaths)
