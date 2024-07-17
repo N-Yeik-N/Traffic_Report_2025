@@ -7,7 +7,7 @@ from docx.shared import Inches
 from docxcompose.composer import Composer
 from docx import Document
 
-def _draw_hist(volumes: list, nameIntersection: str, peakHoursList: list, countImages: int, labels: list) -> str:
+def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList: list, countImages: int, labels: list) -> str:
     # Crear la figura y los ejes
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -49,10 +49,14 @@ def _draw_hist(volumes: list, nameIntersection: str, peakHoursList: list, countI
     ax.set_ylim(top=y_max*1.5)
 
     # Añadir los valores encima de las barras
+    maxHeight = 0
+    for bar in bars:
+        maxHeight = max(maxHeight, bar.get_height())
+
     for bar in bars:
         yval = bar.get_height()
         if yval == 0: continue
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 100, round(yval, 2), ha='center', va='bottom', color='black', rotation=90)
+        ax.text(bar.get_x() + bar.get_width()/2, 0.04*maxHeight+yval, round(yval, 2), ha='center', va='bottom', color='black', rotation=90)
 
     # Configurar etiquetas y título
     ax.set_ylabel('Volumen (veh/h)')
@@ -66,7 +70,7 @@ def _draw_hist(volumes: list, nameIntersection: str, peakHoursList: list, countI
     return finalPath
 
 def _get_data(rangeSlice, ws):
-    volumes = [row[0].value for row in ws[rangeSlice]]
+    volumes = [row[0].value if row[0].value is not None else 0 for row in ws[rangeSlice]]
     return volumes
 
 def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
@@ -100,7 +104,8 @@ def _convert_quarter2hour(hour: str) -> str:
 
     return f"{new_start_time} - {new_end_time}"
 
-def create_histograma(
+def create_histograma_vehicular(
+        subareaPath: str,
         excelPath: str, #Ruta del excel a conseguir su histograma
         txtPath: str, #Ruta del .txt con la hora punta del sistema en formato flotante
         countImages: int, #Contador de imágenes de histogramas vehiculares creados
@@ -154,6 +159,71 @@ def create_histograma(
                     ]
     
     finalPath = _draw_hist(
+        subareaPath,
+        volumes,
+        nameIntersection,
+        peakHoursList,
+        countImages,
+        labels,
+    )
+
+    return finalPath, nameIntersection, volumes, labels
+
+def create_histograma_peatonal(
+        subareaPath: str,
+        excelPath: str, #Ruta del excel a conseguir su histograma
+        txtPath: str, #Ruta del .txt con la hora punta del sistema en formato flotante
+        countImages: int, #Contador de imágenes de histogramas vehiculares creados
+        ) -> None:
+    
+    #Obtener las horas puntas del sistema desplazados
+    peakHoursList = []
+    increments = [6.5, 12, 17.5]
+    with open(txtPath, 'r') as file:
+        reader = csv.reader(file, delimiter='\t')
+        count = 0
+        for row in reader:
+            peakHoursList.append(int((float(row[-1])-increments[count])*4))
+            count += 1
+
+    wb = load_workbook(excelPath, read_only=True, data_only=True)
+    ws = wb['Data Peatonal']
+
+    nameIntersection = wb['Inicio']["G4"].value
+
+    listSlicesVolumes = [
+        slice("VA22", "VA33"),
+        slice("VA44", "VA55"),
+        slice("VA66", "VA77"),
+    ]
+
+    listSlicesLabels = [
+        slice("K22", "K33"),
+        slice("K44", "K55"),
+        slice("K66", "K77"),
+    ]
+
+    volumes = []
+    labels = []
+
+    separations = []
+    for rangeVolumes, rangeLabels in zip(listSlicesVolumes, listSlicesLabels):
+        volume = _get_data(rangeVolumes, ws)
+        volumes.extend(volume)
+        separations.append(len(volume))
+
+        label = _get_data(rangeLabels, ws)
+        labels.extend(label)
+
+    wb.close()
+
+    peakHoursList = [peakHoursList[0],
+                    peakHoursList[1] + separations[0],
+                    peakHoursList[2] + sum(separations[:2]),
+                    ]
+    
+    finalPath = _draw_hist(
+        subareaPath,
         volumes,
         nameIntersection,
         peakHoursList,
@@ -203,7 +273,8 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         VOLUME_SYSTEM = None
         for excel in excelList:
             excelPath = os.path.join(typicalPath, excel)
-            histogramaPath, nameIntersection, volumes, labels = create_histograma( #NOTE: labels se sobreescribe una y otra vez.
+            histogramaPath, nameIntersection, volumes, labels = create_histograma_vehicular( #NOTE: labels se sobreescribe una y otra vez.
+                subareaPath,
                 excelPath,
                 txtPaths[tipicidad],
                 countImages,
@@ -233,14 +304,14 @@ def histogramas_vehiculares(subareaPath: str) -> str:
     #Volúmenes totales
     volumesByStages = {
         "Tipico": {
-            "Morning": None,
-            "Evening": None,
-            "Night": None,
+            "Mañana": None,
+            "Tarde": None,
+            "Noche": None,
         },
         "Atipico": {
-            "Morning": None,
-            "Evening": None,
-            "Night": None,
+            "Mañana": None,
+            "Tarde": None,
+            "Noche": None,
         }
     }
 
@@ -250,9 +321,9 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         else:
             sumvolati = sum(VOLUME)
 
-        volumesByStages[tipicidad]["Morning"] = sum(VOLUME[0:14])
-        volumesByStages[tipicidad]["Evening"]  = sum(VOLUME[14:28])
-        volumesByStages[tipicidad]["Night"] = sum(VOLUME[28:])
+        volumesByStages[tipicidad]["Mañana"] = sum(VOLUME[0:14])
+        volumesByStages[tipicidad]["Tarde"]  = sum(VOLUME[14:28])
+        volumesByStages[tipicidad]["Noche"] = sum(VOLUME[28:])
 
     maxStageByTipicidad = {}
     for tipicidad, stages in volumesByStages.items():
@@ -261,15 +332,15 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         
     if sumvoltip > sumvolati:
         maxtipicidad = "típico"
-        volturnmanana = str(volumesByStages["Tipico"]["Morning"])
-        volturntarde = str(volumesByStages["Tipico"]["Evening"])
-        volturnnoche = str(volumesByStages["Tipico"]["Night"])
+        volturnmanana = str(volumesByStages["Tipico"]["Mañana"])
+        volturntarde = str(volumesByStages["Tipico"]["Tarde"])
+        volturnnoche = str(volumesByStages["Tipico"]["Noche"])
         maxturno = str(maxStageByTipicidad["Tipico"])
     else:
         maxtipicidad = "atípico"
-        volturnmanana = str(volumesByStages["Atipico"]["Morning"])
-        volturntarde = str(volumesByStages["Atipico"]["Evening"])
-        volturnnoche = str(volumesByStages["Atipico"]["Night"])
+        volturnmanana = str(volumesByStages["Atipico"]["Mañana"])
+        volturntarde = str(volumesByStages["Atipico"]["Tarde"])
+        volturnnoche = str(volumesByStages["Atipico"]["Noche"])
         maxturno = str(maxStageByTipicidad["Atipico"])
 
     #peakHourList for totals
@@ -317,10 +388,6 @@ def histogramas_vehiculares(subareaPath: str) -> str:
 
         countImages += 1
 
-    #Volúmenes por horario
-    #TODO: Hazlo por slices y suma nada más, obviamente dividelo en tipico y atipico.
-    #HACK: Escoge ya el día y después de esto sería el horario.
-
     histogramaPathByTipicidad = {
         "Tipico": None,
         "Atipico": None,
@@ -335,6 +402,83 @@ def histogramas_vehiculares(subareaPath: str) -> str:
 
     return histogramaPathByTipicidad["Tipico"], histogramaPathByTipicidad["Atipico"], pathTotalHist["Tipico"], pathTotalHist["Atipico"], sumvoltip, sumvolati, maxtipicidad, volturnmanana, volturntarde, volturnnoche, maxturno
 
-if __name__ == '__main__':
-    subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-    histogramas_vehiculares(subareaPath)
+def histogramas_peatonales(subareaPath: str) -> str:
+    #List of excels
+    pathParts = subareaPath.split("\\")
+    subareaID = pathParts[-1]
+    proyectFolder = '\\'.join(pathParts[:-2])
+    fieldData = os.path.join(
+        proyectFolder,
+        "7. Informacion de Campo",
+        subareaID,
+        "Peatonal",
+    )
+
+    #Find PeakHours.txt
+    txtPaths = {
+        "Tipico": None,
+        "Atipico": None,
+    }
+    try:
+        txtPaths["Tipico"] = os.path.join(subareaPath, "Tablas", "PeakHours_Tipico.txt")
+        txtPaths["Atipico"] = os.path.join(subareaPath, "Tablas", "PeakHours_Atipico.txt")
+    except FileNotFoundError:
+        return print("Error: no existe el archivo PeakHours.txt en la carpeta 'Tablas'")
+
+    wordsByTipicidad = {
+        "Tipico": [],
+        "Atipico": [],
+    }
+
+    countImages = 1
+    for tipicidad in ["Tipico", "Atipico"]:
+        typicalPath = os.path.join(fieldData, tipicidad)
+        excelList = os.listdir(typicalPath)
+        excelList = [file for file in excelList if file.endswith(".xlsm") and not file.startswith("~$")]
+        for excel in excelList:
+            excelPath = os.path.join(typicalPath, excel)
+            histogramaPath, nameIntersection, volumes, labels = create_histograma_peatonal( #NOTE: labels se sobreescribe una y otra vez.
+                subareaPath,
+                excelPath,
+                txtPaths[tipicidad],
+                countImages,
+                )
+            
+            if tipicidad == "Tipico":
+                tipicidadTxt = "típico"
+            else:
+                tipicidadTxt = "atípico"
+
+            texto = f"Histograma peatonal {tipicidadTxt} de la {nameIntersection}"
+
+            docTemplate = DocxTemplate("./templates/template_imagenes.docx")
+            newImage = InlineImage(docTemplate, histogramaPath, width=Inches(6))
+            docTemplate.render({"texto": texto, "tabla": newImage})
+
+            finalPath = os.path.join(subareaPath, "Tablas", f"HistogramaVehicular_{tipicidad}_{countImages}.docx")
+            docTemplate.save(finalPath)
+            wordsByTipicidad[tipicidad].append(finalPath)
+            countImages += 1
+
+    histogramaPathByTipicidad = {
+        "Tipico": None,
+        "Atipico": None,
+    }
+
+    for key, listPaths in wordsByTipicidad.items():
+        if len(listPaths) > 1:
+            filePathMaster = listPaths[0]
+            filePathList = listPaths[1:]
+            histogramaDocx = os.path.join(subareaPath, "Tablas", f"Histograma_Peatonal_{key}.docx")
+            _combine_all_docx(filePathMaster, filePathList, histogramaDocx)
+        else:
+            histogramaDocx = listPaths[0]
+        histogramaPathByTipicidad[key] = histogramaDocx
+
+    return histogramaPathByTipicidad["Tipico"], histogramaPathByTipicidad["Atipico"]
+
+# if __name__ == '__main__':
+#     subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
+#     A, B = histogramas_peatonales(subareaPath)
+#     print(A)
+#     print(B)

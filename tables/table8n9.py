@@ -12,6 +12,16 @@ from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docxcompose.composer import Composer
+
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
+    composer.save(finalPath)
 
 def create_table9(path_subarea):
     path_parts = path_subarea.split("/")
@@ -46,15 +56,27 @@ def create_table9(path_subarea):
     codeList = []
 
     rowCount = 1
+    paragraphsDict = {}
+    paragraphNumber = 0
     for i, excelData in enumerate(phasesList):
         listTipico = excelData.phasesData[:3]
         listCycleTipico = excelData.cycleTimeData[:3]
         startRow = rowCount
         checkFirst = True
         turnCount = 0
-        for turnList, cycleTime in zip(listTipico, listCycleTipico): #turnList = [ [120,3,2], [50,3,2]]
+        for turnList, cycleTime in zip(listTipico, listCycleTipico): #turnList = [[120,3,2], [50,3,2]]
             startRowCycle = rowCount
             for faseID, (verde, ambar, rojo) in enumerate(turnList): #[120, 3, 2]
+
+                paragraphsDict[paragraphNumber] = {
+                    "code": excelData.codigo,
+                    "fase": str(faseID+1),
+                    "verde": str(verde),
+                    "ambar": str(ambar),
+                    "rojo": str(rojo),
+                }
+                paragraphNumber += 1
+
                 newRow = table.add_row().cells
                 if faseID == 0:
                     if checkFirst == True:
@@ -126,7 +148,7 @@ def create_table9(path_subarea):
         texto_aux = ""
         for i, code in enumerate(codeList):
             if i == len(codeList) - 1:
-                texto_aux += f"y {code}"
+                texto_aux += f" y {code}"
             elif i == len(codeList) - 2:
                 texto_aux += f"{code}"
             else:
@@ -144,7 +166,34 @@ def create_table9(path_subarea):
     finalPath = os.path.join(path_subarea, "Tablas", "table9.docx")
     doc_template.save(finalPath)
 
-    return finalPath
+    #Creación de párrafos.
+    listParagraphPaths = []
+    for key, paragraph in paragraphsDict.items():
+        docTemplate = DocxTemplate("./templates/template_lista2.docx")
+        docTemplate.render({
+            "codigo_programacion": paragraph["code"],
+            "fase": paragraph["fase"],
+            "tiempo_verde_act": paragraph["verde"],
+            "tiempo_ambar_act": paragraph["ambar"],
+            "tiempo_rojo_act": paragraph["rojo"],
+        })
+        paragraphPath = os.path.join(
+            path_subarea,
+            "Tablas",
+            f"paragraph_programacion_{key}.docx",
+        )
+        docTemplate.save(paragraphPath)
+        listParagraphPaths.append(paragraphPath)
+
+    paragraphsPath = os.path.join(path_subarea, "Tablas", "programaciones_parrafos.docx")
+    if len(listParagraphPaths) > 1:
+        filePathMaster = listParagraphPaths[0]
+        filePathList = listParagraphPaths[1:]
+        _combine_all_docx(filePathMaster, filePathList, paragraphsPath)
+    else:
+        paragraphPath = listParagraphPaths[0] #TODO: TO TEST
+
+    return finalPath, paragraphsPath
 
 def create_table8(path_subarea):
     path_excel = r"data\Cronograma Vissim.xlsx"

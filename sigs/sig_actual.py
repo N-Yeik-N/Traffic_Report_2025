@@ -1,6 +1,8 @@
 import os
 import xml.etree.ElementTree as ET
 import re
+import pandas as pd
+
 #Doc
 from docxtpl import DocxTemplate, InlineImage
 from docxcompose.composer import Composer
@@ -53,6 +55,12 @@ def get_sigs_actual(subareaPath) -> None:
                 if re.search(pattern, pngFile):
                     pngList_by_Code[pngFile[:-4]].append(os.path.join(scenarioPath, pngFile))
 
+    #Obtaining name of intersections:
+    dataExcel = "./data/Datos Generales.xlsx"
+    df_datos = pd.read_excel(dataExcel, sheet_name="DATOS", header=0, usecols="A:B")
+
+
+
     dictCode = {}
     for code, listPathsPNGs in pngList_by_Code.items():
         dictTurns = {}
@@ -80,9 +88,15 @@ def get_sigs_actual(subareaPath) -> None:
             except KeyError as e:
                 #No existen datos para un turno en específico de una intersección específica.
                 continue
-            doc_template = DocxTemplate("./templates/template_imagenes.docx")
+
+            try:
+                parrafo_sig = df_datos[df_datos["CODE"] == code]["SIG"].values[0]
+            except IndexError as e:
+                parrafo_sig = "NO SE ENCONTRÓ NOMBRE RELACIÓN CON ESE CÓDIGO: data/Datos Generales.xlsx"
+
+            doc_template = DocxTemplate("./templates/template_imagenes_parrafo.docx")
             newImage = InlineImage(doc_template, pathImg, width=Inches(6))
-            doc_template.render({"texto": text, "tabla": newImage})
+            doc_template.render({"parrafo_sig": parrafo_sig, "texto": text, "tabla": newImage}) #NOTE: {{sigactual}}
             turno_text = unidecode(turno)
             finalPath = os.path.join(imagesDirectory, f"{code}_{turno_text}.docx")
             doc_template.save(finalPath) #TODO: <---- Este estaba comentando, parace que este código no esta completo.

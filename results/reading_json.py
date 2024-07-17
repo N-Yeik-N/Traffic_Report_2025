@@ -435,6 +435,7 @@ def generate_results(subareaPath) -> None:
     outputProyectadoPath = os.path.join(subareaPath, "Output_Proyectado")
     listWords = []
     for tipicidad in ["Tipico", "Atipico"]:
+        #---- FOLDERS ----#
         #Actual
         tipicidadFolderActual = os.path.join(actualPath, tipicidad)
         tipicidadContentActual = os.listdir(tipicidadFolderActual)
@@ -454,6 +455,7 @@ def generate_results(subareaPath) -> None:
             tipicidadContentOutputProyectado = [file for file in tipicidadContentOutputProyectado if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
         else: tipicidadContentOutputProyectado = None
 
+        #---- READING .JSON ----#
         if tipicidadContentOutputBase != None and tipicidadContentOutputProyectado != None:
             for scenarioActual, scenarioOutputBase, scenarioOutputProyectado in zip(tipicidadContentActual, tipicidadContentOutputBase, tipicidadContentOutputProyectado):
                 checkActual = False
