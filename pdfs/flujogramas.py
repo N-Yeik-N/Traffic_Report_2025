@@ -1,5 +1,5 @@
 import os
-from tools import *
+from pdfs.tools import *
 import re
 from openpyxl import load_workbook
 from docxtpl import DocxTemplate
@@ -96,8 +96,8 @@ def flujograma_vehicular(pathSubarea: str, maxStage, maxTipicidad) -> str:
 
 def create_paragraphs(subareaPath: str, maxTipicidad: str, maxStsage: str):
     listCodes = get_codes(subareaPath)
-    pathParts = subareaPath.split("\\")
-    proyectFolder = '\\'.join(pathParts[:-2])
+    pathParts = subareaPath.split("/")
+    proyectFolder = '/'.join(pathParts[:-2])
     subareaName = pathParts[-1]
 
     fieldPath = os.path.join(
@@ -165,6 +165,70 @@ def create_paragraphs(subareaPath: str, maxTipicidad: str, maxStsage: str):
         finalPath = listParagraphPaths[0]
 
     return finalPath
+
+def flujograma_peatonal(path_subarea, maxStage, maxTipicidad) -> str:
+    listCodes = get_codes(path_subarea)
+    anexos_path = os.path.join(path_subarea, "Anexos")
+
+    folderAnexos = os.listdir(anexos_path)
+
+    if not "Peatonal" in folderAnexos:
+        print("ERROR: No se encontro el archivo 'Vehicular' en la carpeta 'Anexos'")
+
+    folderPeatonal = os.path.join(anexos_path, "Peatonal")
+    listPDFS = os.listdir(folderPeatonal)
+
+    pdfs_by_code = {}
+    for code in listCodes:
+        pdfs_by_code[code] = []
+
+    pattern1 = r"([A-Z]+[0-9]+)"
+    pattern2 = r"([A-Z]+-[0-9]+)"
+    for pdf in listPDFS:
+        match_pdf = re.search(pattern1, pdf) or re.search(pattern2, pdf)
+        if match_pdf:
+            code_str = match_pdf[1]
+            pdfs_by_code[code_str].append(pdf)
+
+    listSelectedPDF = []
+    listCodes = []
+    for code, pdfs in pdfs_by_code.items():
+        for pdf in pdfs:
+            if "Turno 01_T" in pdf:
+                listSelectedPDF.append((code, os.path.join(folderPeatonal, pdf)))
+                listCodes.append(code)
+    listCodes = list(set(listCodes))
+
+    listPathImages = {}
+
+    for code in listCodes:
+        listPathImages[code] = []
+
+    #Checking if there are images
+    for code in listCodes:
+        for codePath, pdfPath in listSelectedPDF:
+            if code == codePath:
+                if pdfPath.endswith('.png'):
+                    listPathImages[code].append(pdfPath)
+                    break
+
+    #In case there are no .png files
+    listPngImages = listPathImages.copy()
+    for code, listDocuments in listPngImages.items():
+        if len(listDocuments) == 0: #There is no .pngs
+            for codePDF, pdfPath in listSelectedPDF:
+                if code == codePDF:
+                    namePDF = os.path.split(pdfPath)[1]
+                    namePDF = namePDF[:-4]
+                    listPathImages[code] = convert_pdf_to_image(pdfPath, folderPeatonal, namePDF)
+    
+    resultList = []
+    for code, imagePath in listPathImages.items():
+        resultList.append((code, imagePath[0]))
+
+    flujograma_path = create_flujograma_peatonal_subdocs(resultList, path_subarea)
+
+    return flujograma_path
 
 # if __name__ == "__main__":
 #     pathSubarea = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"

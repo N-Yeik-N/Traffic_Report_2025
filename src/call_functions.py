@@ -209,7 +209,7 @@ def flujogramas_vehiculares(path_subarea) -> str:
 
     return flujograma_path
 
-def flujogramas_peatonales(path_subarea) -> str:
+def flujogramas_peatonales(path_subarea, maxTurn, maxTipicidad) -> str:
     listCodes = get_codes(path_subarea)
     anexos_path = os.path.join(path_subarea, "Anexos")
 
@@ -233,11 +233,23 @@ def flujogramas_peatonales(path_subarea) -> str:
             code_str = match_pdf[1]
             pdfs_by_code[code_str].append(pdf)
 
+    if maxTurn == "Mañana":
+        pattern = "Turno 01_"
+    elif maxTurn == "Tarde":
+        pattern = "Turno 02_"
+    else:
+        pattern = "Turno 03_"
+    
+    if maxTipicidad == "típico":
+        pattern += "T"
+    elif maxTipicidad == "atípico":
+        pattern += "A"
+
     listSelectedPDF = []
     listCodes = []
     for code, pdfs in pdfs_by_code.items():
         for pdf in pdfs:
-            if "Turno 01_T" in pdf:
+            if pattern in pdf:
                 listSelectedPDF.append((code, os.path.join(folderPeatonal, pdf)))
                 listCodes.append(code)
     listCodes = list(set(listCodes))

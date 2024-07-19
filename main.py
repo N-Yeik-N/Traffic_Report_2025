@@ -14,11 +14,13 @@ from tables.table18 import create_table18
 from tables.table19 import create_table19
 from parrafos.paragraphs import cambios_variable
 from src.call_functions import *
+from src.histogramas import *
 from src.changer_dates import change_peakhours
 from sigs.sig_actual import get_sigs_actual
 from images.resultados import create_resultados_images
 from results.reading_json import generate_results
 from conclusions.table23 import create_table23
+from pdfs.flujogramas import *
 
 import logging
 from pathlib import Path
@@ -29,6 +31,14 @@ from tqdm import tqdm
 from ui.interface import Ui_Form
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5 import QtCore
+
+#Dates
+import datetime
+import locale
+
+locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+fecha_actual = datetime.datetime.now()
+month = fecha_actual.strftime("%B")
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -100,7 +110,7 @@ class MyWindow(QMainWindow, Ui_Form):
             if item:
                 item.setCheckState(QtCore.Qt.Unchecked)
 
-    def start(self):
+    def start(self): 
         nameSubArea = os.path.split(self.path_subarea)[1]
         print(f"##{'#'*len(nameSubArea)}##")
         print(f"# {nameSubArea} #")
@@ -113,7 +123,7 @@ class MyWindow(QMainWindow, Ui_Form):
 
         #Table paths:
         checkObject = self.ui.tableWidget.item(0,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla1
             try:
                 table1_path = create_table1(self.path_subarea)
                 table1 = doc.new_subdoc(table1_path)
@@ -125,7 +135,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
                 
         checkObject = self.ui.tableWidget.item(1,0).checkState()
-        if checkObject: #TODO: MISSING NEW VARIABLES IN THE NEW TEMPLATE.
+        if checkObject: #NOTE: Ready tabla2n3
             try:
                 table2_vehicular, table2_peatonal, table3_path, dcontet, dcontea = create_tables2n3(self.path_subarea)
                 table2Vehicular = doc.new_subdoc(table2_vehicular)
@@ -141,7 +151,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(2,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla4
             try:
                 table4_path, table5_path = create_table4n5(self.path_subarea)
                 print(table5_path)
@@ -158,7 +168,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(3,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla5
             try:
                 table5 = doc.new_subdoc(table5_path)
                 VARIABLES.update({"tabla5": table5})
@@ -173,7 +183,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
         
         checkObject = self.ui.tableWidget.item(4,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla6
             try:
                 table6_path = create_table6(self.path_subarea)
                 table6 = doc.new_subdoc(table6_path)
@@ -185,7 +195,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(5,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla7
             try:
                 table7_path = create_table7(self.path_subarea)
                 table7 = doc.new_subdoc(table7_path)
@@ -204,7 +214,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(6,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla8
             try:
                 table8_path = create_table8(self.path_subarea)
                 table8 = doc.new_subdoc(table8_path)
@@ -216,43 +226,118 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(7,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready table9 and parrafos_programacion
             try:    
-                table9_path = create_table9(self.path_subarea)
+                table9_path, parrafos_programacion_path = create_table9(self.path_subarea)
                 table9 = doc.new_subdoc(table9_path)
-                VARIABLES.update({"tabla9": table9})
+                parrafos_programacion = doc.new_subdoc(parrafos_programacion_path)
+                VARIABLES.update({"tabla9": table9, "parrafos_programacion": parrafos_programacion})
                 print("Tabla 9\t\tOK\tGráficas de programaciones semafóricas")
             except Exception as e:
                 print("Tabla 9\t\tERROR\tGráficas de programaciones semafóricas")
                 LOGGER.warning("Error Tabla 9")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(8,0).checkState()
-        if checkObject:
+        checkObject = self.ui.tableWidget.item(19,0).checkState()
+        if checkObject: #NOTE: Ready histogramas and maxTipicidad, maxTurno            
             try:
-                table10_path = create_table10(self.path_subarea)
-                tabla10 = doc.new_subdoc(table10_path)
-                VARIABLES.update({"tabla10": tabla10})
-                print("Tabla 10\tOK\tDatos del Webster")
+                histogramas_tipicos, histogramas_atipicos, histograma_path_tipico, histograma_path_atipico, sumvoltip_var, sumvolati_var, maxtipicidad, volturmanana, volturntarde, volturnnoche, maxturno = histogramas_vehiculares(self.path_subarea)
+                #histograma_path = histogramas(self.path_subarea)
+                histogramas_tip = doc.new_subdoc(histogramas_tipicos)
+                histogramas_atip = doc.new_subdoc(histogramas_atipicos)
+                histogramas_sist_tip = doc.new_subdoc(histograma_path_tipico)
+                histogramas_sist_ati = doc.new_subdoc(histograma_path_atipico)
+                VARIABLES.update({ #Check if you need these in strings or not
+                    "histogramas_tip": histogramas_tip,
+                    "histogramas_atip": histogramas_atip,
+                    "histogramas_sist_tip": histogramas_sist_tip,
+                    "histogramas_sist_ati": histogramas_sist_ati,
+                    "sumvoltip": sumvoltip_var,
+                    "sumvolati": sumvolati_var,
+                    "maxtipicidad": maxtipicidad, #típico, atípico
+                    "volturmanana": volturmanana,
+                    "volturntarde": volturntarde,
+                    "volturnnoche": volturnnoche,
+                    "maxturno": maxturno #Mañana, Tarde, Noche
+                    })
+                print("Histograma\tOK\tVehiculares")
             except Exception as e:
-                print("Tabla 10\tERROR\tDatos del Webster")
-                LOGGER.warning("Error Tabla 10")
+                print("Histograma\tERROR\tVehiculares")
+                LOGGER.warning("Errores de histogramas vehiculares")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(9,0).checkState()
-        if checkObject:
             try:
-                table11_path = create_table11(self.path_subarea)
-                tabla11 = doc.new_subdoc(table11_path)
-                VARIABLES.update({"tabla11": tabla11})
-                print("Tabla 11\tOK\tTabla de fases semafóricas propuestas")
+                histogramas_pea_tip, histogramas_pea_atip = histogramas_peatonales(self.path_subarea)
+                histogramas_tip_pea = doc.new_subdoc(histogramas_pea_tip)
+                histogramas_atip_pea = doc.new_subdoc(histogramas_pea_atip)
+                VARIABLES.update({
+                    "histogramas_tip_pea": histogramas_tip_pea,
+                    "histogramas_atip_pea": histogramas_atip_pea,
+                    })
+                print("Histograma\tOK\tPeatonales")
             except Exception as e:
-                print("Tabla 11\tERROR\tTabla de fases semafóricas propuestas")
-                LOGGER.warning("Error Tabla 11")
+                print("Histograma\tERROR\tPeatonales")
+                LOGGER.warning("Errores de histogramas peatonales")
                 LOGGER.warning(str(e))
+                raise e
+
+        checkObject = self.ui.tableWidget.item(20,0).checkState()
+        if checkObject: #NOTE: Ready flujograma_veh_sist and paragraphs
+            try:
+                flujograma_vehicular_path = flujograma_vehicular(self.path_subarea, maxturno, maxtipicidad)
+                flujogvmt_cod_maxtip_maxturno = doc.new_subdoc(flujograma_vehicular_path)
+                paragraph_flujograma_veh_path = create_paragraphs(self.path_subarea, maxtipicidad, maxturno)
+                paragraphs_flujogramas_vehiculares = doc.new_subdoc(paragraph_flujograma_veh_path)
+                VARIABLES.update({
+                    "flujogvmt_cod_maxtip_maxturno": flujogvmt_cod_maxtip_maxturno,
+                    "paragraphs_flujogramas_vehiculares": paragraphs_flujogramas_vehiculares,
+                    }) 
+                print("Flujogramas\tOK\tVehiculares")
+            except Exception as e:
+                print("Flujogramas\tERROR\tVehiculares")
+                LOGGER.warning("Flujogramas vehiculares")
+                LOGGER.warning(str(e))
+                raise e
+
+        checkObject = self.ui.tableWidget.item(21,0).checkState()
+        if checkObject: #NOTE: Ready flujogramas peatonales
+            try:
+                flujograma_peatonal_path = flujogramas_peatonales(self.path_subarea, maxturno, maxtipicidad)
+                flujograma_peatonal = doc.new_subdoc(flujograma_peatonal_path)
+                VARIABLES.update({"flujograma_peat_max": flujograma_peatonal})
+                print("Flujogramas\tOK\tPeatonales")
+            except Exception as e:
+                print("Flujogramas\tERROR\tPeatonales")
+                LOGGER.warning("Flujogramas peatonales")
+                LOGGER.warning(str(e))
+                raise e
+
+        # checkObject = self.ui.tableWidget.item(8,0).checkState()
+        # if checkObject: #TODO: ¿Esto irá?
+        #     try:
+        #         table10_path = create_table10(self.path_subarea)
+        #         tabla10 = doc.new_subdoc(table10_path)
+        #         VARIABLES.update({"tabla10": tabla10})
+        #         print("Tabla 10\tOK\tDatos del Webster")
+        #     except Exception as e:
+        #         print("Tabla 10\tERROR\tDatos del Webster")
+        #         LOGGER.warning("Error Tabla 10")
+        #         LOGGER.warning(str(e))
+
+        # checkObject = self.ui.tableWidget.item(9,0).checkState()
+        # if checkObject: #TODO: ¿Esto irá?
+        #     try:
+        #         table11_path = create_table11(self.path_subarea)
+        #         tabla11 = doc.new_subdoc(table11_path)
+        #         VARIABLES.update({"tabla11": tabla11})
+        #         print("Tabla 11\tOK\tTabla de fases semafóricas propuestas")
+        #     except Exception as e:
+        #         print("Tabla 11\tERROR\tTabla de fases semafóricas propuestas")
+        #         LOGGER.warning("Error Tabla 11")
+        #         LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(10,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla12
             try:
                 table12_path = create_table12(self.path_subarea)
                 table12 = doc.new_subdoc(table12_path)
@@ -264,7 +349,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(11,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready Tabla OD only when GEH-R2.xlsm exists
             try:
                 table14_path, VARIABLES_OD = create_table14(self.path_subarea)
                 table14 = doc.new_subdoc(table14_path)
@@ -277,7 +362,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(12,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla16
             try:
                 table16_path = create_resultados_images(self.path_subarea)
                 table16 = doc.new_subdoc(table16_path)
@@ -289,7 +374,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(13,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready tabla17
             try:
                 table17_path = create_table17(self.path_subarea)
                 table17 = doc.new_subdoc(table17_path)
@@ -301,37 +386,61 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(14,0).checkState() #TODO: CHECK
-        if checkObject:
+        if checkObject: #TODO: Me parece que cambiará de nombre, es lo mismo que el 19.
             try: #Cambiar a solo horas punta
                 table18_path = create_table18(self.path_subarea)
                 table18 = doc.new_subdoc(table18_path)
                 VARIABLES.update({"tabla18": table18})
-                print("Tabla 18\tOK\tGráficas de sigs Output - base")
+                print("Tabla 18\tOK\tProgramación de sigs Output - base")
             except Exception as e:
-                print("Tabla 18\tERROR\tGráficas de sigs Output - base")
+                print("Tabla 18\tERROR\tProgramación de sigs Output - base")
                 LOGGER.warning("Error Tabla 18")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(15,0).checkState() #TODO: CHECK
-        if checkObject:
-            try: #Cambiar a solo horas punta
-                table19_path = create_table19(self.path_subarea)
-                table19 = doc.new_subdoc(table19_path)
-                VARIABLES.update({"tabla19": table19})
-                print("Tabla 19\tOK\tGráficas de sigs Output - 3 años")
-            except Exception as e:
-                print("Tabla 19\tERROR\tGráficas de sigs Output - 3 años")
-                LOGGER.warning("Error Tabla 19")
-                LOGGER.warning(str(e))
+        # checkObject = self.ui.tableWidget.item(15,0).checkState() #TODO: CHECK
+        # if checkObject: #NOTE: ¿O irá este?
+        #     try: #Cambiar a solo horas punta
+        #         table19_path = create_table19(self.path_subarea)
+        #         table19 = doc.new_subdoc(table19_path)
+        #         VARIABLES.update({"tabla19": table19})
+        #         print("Tabla 19\tOK\tGráficas de sigs Output - 3 años")
+        #     except Exception as e:
+        #         print("Tabla 19\tERROR\tGráficas de sigs Output - 3 años")
+        #         LOGGER.warning("Error Tabla 19")
+        #         LOGGER.warning(str(e))
 
         SEND_MESSAGE = False
         checkObject = self.ui.tableWidget.item(16,0).checkState()
-        if checkObject:
-            try: #Cambiar solo a horas punta
-                table20_path = generate_results(self.path_subarea)
-                #table20 = doc.new_subdoc(table20_path)
-                #VARIABLES.update({"tabla20": table20})
-                SEND_MESSAGE = True
+        if checkObject: #NOTE: Results ready
+            try:
+                resultsPaths = generate_results(self.path_subarea)
+                tabla_tip_veh_nodo_var = resultsPaths["Tipico"]["Vehicular"]["Nodo"]
+                tabla_tip_veh_red_var = resultsPaths["Tipico"]["Vehicular"]["Red"]
+
+                tabla_atip_veh_nodo_var = resultsPaths["Atipico"]["Vehicular"]["Nodo"]
+                tabla_atip_veh_red_var = resultsPaths["Atipico"]["Vehicular"]["Red"]
+
+                tabla_tip_pea_red_var = resultsPaths["Tipico"]["Peatonal"]["Red"]
+                tabla_atip_pea_red_var = resultsPaths["Atipico"]["Peatonal"]["Red"]
+
+                tabla_tip_veh_nodo = doc.new_subdoc(tabla_tip_veh_nodo_var)
+                tabla_tip_veh_red = doc.new_subdoc(tabla_tip_veh_red_var)
+
+                tabla_atip_veh_nodo = doc.new_subdoc(tabla_atip_veh_nodo_var)
+                tabla_atip_veh_red = doc.new_subdoc(tabla_atip_veh_red_var)
+
+                tabla_tip_pea_red = doc.new_subdoc(tabla_tip_pea_red_var)
+                tabla_atip_pea_red = doc.new_subdoc(tabla_atip_pea_red_var)
+
+                VARIABLES.update({
+                    "tabla_tip_veh_nodo": tabla_tip_veh_nodo,
+                    "tabla_tip_veh_red": tabla_tip_veh_red,
+                    "tabla_atip_veh_nodo": tabla_atip_veh_nodo,
+                    "tabla_atip_veh_red": tabla_atip_veh_red,
+                    "tabla_tip_pea_red": tabla_tip_pea_red,
+                    "tabla_atip_pea_red": tabla_atip_pea_red,
+                    })
+                #SEND_MESSAGE = True
                 print("Tabla 20\tOK\tTablas de resultados peatonales, vehiculares y de nodos")
             except Exception as e:
                 print("Tabla 20\tERROR\tTablas de resultados peatonales, vehiculares y de nodos")
@@ -339,8 +448,9 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(17,0).checkState()
-        if checkObject:
-            try: #Cambiar a solo horas punta
+
+        if checkObject: #NOTE: Ready tabla23
+            try: 
                 table23_path = create_table23(self.path_subarea)
                 table23 = doc.new_subdoc(table23_path)
                 VARIABLES.update({"tabla23": table23})
@@ -351,59 +461,22 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
         #Paragraphs:
-        checkObject = self.ui.tableWidget.item(18,0).checkState()
-        if checkObject:
-            try:
-                cambios_path = cambios_variable(self.path_subarea, codintersecciones)
-                cambioParagraph = doc.new_subdoc(cambios_path)
-                VARIABLES.update({"cambios": cambioParagraph})
-                print("Párrafos\tOK\tCreación de párrafos")
-            except Exception as e:
-                print("Párrafos\tERROR\tCreación de párrafos")
-                LOGGER.warning("Error de creación de párrafos")
-                LOGGER.warning(str(e))
-
-        #Image paths:
-        checkObject = self.ui.tableWidget.item(19,0).checkState()
-        if checkObject:
-            try:
-                histograma_path = histogramas(self.path_subarea)
-                histograma = doc.new_subdoc(histograma_path)
-                VARIABLES.update({"histogramas": histograma})
-                print("Histograma\tOK\tCreación de histogramas")
-            except Exception as e:
-                print("Histograma\tERROR\tCreación de histogramas")
-                LOGGER.warning("Errores de histogramas")
-                LOGGER.warning(str(e))
-
-        checkObject = self.ui.tableWidget.item(20,0).checkState()
-        if checkObject:
-            try:
-                flujograma_vehicular_path = flujogramas_vehiculares(self.path_subarea)
-                flujograma_vehicular = doc.new_subdoc(flujograma_vehicular_path)
-                VARIABLES.update({"flujogvmt": flujograma_vehicular}) 
-                print("Vehiculos\tOK\tFlujogramas")
-            except Exception as e:
-                print("Vehiculos\tERROR\tFlujogramas")
-                LOGGER.warning("Flujogramas vehiculares")
-                LOGGER.warning(str(e))
-
-        checkObject = self.ui.tableWidget.item(21,0).checkState()
-        if checkObject:
-            try:
-                flujograma_peatonal_path = flujogramas_peatonales(self.path_subarea)
-                flujograma_peatonal = doc.new_subdoc(flujograma_peatonal_path)
-                VARIABLES.update({"flujogpmt": flujograma_peatonal})
-                print("Peatones\tOK\tFlujogramas")
-            except Exception as e:
-                print("Peatones\tERROR\tFlujogramas")
-                LOGGER.warning("Flujogramas peatonales")
-                LOGGER.warning(str(e))
+        # checkObject = self.ui.tableWidget.item(18,0).checkState()
+        # if checkObject: #TODO: ¿Irán estos párrafos?
+        #     try:
+        #         cambios_path = cambios_variable(self.path_subarea, codintersecciones)
+        #         cambioParagraph = doc.new_subdoc(cambios_path)
+        #         VARIABLES.update({"cambios": cambioParagraph})
+        #         print("Párrafos\tOK\tCreación de párrafos")
+        #     except Exception as e:
+        #         print("Párrafos\tERROR\tCreación de párrafos")
+        #         LOGGER.warning("Error de creación de párrafos")
+        #         LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(22,0).checkState()
-        if checkObject:
+        if checkObject: #NOTE: Ready get sigs actual
             try:
-                sigActual_path = get_sigs_actual(self.path_subarea)
+                sigActual_path = get_sigs_actual(self.path_subarea, "Actual")
                 sigActual = doc.new_subdoc(sigActual_path)
                 VARIABLES.update({"sigactual": sigActual})
                 print("Sigs actual\tOK")
@@ -414,10 +487,28 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Sigs actual")
                 LOGGER.warning(str(e))
 
-        if SEND_MESSAGE:
-            print("\n############################### MENSAJE IMPORTANTE ###############################\n")
-            print("Copiar contenido en el capítulo 3.1 RESULTADOS DEL MODELO después de la tabla de niveles de servicio.\n",table20_path)
-            print("\n############################### MENSAJE IMPORTANTE ###############################")
+        checkObject = self.ui.tableWidget.item(22,0).checkState()
+        if checkObject: #TODO: ready get sigs propuesto
+            try:
+                sigPropuesto_path = get_sigs_actual(self.path_subarea, "Propuesto")
+                sigPropuesto = doc.new_subdoc(sigPropuesto_path)
+                VARIABLES.update({"sigpropuesto": sigPropuesto})
+                print("Sigs propuesto\tOK")
+            except IndexError:
+                print("Sigs propuesto\tERROR\tNo hay sigs")
+            except Exception as e:
+                print("Sigs propuesto\tERROR")
+                LOGGER.warning("Sigs propuesto")
+                LOGGER.warning(str(e))
+
+        # if SEND_MESSAGE:
+        #     print("\n############################### MENSAJE IMPORTANTE ###############################\n")
+        #     print("Copiar contenido en el capítulo 3.1 RESULTADOS DEL MODELO después de la tabla de niveles de servicio.\n",table20_path)
+        #     print("\n############################### MENSAJE IMPORTANTE ###############################")
+
+        VARIABLES.update({
+            "month": month,
+        })
 
         doc.render(VARIABLES)
 

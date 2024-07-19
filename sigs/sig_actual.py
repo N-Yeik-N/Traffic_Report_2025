@@ -20,7 +20,10 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
 
     composer.save(finalPath)
 
-def get_sigs_actual(subareaPath) -> None:
+def get_sigs_actual(
+        subareaPath,
+        typesig: str #Actual / Propuesto
+        ) -> None:
 
     #Getting list of node codes
     listFiles = os.listdir(subareaPath)
@@ -41,7 +44,7 @@ def get_sigs_actual(subareaPath) -> None:
         pngList_by_Code[nodeCode] = []
 
     pattern = r"([A-Z]+-[0-9]+)"
-    actualPath = os.path.join(subareaPath,"Actual")
+    actualPath = os.path.join(subareaPath,typesig)
     for tipicidad in ["Tipico"]:
         tipicidadPath = os.path.join(actualPath, tipicidad)
         scenariosList = os.listdir(tipicidadPath)
@@ -58,8 +61,6 @@ def get_sigs_actual(subareaPath) -> None:
     #Obtaining name of intersections:
     dataExcel = "./data/Datos Generales.xlsx"
     df_datos = pd.read_excel(dataExcel, sheet_name="DATOS", header=0, usecols="A:B")
-
-
 
     dictCode = {}
     for code, listPathsPNGs in pngList_by_Code.items():
@@ -98,11 +99,11 @@ def get_sigs_actual(subareaPath) -> None:
             newImage = InlineImage(doc_template, pathImg, width=Inches(6))
             doc_template.render({"parrafo_sig": parrafo_sig, "texto": text, "tabla": newImage}) #NOTE: {{sigactual}}
             turno_text = unidecode(turno)
-            finalPath = os.path.join(imagesDirectory, f"{code}_{turno_text}.docx")
+            finalPath = os.path.join(imagesDirectory, f"{code}_{turno_text}_sig{typesig}.docx")
             doc_template.save(finalPath) #TODO: <---- Este estaba comentando, parace que este código no esta completo.
             listWordPaths.append(finalPath)
     
-    sigactual_path = os.path.join(subareaPath, "Tablas", "SigActual.docx")
+    sigactual_path = os.path.join(subareaPath, "Tablas", f"sig{typesig}.docx")
     
     filePathMaster = listWordPaths[0]
     filePathList = listWordPaths[1:]

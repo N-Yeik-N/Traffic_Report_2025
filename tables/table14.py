@@ -132,7 +132,7 @@ def table_creation(MATRIX, nameScenario, tipicidad, subareaPath):
 
     return finalPath
 
-def create_table14(path_subarea):
+def create_table14(path_subarea, maxTurn, maxTipicidad):
     subareaName = os.path.split(path_subarea)[-1]
     subareaID = subareaName[-3:]
     #subarea_id = path_parts[-1]

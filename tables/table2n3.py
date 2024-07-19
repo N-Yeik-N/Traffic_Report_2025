@@ -401,9 +401,9 @@ def create_tables2n3(pathSubarea: str):
     codeBySubarea = code_by_subarea(pathSubarea)
 
     #List of excels
-    pathParts = pathSubarea.split("\\")
+    pathParts = pathSubarea.split("/")
     subareaID = pathParts[-1]
-    proyectFolder = '\\'.join(pathParts[:-2])
+    proyectFolder = '/'.join(pathParts[:-2])
     fieldData = Path(proyectFolder) / "7. Informacion de Campo" / subareaID / "Vehicular"
 
     excelByTipicidad = {}
@@ -452,6 +452,18 @@ def create_tables2n3(pathSubarea: str):
             "Evening": hourSystem2,
             "Night": hourSystem3,
         })
+
+    #Creating .txt with peakhours:
+    pathSubarea = Path(pathSubarea)
+    contentTipico = f"Morning:\t{peakHours['Tipico']['Morning']/4}\nEvening:\t{peakHours['Tipico']['Evening']/4}\nNight:\t{peakHours['Tipico']['Night']/4}"
+    peakhourstip_path = pathSubarea / "Tablas" / "PeakHoursTipico.txt"
+    with open(peakhourstip_path, "w") as file:
+        file.write(contentTipico)
+
+    contentTipico = f"Morning:\t{peakHours['Tipico']['Morning']/4}\nEvening:\t{peakHours['Tipico']['Evening']/4}\nNight:\t{peakHours['Tipico']['Night']/4}"
+    peakhoursati_path = pathSubarea / "Tablas" / "PeakHoursAtipico.txt"
+    with open(peakhoursati_path, "w") as file:
+        file.write(contentTipico)
 
     ##########################
     # Pedestrian Information #

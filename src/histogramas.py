@@ -235,9 +235,9 @@ def create_histograma_peatonal(
 
 def histogramas_vehiculares(subareaPath: str) -> str:
     #List of excels
-    pathParts = subareaPath.split("\\")
+    pathParts = subareaPath.split("/")
     subareaID = pathParts[-1]
-    proyectFolder = '\\'.join(pathParts[:-2])
+    proyectFolder = '/'.join(pathParts[:-2])
     fieldData = os.path.join(
         proyectFolder,
         "7. Informacion de Campo",
@@ -251,8 +251,8 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         "Atipico": None,
     }
     try:
-        txtPaths["Tipico"] = os.path.join(subareaPath, "Tablas", "PeakHours_Tipico.txt")
-        txtPaths["Atipico"] = os.path.join(subareaPath, "Tablas", "PeakHours_Atipico.txt")
+        txtPaths["Tipico"] = os.path.join(subareaPath, "Tablas", "PeakHoursTipico.txt")
+        txtPaths["Atipico"] = os.path.join(subareaPath, "Tablas", "PeakHoursAtipico.txt")
     except FileNotFoundError:
         return print("Error: no existe el archivo PeakHours.txt en la carpeta 'Tablas'")
 
@@ -367,11 +367,12 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         ]
 
         pathTotal = _draw_hist(
+            subareaPath,
             VOLUME,
             "SISTEMA",
             peakHoursList,
             countImages,
-            labels
+            labels,
         )
 
         if tipicidad == "Tipico":
@@ -404,9 +405,9 @@ def histogramas_vehiculares(subareaPath: str) -> str:
 
 def histogramas_peatonales(subareaPath: str) -> str:
     #List of excels
-    pathParts = subareaPath.split("\\")
+    pathParts = subareaPath.split("/")
     subareaID = pathParts[-1]
-    proyectFolder = '\\'.join(pathParts[:-2])
+    proyectFolder = '/'.join(pathParts[:-2])
     fieldData = os.path.join(
         proyectFolder,
         "7. Informacion de Campo",
@@ -420,8 +421,8 @@ def histogramas_peatonales(subareaPath: str) -> str:
         "Atipico": None,
     }
     try:
-        txtPaths["Tipico"] = os.path.join(subareaPath, "Tablas", "PeakHours_Tipico.txt")
-        txtPaths["Atipico"] = os.path.join(subareaPath, "Tablas", "PeakHours_Atipico.txt")
+        txtPaths["Tipico"] = os.path.join(subareaPath, "Tablas", "PeakHoursTipico.txt")
+        txtPaths["Atipico"] = os.path.join(subareaPath, "Tablas", "PeakHoursAtipico.txt")
     except FileNotFoundError:
         return print("Error: no existe el archivo PeakHours.txt en la carpeta 'Tablas'")
 
