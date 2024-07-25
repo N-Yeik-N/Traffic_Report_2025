@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Traffic_Report v1.6.4',
+    name='Traffic_Report v2.0.0',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

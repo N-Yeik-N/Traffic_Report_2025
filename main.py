@@ -154,7 +154,6 @@ class MyWindow(QMainWindow, Ui_Form):
         if checkObject: #NOTE: Ready tabla4
             try:
                 table4_path, table5_path = create_table4n5(self.path_subarea)
-                print(table5_path)
                 table4 = doc.new_subdoc(table4_path)
                 VARIABLES.update({"tabla4": table4})
                 print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
@@ -279,7 +278,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Histograma\tERROR\tPeatonales")
                 LOGGER.warning("Errores de histogramas peatonales")
                 LOGGER.warning(str(e))
-                raise e
 
         checkObject = self.ui.tableWidget.item(20,0).checkState()
         if checkObject: #NOTE: Ready flujograma_veh_sist and paragraphs
@@ -297,7 +295,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Flujogramas\tERROR\tVehiculares")
                 LOGGER.warning("Flujogramas vehiculares")
                 LOGGER.warning(str(e))
-                raise e
 
         checkObject = self.ui.tableWidget.item(21,0).checkState()
         if checkObject: #NOTE: Ready flujogramas peatonales
@@ -310,7 +307,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Flujogramas\tERROR\tPeatonales")
                 LOGGER.warning("Flujogramas peatonales")
                 LOGGER.warning(str(e))
-                raise e
 
         # checkObject = self.ui.tableWidget.item(8,0).checkState()
         # if checkObject: #TODO: ¿Esto irá?
@@ -351,7 +347,7 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(11,0).checkState()
         if checkObject: #NOTE: Ready Tabla OD only when GEH-R2.xlsm exists
             try:
-                table14_path, VARIABLES_OD = create_table14(self.path_subarea)
+                table14_path, VARIABLES_OD = create_table14(self.path_subarea, maxturno, maxtipicidad)
                 table14 = doc.new_subdoc(table14_path)
                 VARIABLES.update({"tabla14": table14})
                 VARIABLES.update(VARIABLES_OD)
@@ -480,7 +476,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 sigActual = doc.new_subdoc(sigActual_path)
                 VARIABLES.update({"sigactual": sigActual})
                 print("Sigs actual\tOK")
-            except IndexError:
+            except IndexError as e:
                 print("Sigs actual\tERROR\tNo hay sigs")
             except Exception as e:
                 print("Sigs actual\tERROR")
@@ -490,11 +486,11 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(22,0).checkState()
         if checkObject: #TODO: ready get sigs propuesto
             try:
-                sigPropuesto_path = get_sigs_actual(self.path_subarea, "Propuesto")
+                sigPropuesto_path = get_sigs_actual(self.path_subarea, "Output_Base")
                 sigPropuesto = doc.new_subdoc(sigPropuesto_path)
                 VARIABLES.update({"sigpropuesto": sigPropuesto})
                 print("Sigs propuesto\tOK")
-            except IndexError:
+            except IndexError as e:
                 print("Sigs propuesto\tERROR\tNo hay sigs")
             except Exception as e:
                 print("Sigs propuesto\tERROR")

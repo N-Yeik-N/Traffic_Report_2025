@@ -91,7 +91,7 @@ def get_sigs_actual(
                 continue
 
             try:
-                parrafo_sig = df_datos[df_datos["CODE"] == code]["SIG"].values[0]
+                parrafo_sig = df_datos[df_datos["Code"] == code]["Interseccion"].values[0]
             except IndexError as e:
                 parrafo_sig = "NO SE ENCONTRÓ NOMBRE RELACIÓN CON ESE CÓDIGO: data/Datos Generales.xlsx"
 
@@ -105,9 +105,12 @@ def get_sigs_actual(
     
     sigactual_path = os.path.join(subareaPath, "Tablas", f"sig{typesig}.docx")
     
-    filePathMaster = listWordPaths[0]
-    filePathList = listWordPaths[1:]
+    if len(listWordPaths) == 1:
+        sigactual_path = listWordPaths[0]
+    else:
+        filePathMaster = listWordPaths[0]
+        filePathList = listWordPaths[1:]
 
-    _combine_all_docx(filePathMaster, filePathList, sigactual_path)
+        _combine_all_docx(filePathMaster, filePathList, sigactual_path)
 
     return sigactual_path
