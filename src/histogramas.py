@@ -7,7 +7,7 @@ from docx.shared import Inches
 from docxcompose.composer import Composer
 from docx import Document
 
-def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList: list, countImages: int, labels: list) -> str:
+def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList: list, countImages: int, labels: list, pedestrian: bool = False) -> str:
     # Crear la figura y los ejes
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -16,11 +16,13 @@ def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList:
     selectedIndexes = []
     for i in peakHoursList:
         selectedIndexes.append(
-            (i-2, i-1)
+            (i+2, i+3)
             )
-        for j in range(i-3, i+1):
+        for j in range(i+1, i+5):
             bars[j].set_color('#1f77b4')
 
+    fullText = "Peatonal" if pedestrian else "Vehicular"
+    shortText = "pea" if pedestrian else "veh"
     headers = ["TURNO ", "\nHora Punta Sistema\n"]
     stageDay = ["MAÑANA", "TARDE", "NOCHE"]
     for (id1, id2), stage in zip(selectedIndexes, stageDay):
@@ -37,7 +39,7 @@ def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList:
 
         midPoint_X = (bar1.get_x() + bar1.get_width() / 2 + bar2.get_x() + bar2.get_width() / 2) / 2
         midPoint_Y = maxVol*1.41
-        text = headers[0] + stage + '\n' + str(maxVol) + " vehs" + headers[1] + _convert_quarter2hour(str(labels[maxIndex]))
+        text = headers[0] + stage + '\n' + str(tuple(sum(x) for x in zip(*relevantBars))[1]) + " " + shortText + "s" + headers[1] + _convert_quarter2hour(str(labels[maxIndex])) # Copilot sum
         ax.text(midPoint_X, midPoint_Y, text, ha='center', va='center', fontsize = 10, bbox=dict(facecolor='white', alpha=0.5))
 
     # Girar las etiquetas del eje x
@@ -59,8 +61,8 @@ def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList:
         ax.text(bar.get_x() + bar.get_width()/2, 0.04*maxHeight+yval, round(yval, 2), ha='center', va='bottom', color='black', rotation=90)
 
     # Configurar etiquetas y título
-    ax.set_ylabel('Volumen (veh/h)')
-    ax.set_title(f'HISTOGRAMA VEHICULAR\n{nameIntersection}')
+    ax.set_ylabel(f'Volumen ({shortText}/15 min)')
+    ax.set_title(f'HISTOGRAMA {fullText}\n{nameIntersection}')
 
     # Mostrar el gráfico
     plt.tight_layout()
@@ -99,8 +101,8 @@ def _convert_quarter2hour(hour: str) -> str:
         end_hour += 24
 
     # Formatear las nuevas horas y minutos en cadenas de texto
-    new_start_time = f"{end_hour:02d}:00"
-    new_end_time = f"{end_hour + 1:02d}:00"
+    new_start_time = f"{end_hour:02d}:{end_minute}"
+    new_end_time = f"{end_hour + 1:02d}:{end_minute}"
 
     return f"{new_start_time} - {new_end_time}"
 
@@ -127,6 +129,12 @@ def create_histograma_vehicular(
 
     nameIntersection = wb['Inicio']["G5"].value
 
+    listSlices15minVolumes = [
+        slice("HQ41", "HQ54"),
+        slice("HQ63", "HQ76"),
+        slice("HQ85", "HQ98"),
+    ]
+
     listSlicesVolumes = [
         slice("HR41", "HR54"),
         slice("HR63", "HR76"),
@@ -143,7 +151,7 @@ def create_histograma_vehicular(
     labels = []
 
     separations = []
-    for rangeVolumes, rangeLabels in zip(listSlicesVolumes, listSlicesLabels):
+    for rangeVolumes, rangeLabels in zip(listSlices15minVolumes, listSlicesLabels):
         volume = _get_data(rangeVolumes, ws)
         volumes.extend(volume)
         separations.append(len(volume))
@@ -192,15 +200,15 @@ def create_histograma_peatonal(
     nameIntersection = wb['Inicio']["G4"].value
 
     listSlicesVolumes = [
-        slice("VA22", "VA33"),
-        slice("VA44", "VA55"),
-        slice("VA66", "VA77"),
+        slice("UZ21", "UZ34"),
+        slice("UZ43", "UZ56"),
+        slice("UZ65", "UZ78"),
     ]
 
     listSlicesLabels = [
-        slice("K22", "K33"),
-        slice("K44", "K55"),
-        slice("K66", "K77"),
+        slice("K21", "K34"),
+        slice("K43", "K56"),
+        slice("K65", "K78"),
     ]
 
     volumes = []
@@ -229,6 +237,7 @@ def create_histograma_peatonal(
         peakHoursList,
         countImages,
         labels,
+        True
     )
 
     return finalPath, nameIntersection, volumes, labels
