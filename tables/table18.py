@@ -45,7 +45,7 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
         composer.append(doc_temp)
     composer.save(finalPath)
 
-def _create_data(sig_path) -> dict:
+def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
     tree = ET.parse(sig_path)
     sc_tag = tree.getroot()
     for stageProg in sc_tag.findall("./stageProgs/stageProg"):
@@ -88,6 +88,8 @@ def _create_data(sig_path) -> dict:
 
     sig_info = {
         "sig_name": os.path.split(sig_path)[1][:-4],
+        "turn": scenario,
+        "tipicidad": tipicidad,
         "cycle_time": cycle_time,
         "offset": offset,
         "greens": filtered_green,
@@ -169,10 +171,12 @@ def create_table18(subarea_path) -> None:
     tipicidades = ["Tipico", "Atipico"]
 
     listData = []
+    scenarioByTipicidad = {
+        "Tipico": ["HPMAD", "HVMAD", "HPM", "HVM", "HPT", "HVT", "HPN", "HVN"],
+        "Atipico": ["HVMAD", "HPM", "HPT", "HPN", "HVN"],
+    }
     for tipicidad in tipicidades:
-        scenarios = os.listdir(output_folder / tipicidad)
-        
-        for i, scenario in enumerate(scenarios):
+        for i, scenario in enumerate(scenarioByTipicidad[tipicidad]):
             if i == 0: #What the hell is this for?
                 scenario_path = output_folder / tipicidad / scenario
                 sig_files = os.listdir(scenario_path)
@@ -182,9 +186,9 @@ def create_table18(subarea_path) -> None:
 
         for sig_file in sig_files:
             sigs_info = []
-            for scenario in scenarios:
+            for scenario in scenarioByTipicidad[tipicidad]:
                 sig_path = output_folder / tipicidad / scenario / sig_file
-                sig_info = _create_data(sig_path) #Data necesaria por fases de una intersección.
+                sig_info = _create_data(sig_path, scenario, tipicidad) #Data necesaria por fases de una intersección.
                 sigs_info.append(sig_info) #Data por cada horario de los programas (HVMAD, HPM, ...)
 
             finalPath, code, tipicidad = _create_table(sigs_info, tipicidad, tablasPath)
@@ -213,6 +217,6 @@ def create_table18(subarea_path) -> None:
 
     return programPath
 
-# if __name__ == '__main__':
-#     path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-#     read_programs(path)
+if __name__ == '__main__':
+    path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 099"
+    create_table18(path)

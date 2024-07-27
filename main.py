@@ -6,13 +6,9 @@ from tables.table6 import create_table6
 from tables.table7 import create_table7
 from tables.table8n9 import create_table8, create_table9
 from tables.table12 import create_table12
-from tables.table10 import create_table10
-from tables.table11 import create_table11
 from tables.table14 import create_table14
 from tables.table17 import create_table17
 from tables.table18 import create_table18
-from tables.table19 import create_table19
-from parrafos.paragraphs import cambios_variable
 from src.call_functions import *
 from src.histogramas import *
 from src.changer_dates import change_peakhours
@@ -237,7 +233,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 9")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(19,0).checkState()
+        checkObject = self.ui.tableWidget.item(8,0).checkState()
         if checkObject: #NOTE: Ready histogramas and maxTipicidad, maxTurno            
             try:
                 histogramas_tipicos, histogramas_atipicos, histograma_path_tipico, histograma_path_atipico, sumvoltip_var, sumvolati_var, maxtipicidad, volturmanana, volturntarde, volturnnoche, maxturno = histogramas_vehiculares(self.path_subarea)
@@ -279,7 +275,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Errores de histogramas peatonales")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(20,0).checkState()
+        checkObject = self.ui.tableWidget.item(9,0).checkState()
         if checkObject: #NOTE: Ready flujograma_veh_sist and paragraphs
             try:
                 flujograma_vehicular_path = flujograma_vehicular(self.path_subarea, maxturno, maxtipicidad)
@@ -296,7 +292,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Flujogramas vehiculares")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(21,0).checkState()
+        checkObject = self.ui.tableWidget.item(10,0).checkState()
         if checkObject: #NOTE: Ready flujogramas peatonales
             try:
                 flujograma_peatonal_path = flujogramas_peatonales(self.path_subarea, maxturno, maxtipicidad)
@@ -308,31 +304,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Flujogramas peatonales")
                 LOGGER.warning(str(e))
 
-        # checkObject = self.ui.tableWidget.item(8,0).checkState()
-        # if checkObject: #TODO: ¿Esto irá?
-        #     try:
-        #         table10_path = create_table10(self.path_subarea)
-        #         tabla10 = doc.new_subdoc(table10_path)
-        #         VARIABLES.update({"tabla10": tabla10})
-        #         print("Tabla 10\tOK\tDatos del Webster")
-        #     except Exception as e:
-        #         print("Tabla 10\tERROR\tDatos del Webster")
-        #         LOGGER.warning("Error Tabla 10")
-        #         LOGGER.warning(str(e))
-
-        # checkObject = self.ui.tableWidget.item(9,0).checkState()
-        # if checkObject: #TODO: ¿Esto irá?
-        #     try:
-        #         table11_path = create_table11(self.path_subarea)
-        #         tabla11 = doc.new_subdoc(table11_path)
-        #         VARIABLES.update({"tabla11": tabla11})
-        #         print("Tabla 11\tOK\tTabla de fases semafóricas propuestas")
-        #     except Exception as e:
-        #         print("Tabla 11\tERROR\tTabla de fases semafóricas propuestas")
-        #         LOGGER.warning("Error Tabla 11")
-        #         LOGGER.warning(str(e))
-
-        checkObject = self.ui.tableWidget.item(10,0).checkState()
+        checkObject = self.ui.tableWidget.item(11,0).checkState()
         if checkObject: #NOTE: Ready tabla12
             try:
                 table12_path = create_table12(self.path_subarea)
@@ -344,7 +316,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 12")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(11,0).checkState()
+        checkObject = self.ui.tableWidget.item(12,0).checkState()
         if checkObject: #NOTE: Ready Tabla OD only when GEH-R2.xlsm exists
             try:
                 table14_path, VARIABLES_OD = create_table14(self.path_subarea, maxturno, maxtipicidad)
@@ -357,7 +329,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 14")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(12,0).checkState()
+        checkObject = self.ui.tableWidget.item(13,0).checkState()
         if checkObject: #NOTE: Ready tabla16
             try:
                 table16_path = create_resultados_images(self.path_subarea)
@@ -369,7 +341,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 16")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(13,0).checkState()
+        checkObject = self.ui.tableWidget.item(14,0).checkState()
         if checkObject: #NOTE: Ready tabla17
             try:
                 table17_path = create_table17(self.path_subarea)
@@ -381,7 +353,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 17")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(14,0).checkState() #TODO: CHECK
+        checkObject = self.ui.tableWidget.item(15,0).checkState() #TODO: CHECK
         if checkObject: #TODO: Me parece que cambiará de nombre, es lo mismo que el 19.
             try: #Cambiar a solo horas punta
                 table18_path = create_table18(self.path_subarea)
@@ -393,19 +365,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 18")
                 LOGGER.warning(str(e))
 
-        # checkObject = self.ui.tableWidget.item(15,0).checkState() #TODO: CHECK
-        # if checkObject: #NOTE: ¿O irá este?
-        #     try: #Cambiar a solo horas punta
-        #         table19_path = create_table19(self.path_subarea)
-        #         table19 = doc.new_subdoc(table19_path)
-        #         VARIABLES.update({"tabla19": table19})
-        #         print("Tabla 19\tOK\tGráficas de sigs Output - 3 años")
-        #     except Exception as e:
-        #         print("Tabla 19\tERROR\tGráficas de sigs Output - 3 años")
-        #         LOGGER.warning("Error Tabla 19")
-        #         LOGGER.warning(str(e))
-
-        SEND_MESSAGE = False
         checkObject = self.ui.tableWidget.item(16,0).checkState()
         if checkObject: #NOTE: Results ready
             try:
@@ -456,20 +415,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 23")
                 LOGGER.warning(str(e))
 
-        #Paragraphs:
-        # checkObject = self.ui.tableWidget.item(18,0).checkState()
-        # if checkObject: #TODO: ¿Irán estos párrafos?
-        #     try:
-        #         cambios_path = cambios_variable(self.path_subarea, codintersecciones)
-        #         cambioParagraph = doc.new_subdoc(cambios_path)
-        #         VARIABLES.update({"cambios": cambioParagraph})
-        #         print("Párrafos\tOK\tCreación de párrafos")
-        #     except Exception as e:
-        #         print("Párrafos\tERROR\tCreación de párrafos")
-        #         LOGGER.warning("Error de creación de párrafos")
-        #         LOGGER.warning(str(e))
-
-        checkObject = self.ui.tableWidget.item(22,0).checkState()
+        checkObject = self.ui.tableWidget.item(18,0).checkState()
         if checkObject: #NOTE: Ready get sigs actual
             try:
                 sigActual_path = get_sigs_actual(self.path_subarea, "Actual")
@@ -483,7 +429,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Sigs actual")
                 LOGGER.warning(str(e))
 
-        checkObject = self.ui.tableWidget.item(22,0).checkState()
+        checkObject = self.ui.tableWidget.item(19,0).checkState()
         if checkObject: #TODO: ready get sigs propuesto
             try:
                 sigPropuesto_path = get_sigs_actual(self.path_subarea, "Output_Base")
@@ -496,11 +442,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Sigs propuesto\tERROR")
                 LOGGER.warning("Sigs propuesto")
                 LOGGER.warning(str(e))
-
-        # if SEND_MESSAGE:
-        #     print("\n############################### MENSAJE IMPORTANTE ###############################\n")
-        #     print("Copiar contenido en el capítulo 3.1 RESULTADOS DEL MODELO después de la tabla de niveles de servicio.\n",table20_path)
-        #     print("\n############################### MENSAJE IMPORTANTE ###############################")
 
         VARIABLES.update({
             "month": month,

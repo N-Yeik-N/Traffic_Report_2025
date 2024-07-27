@@ -59,7 +59,7 @@ def table_creation(MATRIX, nameScenario, tipicidad, subareaPath):
     for i, row in enumerate(MATRIX.itertuples(index=False, name=None)):
         for j, elem in enumerate(row):
             cell = table.cell(i + 1, j + 1)
-            cell.text = str(elem)
+            cell.text = str(int(elem))
 
     # #Format
     # table.cell(2,0).vertical_alignment = WD_ALIGN_VERTICAL.CENTER

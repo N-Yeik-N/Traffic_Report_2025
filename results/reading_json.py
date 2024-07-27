@@ -50,7 +50,7 @@ def _align_content(table) -> None:
             for paragraph in cell.paragraphs:
                 paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 for run in paragraph.runs:
-                    run.font.size = Pt(7)
+                    run.font.size = Pt(9)
                     run.font.name = 'Arial'
 
     for i in range(len(table.columns)):
@@ -235,8 +235,6 @@ def read_json(jsonPathActual, jsonPathOutputBase, jsonPathOutputProyectado,subar
     doc.save(pedestrianResultPath)
     new_text = f"Rendimiento de peatones de la red en la {dictNames[name]} día {tipicidad.lower()}"
     pedestrianResultPathRef = _generate_table_ref(pedestrianResultPath, new_text)
-
-    table.style = 'Table Grid'
 
     ##########################################
     # Resultados de rendimiento de los nodos #
@@ -619,7 +617,6 @@ def generate_results(subareaPath) -> None:
         
     return resultsPaths
 
-# if __name__ == "__main__":
-#     subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 001"
-#     resultsPaths = generate_results(subareaPath)
-#     print(resultsPaths)
+if __name__ == "__main__":
+    subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 099"
+    resultsPaths = generate_results(subareaPath)
