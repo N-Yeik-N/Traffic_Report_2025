@@ -129,6 +129,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 1:\t\tERROR\tDatos generales de intersecciones y códigos")
                 LOGGER.warning("Error Tabla 1")
                 LOGGER.warning(str(e))
+                #raise e
                 
         checkObject = self.ui.tableWidget.item(1,0).checkState()
         if checkObject: #NOTE: Ready tabla2n3
@@ -145,6 +146,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 3\t\tERROR\tTabla de fechas de conteos")
                 LOGGER.warning("Error Tabla 2 o 3")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(2,0).checkState()
         if checkObject: #NOTE: Ready tabla4
@@ -219,6 +221,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 8:\t\tERROR\tTabla de fechas de tiempos de ciclo y fases")
                 LOGGER.warning("Error Tabla 8")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(7,0).checkState()
         if checkObject: #NOTE: Ready table9 and parrafos_programacion
@@ -232,11 +235,12 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 9\t\tERROR\tGráficas de programaciones semafóricas")
                 LOGGER.warning("Error Tabla 9")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(8,0).checkState()
         if checkObject: #NOTE: Ready histogramas and maxTipicidad, maxTurno            
             try:
-                histogramas_tipicos, histogramas_atipicos, histograma_path_tipico, histograma_path_atipico, sumvoltip_var, sumvolati_var, maxtipicidad, volturmanana, volturntarde, volturnnoche, maxturno = histogramas_vehiculares(self.path_subarea)
+                histogramas_tipicos, histogramas_atipicos, histograma_path_tipico, histograma_path_atipico, sumvoltip_var, sumvolati_var, maxtipicidad, volturnmanana, volturntarde, volturnnoche, maxturno = histogramas_vehiculares(self.path_subarea)
                 #histograma_path = histogramas(self.path_subarea)
                 histogramas_tip = doc.new_subdoc(histogramas_tipicos)
                 histogramas_atip = doc.new_subdoc(histogramas_atipicos)
@@ -250,16 +254,17 @@ class MyWindow(QMainWindow, Ui_Form):
                     "sumvoltip": sumvoltip_var,
                     "sumvolati": sumvolati_var,
                     "maxtipicidad": maxtipicidad, #típico, atípico
-                    "volturmanana": volturmanana,
+                    "volturnmanana": volturnmanana,
                     "volturntarde": volturntarde,
                     "volturnnoche": volturnnoche,
-                    "maxturno": maxturno #Mañana, Tarde, Noche
+                    "maxturno": maxturno.lower() #Mañana, Tarde, Noche
                     })
                 print("Histograma\tOK\tVehiculares")
             except Exception as e:
                 print("Histograma\tERROR\tVehiculares")
                 LOGGER.warning("Errores de histogramas vehiculares")
                 LOGGER.warning(str(e))
+                #raise e
 
             try:
                 histogramas_pea_tip, histogramas_pea_atip = histogramas_peatonales(self.path_subarea)
@@ -274,6 +279,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Histograma\tERROR\tPeatonales")
                 LOGGER.warning("Errores de histogramas peatonales")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(9,0).checkState()
         if checkObject: #NOTE: Ready flujograma_veh_sist and paragraphs
@@ -291,6 +297,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Flujogramas\tERROR\tVehiculares")
                 LOGGER.warning("Flujogramas vehiculares")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(10,0).checkState()
         if checkObject: #NOTE: Ready flujogramas peatonales
@@ -303,6 +310,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Flujogramas\tERROR\tPeatonales")
                 LOGGER.warning("Flujogramas peatonales")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(11,0).checkState()
         if checkObject: #NOTE: Ready tabla12
@@ -315,6 +323,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 12\tERROR\tTabla para ser llenada de interacciones peatonales")
                 LOGGER.warning("Error Tabla 12")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(12,0).checkState()
         if checkObject: #NOTE: Ready Tabla OD only when GEH-R2.xlsm exists
@@ -328,6 +337,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 14\tERROR\tTabla de orígenes y destinos de situación actual")
                 LOGGER.warning("Error Tabla 14")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(13,0).checkState()
         if checkObject: #NOTE: Ready tabla16
@@ -340,6 +350,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 16\tERROR\tImágenes de GEH y R2")
                 LOGGER.warning("Error Tabla 16")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(14,0).checkState()
         if checkObject: #NOTE: Ready tabla17
@@ -352,6 +363,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 17\tERROR\tResultados del GEH-R2")
                 LOGGER.warning("Error Tabla 17")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(15,0).checkState() #TODO: CHECK
         if checkObject: #TODO: Me parece que cambiará de nombre, es lo mismo que el 19.
@@ -364,6 +376,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 18\tERROR\tProgramación de sigs Output - base")
                 LOGGER.warning("Error Tabla 18")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(16,0).checkState()
         if checkObject: #NOTE: Results ready
@@ -401,6 +414,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 20\tERROR\tTablas de resultados peatonales, vehiculares y de nodos")
                 LOGGER.warning("Error Tabla 20")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(17,0).checkState()
 
@@ -428,6 +442,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Sigs actual\tERROR")
                 LOGGER.warning("Sigs actual")
                 LOGGER.warning(str(e))
+                #raise e
 
         checkObject = self.ui.tableWidget.item(19,0).checkState()
         if checkObject: #TODO: ready get sigs propuesto
@@ -442,6 +457,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Sigs propuesto\tERROR")
                 LOGGER.warning("Sigs propuesto")
                 LOGGER.warning(str(e))
+                #raise e
 
         VARIABLES.update({
             "month": month,

@@ -7,21 +7,44 @@ from docx.shared import Inches
 from docxcompose.composer import Composer
 from docx import Document
 
+def _convert_quarter2hour(hour: str) -> str:
+    # Dividir el texto en los límites inferior y superior
+    start_time, end_time = hour.split(" - ")
+
+    # Convertir las partes del tiempo en horas y minutos
+    start_hour, start_minute = map(int, start_time.split(":"))
+    end_hour, end_minute = map(int, end_time.split(":"))
+
+    # Restar una hora del límite superior
+    end_hour -= 1
+
+    # Asegurarse de que el nuevo límite superior es una hora válida (0-23)
+    if end_hour < 0:
+        end_hour += 24
+
+    # Formatear las nuevas horas y minutos en cadenas de texto
+    new_start_time = f"{end_hour:02d}:{end_minute:02d}"
+    new_end_time = f"{end_hour + 1:02d}:{end_minute:02d}"
+
+    return f"{new_start_time} - {new_end_time}"
+
 def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList: list, countImages: int, labels: list, pedestrian: bool = False) -> str:
     # Crear la figura y los ejes
     fig, ax = plt.subplots(figsize=(10, 6))
+
+    volumes = [int(x) for x in volumes]
 
     # Crear el gráfico de barras
     bars = ax.bar(range(len(volumes)), volumes, color='#A6A6A6')
     selectedIndexes = []
     for i in peakHoursList:
         selectedIndexes.append(
-            (i+2, i+3)
+            (i+1, i+2)
             )
-        for j in range(i+1, i+5):
+        for j in range(i, i+4):
             bars[j].set_color('#1f77b4')
 
-    fullText = "Peatonal" if pedestrian else "Vehicular"
+    fullText = "PEATONAL" if pedestrian else "VEHICULAR"
     shortText = "pea" if pedestrian else "veh"
     headers = ["TURNO ", "\nHora Punta Sistema\n"]
     stageDay = ["MAÑANA", "TARDE", "NOCHE"]
@@ -39,7 +62,7 @@ def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList:
 
         midPoint_X = (bar1.get_x() + bar1.get_width() / 2 + bar2.get_x() + bar2.get_width() / 2) / 2
         midPoint_Y = maxVol*1.41
-        text = headers[0] + stage + '\n' + str(tuple(sum(x) for x in zip(*relevantBars))[1]) + " " + shortText + "s" + headers[1] + _convert_quarter2hour(str(labels[maxIndex])) # Copilot sum
+        text = headers[0] + stage + '\n' + str(int((tuple(sum(x) for x in zip(*relevantBars))[1]))) + " " + shortText + "s/h" + headers[1] + _convert_quarter2hour(str(labels[relevantBars[-1][0]])) # Copilot sum
         ax.text(midPoint_X, midPoint_Y, text, ha='center', va='center', fontsize = 10, bbox=dict(facecolor='white', alpha=0.5))
 
     # Girar las etiquetas del eje x
@@ -68,6 +91,7 @@ def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList:
     plt.tight_layout()
     finalPath = os.path.join(subareaPath, "Tablas", f"HistogramaVehicular_{countImages}.png")
     plt.savefig(finalPath)
+    plt.close()
 
     return finalPath
 
@@ -85,27 +109,6 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
 
     composer.save(finalPath)
 
-def _convert_quarter2hour(hour: str) -> str:
-    # Dividir el texto en los límites inferior y superior
-    start_time, end_time = hour.split(" - ")
-
-    # Convertir las partes del tiempo en horas y minutos
-    start_hour, start_minute = map(int, start_time.split(":"))
-    end_hour, end_minute = map(int, end_time.split(":"))
-
-    # Restar una hora del límite superior
-    end_hour -= 1
-
-    # Asegurarse de que el nuevo límite superior es una hora válida (0-23)
-    if end_hour < 0:
-        end_hour += 24
-
-    # Formatear las nuevas horas y minutos en cadenas de texto
-    new_start_time = f"{end_hour:02d}:{end_minute}"
-    new_end_time = f"{end_hour + 1:02d}:{end_minute}"
-
-    return f"{new_start_time} - {new_end_time}"
-
 def create_histograma_vehicular(
         subareaPath: str,
         excelPath: str, #Ruta del excel a conseguir su histograma
@@ -115,7 +118,7 @@ def create_histograma_vehicular(
     
     #Obtener las horas puntas del sistema desplazados
     peakHoursList = []
-    increments = [6.5, 12, 17.5]
+    increments = [6.25, 11.75, 17.25]
     with open(txtPath, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         count = 0
@@ -123,7 +126,6 @@ def create_histograma_vehicular(
             peakHoursList.append(int((float(row[-1])-increments[count])*4))
             count += 1
 
-    #TODO: FALTA EL CÁLCULO DE LA HORA PUNTA.
     wb = load_workbook(excelPath, read_only=True, data_only=True)
     ws = wb['N']
 
@@ -133,12 +135,6 @@ def create_histograma_vehicular(
         slice("HQ41", "HQ54"),
         slice("HQ63", "HQ76"),
         slice("HQ85", "HQ98"),
-    ]
-
-    listSlicesVolumes = [
-        slice("HR41", "HR54"),
-        slice("HR63", "HR76"),
-        slice("HR85", "HR98"),
     ]
 
     listSlicesLabels = [
@@ -175,7 +171,7 @@ def create_histograma_vehicular(
         labels,
     )
 
-    return finalPath, nameIntersection, volumes, labels
+    return finalPath, nameIntersection, volumes, labels, peakHoursList
 
 def create_histograma_peatonal(
         subareaPath: str,
@@ -186,7 +182,7 @@ def create_histograma_peatonal(
     
     #Obtener las horas puntas del sistema desplazados
     peakHoursList = []
-    increments = [6.5, 12, 17.5]
+    increments = [6.25, 11.75, 17.25]
     with open(txtPath, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         count = 0
@@ -275,24 +271,36 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         "Atipico": None,
     }
 
+    totalVolumes ={
+        "Tipico": None,
+        "Atipico": None,
+    }
+
     countImages = 1
     for tipicidad in ["Tipico", "Atipico"]:
         typicalPath = os.path.join(fieldData, tipicidad)
         excelList = os.listdir(typicalPath)
         VOLUME_SYSTEM = None
+        VOLUME_TOTAL = None
         for excel in excelList:
             excelPath = os.path.join(typicalPath, excel)
-            histogramaPath, nameIntersection, volumes, labels = create_histograma_vehicular( #NOTE: labels se sobreescribe una y otra vez.
+            histogramaPath, nameIntersection, volumes, labels, peakHoursList = create_histograma_vehicular( #NOTE: labels se sobreescribe una y otra vez.
                 subareaPath,
                 excelPath,
                 txtPaths[tipicidad],
                 countImages,
                 )
-            
+            VOLUME_PARTIAL = [x+y+z for x,y,z in zip(
+                                                    volumes[peakHoursList[0]:peakHoursList[0]+4],
+                                                    volumes[peakHoursList[1]:peakHoursList[1]+4],
+                                                    volumes[peakHoursList[2]:peakHoursList[2]+4],
+                                                    )]
             if VOLUME_SYSTEM:
-                VOLUME_SYSTEM = [x+y for x,y in zip(VOLUME_SYSTEM, volumes)]
+                VOLUME_SYSTEM += VOLUME_PARTIAL
+                VOLUME_TOTAL = [x+y for x,y in zip(VOLUME_TOTAL, volumes)]
             else:
-                VOLUME_SYSTEM = volumes
+                VOLUME_SYSTEM = VOLUME_PARTIAL
+                VOLUME_TOTAL = volumes
             
             if tipicidad == "Tipico":
                 tipicidadTxt = "típico"
@@ -308,6 +316,7 @@ def histogramas_vehiculares(subareaPath: str) -> str:
             docTemplate.save(finalPath)
             wordsByTipicidad[tipicidad].append(finalPath)
             countImages += 1
+        totalVolumes[tipicidad] = VOLUME_TOTAL
         systemVolumes[tipicidad] = VOLUME_SYSTEM
 
     #Volúmenes totales
@@ -324,15 +333,16 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         }
     }
 
+    for tipicidad, VOLUME_TOTAL in totalVolumes.items():
+        volumesByStages[tipicidad]["Mañana"] = sum(VOLUME_TOTAL[0:14])
+        volumesByStages[tipicidad]["Tarde"]  = sum(VOLUME_TOTAL[14:28])
+        volumesByStages[tipicidad]["Noche"] = sum(VOLUME_TOTAL[28:])
+
     for tipicidad, VOLUME in systemVolumes.items():
         if tipicidad == "Tipico":
             sumvoltip = sum(VOLUME)
         else:
             sumvolati = sum(VOLUME)
-
-        volumesByStages[tipicidad]["Mañana"] = sum(VOLUME[0:14])
-        volumesByStages[tipicidad]["Tarde"]  = sum(VOLUME[14:28])
-        volumesByStages[tipicidad]["Noche"] = sum(VOLUME[28:])
 
     maxStageByTipicidad = {}
     for tipicidad, stages in volumesByStages.items():
@@ -359,8 +369,8 @@ def histogramas_vehiculares(subareaPath: str) -> str:
     }
 
     separations = [14,14,14]
-    increments = [6.5, 12, 17.5]
-    for tipicidad, VOLUME in systemVolumes.items():
+    increments = [6.25, 11.75, 17.25]
+    for tipicidad, VOLUME in totalVolumes.items():
         peakHoursList = []
         with open(txtPaths[tipicidad], 'r') as file:
             reader = csv.reader(file, delimiter='\t')
@@ -486,9 +496,3 @@ def histogramas_peatonales(subareaPath: str) -> str:
         histogramaPathByTipicidad[key] = histogramaDocx
 
     return histogramaPathByTipicidad["Tipico"], histogramaPathByTipicidad["Atipico"]
-
-# if __name__ == '__main__':
-#     subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-#     A, B = histogramas_peatonales(subareaPath)
-#     print(A)
-#     print(B)

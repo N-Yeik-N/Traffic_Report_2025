@@ -101,7 +101,7 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
 
 def _create_table(sigs_info, tipicidad, tablasPath) -> None:
     doc = Document()
-    sig_info_0 = sigs_info[0]
+    sig_info_0 = sigs_info[2] #HPM
     greens_0 = sig_info_0['greens']
     len_greens =len(greens_0)
 
@@ -140,7 +140,10 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
     for row in table.rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
+                try:
+                    run = paragraph.runs[0]
+                except:
+                    continue
                 run.font.name = 'Arial Narrow'
                 run.font.size = Pt(11)
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
@@ -216,7 +219,3 @@ def create_table18(subarea_path) -> None:
     _combine_all_docx(filePathMaster, filePathList, programPath)
 
     return programPath
-
-if __name__ == '__main__':
-    path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 099"
-    create_table18(path)

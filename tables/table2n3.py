@@ -460,7 +460,7 @@ def create_tables2n3(pathSubarea: str):
     with open(peakhourstip_path, "w") as file:
         file.write(contentTipico)
 
-    contentTipico = f"Morning:\t{peakHours['Tipico']['Morning']/4}\nEvening:\t{peakHours['Tipico']['Evening']/4}\nNight:\t{peakHours['Tipico']['Night']/4}"
+    contentTipico = f"Morning:\t{peakHours['Atipico']['Morning']/4}\nEvening:\t{peakHours['Atipico']['Evening']/4}\nNight:\t{peakHours['Atipico']['Night']/4}"
     peakhoursati_path = pathSubarea / "Tablas" / "PeakHoursAtipico.txt"
     with open(peakhoursati_path, "w") as file:
         file.write(contentTipico)
