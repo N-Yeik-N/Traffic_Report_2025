@@ -1,17 +1,26 @@
 import json
 import pandas as pd
 from docx import Document
-from docx.enum.section import WD_ORIENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt, Cm
+from docx.shared import Pt, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_ALIGN_VERTICAL
 import os
 from docxcompose.composer import Composer
 from docxtpl import DocxTemplate
-from unidecode import unidecode
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import qn, nsdecls
+
+def get_color_by_los(los: str) -> str:
+    colores = {
+        "A": "00FF00", # Verde
+        "B": "ADFF2F", # Verde amarillento
+        "C": "FFFF00", # Amarillo
+        "D": "FFA500", # Naranja
+        "E": "FF4500", # Naranja rojizo
+        "F": "FF0000", # Rojo
+    }
+    return colores.get(los, "FFFFFF") #Blanco por defecto
 
 dictNames = {
     "HVMAD": "Hora Valle Madrugada",
@@ -23,6 +32,51 @@ dictNames = {
     "HPN": "Hora Punta Noche",
     "HVN": "Hora Valle Noche",
 }
+
+def _filling_df(df: pd.DataFrame, data: json, rowDf: int, tipicidad: str, state: str, scenario: str):
+    for _, nodeName in enumerate(data["nodes_names"]):
+        name = nodeName[0]
+        for _, listAcess in data["node_results"][name].items():
+            nombre = listAcess["Nombre"]
+            volumen = int(float(listAcess["Numero de Vehiculos"]))
+            cola_prom = listAcess["Longitud de Cola Prom."]
+            cola_max = listAcess["Longitud de Cola Max."]
+            paradas = listAcess["Demora en Paradas Prom."]
+            demora = listAcess["Demora Promedio"]
+            los = listAcess["LOS"]
+            df.loc[rowDf] = [name, nombre, volumen, cola_prom, cola_max, paradas, demora, los, tipicidad.capitalize(), state, scenario]
+            rowDf += 1
+
+    return rowDf, df
+
+def _filling_df2(df: pd.DataFrame, data: json, rowDf: int, tipicidad: str, state: str, scenario: str):
+    for number, dictDatos in data["vehicle_performance"].items():
+        simrun = number
+        delayavg = dictDatos["DelayAvg"]
+        delaystopavg = dictDatos["DelayStopAvg"]
+        speedavg = dictDatos["SpeedAvg"]
+        stopsavg = dictDatos["StopsAvg"]
+        vehact = dictDatos["VehAct"]
+        veharr = dictDatos["VehArr"]
+        demandlatent = dictDatos["DemandLatent"]
+        df.loc[rowDf] = [state, simrun, delayavg, delaystopavg, speedavg, stopsavg, vehact, veharr, demandlatent, tipicidad.capitalize(), scenario]
+        rowDf += 1
+
+    return rowDf, df
+
+def _filling_df3(df: pd.DataFrame, data: json, rowDf: int, tipicidad: str, state: str, scenario: str):
+    for number, dictDatos in data["pedestrian_performance"].items():
+        simrun = number
+        densavg = dictDatos["DensAvg"]
+        flowavg = dictDatos["FlowAvg"]
+        normspeedavg = dictDatos["NormSpeedAvg"]
+        speedavg = dictDatos["SpeedAvg"]
+        stoptmavg = dictDatos["StopTmAvg"]
+        travtmavg = dictDatos["TravTmAvg"]
+        df.loc[rowDf] = [state, simrun, densavg, flowavg, normspeedavg, speedavg, stoptmavg, travtmavg, tipicidad.capitalize(), scenario]
+        rowDf += 1
+        
+    return rowDf, df
 
 def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
     number_of_sections = len(filePathsList)
@@ -62,17 +116,6 @@ def _align_content(table) -> None:
         shade_obj.set(qn('w:fill'),'B4C6E7')
         table_cell_properties.append(shade_obj)
 
-def _create_final_tables(subareaPath, finalName, listContent):
-    resultTablesPath = os.path.join(subareaPath, "Tablas", finalName)
-    if len(listContent) > 1:
-        filePathMaster = listContent[0]
-        filePathList = listContent[1:]
-        _combine_all_docx(filePathMaster, filePathList, resultTablesPath)
-    else:
-        resultTablesPath = listContent[0]
-
-    return resultTablesPath
-
 NODES_TOTRES = [
     "Nodo",
     "VehDelay\n(Avg,Avg,All)",
@@ -83,8 +126,37 @@ NODES_TOTRES = [
     "LOS Value\n(Avg,Total,All)",
 ]
 
-def read_json(jsonPathActual, jsonPathOutputBase, jsonPathOutputProyectado,subareaPath, name, tipicidad) -> None:
+def _read_folders(subareaPath, folderName):
+    contentByFolder = {
+            "HPM": {
+                "Tipico": None,
+                "Atipico": None,
+            },
+            "HPT": {
+                "Tipico": None,
+                "Atipico": None,
+            },
+            "HPN": {
+                "Tipico": None,
+                "Atipico": None,
+            },
+        }
 
+    folderPath = os.path.join(subareaPath, folderName)
+
+    if os.path.exists(folderPath):
+        for tipicidad in ["Tipico", "Atipico"]:
+            tipicidadFolder = os.path.join(folderPath, tipicidad)
+            tipicidadContent = os.listdir(tipicidadFolder)
+            tipicidadContent = [file for file in tipicidadContent if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
+
+            for scenario in ["HPM", "HPT", "HPN"]:
+                jsonPath = os.path.join(tipicidadFolder, scenario, "table.json")
+                contentByFolder[scenario][tipicidad] = jsonPath
+
+    return contentByFolder
+
+def result_nodos(jsonPathActual, jsonPathOutputBase, jsonPathOutputProyectado, scenario, tipicidad, df, rowDf) -> None:
     if jsonPathActual:
         with open(jsonPathActual, 'r') as file:
             data = json.load(file)
@@ -97,527 +169,459 @@ def read_json(jsonPathActual, jsonPathOutputBase, jsonPathOutputProyectado,subar
         with open(jsonPathOutputProyectado, 'r') as file3:
             data3 = json.load(file3)
 
-    #################################
-    # Resultados vehiculares global #
-    #################################
-
-    doc = Document()
-    table = doc.add_table(rows = 1, cols = len(data['vehicle_performance']['Avg'])+1+1)
-
-    #Writing headers
-    table.cell(0,1).text = "SimRun"
-    for i, elem in enumerate(data['vehicle_performance']['Avg']):
-        table.cell(0,i+2).text = f'{elem}'
-
-    #Actual
+    #Creating dataframe
     if jsonPathActual:
-        for i,num_runs in enumerate(data['vehicle_performance']): #Start row = 1
-            new_row  = table.add_row()
-            new_row.cells[1].text = num_runs
-            for j,attribute in enumerate(data['vehicle_performance'][num_runs]):
-                try:
-                    new_row.cells[j+2].text = str(int(data['vehicle_performance'][num_runs][attribute]))
-                except TypeError:
-                    new_row.cells[j+2].text = str(0)
-            last_row_actual = i
-
-    #Output Base
+        rowDf, df = _filling_df(df, data, rowDf, tipicidad, "Actual", scenario)
     if jsonPathOutputBase:
-        for i,num_runs in enumerate(data2['vehicle_performance']): #Start row = 1
-            new_row  = table.add_row()
-            new_row.cells[1].text = num_runs
-            for j,attribute in enumerate(data2['vehicle_performance'][num_runs]):
-                try:
-                    new_row.cells[j+2].text = str(int(data2['vehicle_performance'][num_runs][attribute]))
-                except TypeError:
-                    new_row.cells[j+2].text = str(0)
-            last_row_base = i
+        rowDf, df = _filling_df(df, data2, rowDf, tipicidad, "Propuesta Base", scenario)
+    if jsonPathOutputProyectado:
+        rowDf, df = _filling_df(df, data3, rowDf, tipicidad, "Propuesta Proyectada", scenario)
+            
+    return rowDf, df
+
+def result_vehicular(jsonPathActual, jsonPathOutputBase, jsonPathOutputProyectado, scenario, tipicidad, df, rowDf) -> None:
+    if jsonPathActual:
+        with open(jsonPathActual, 'r') as file:
+            data = json.load(file)
+
+    if jsonPathOutputBase:
+        with open(jsonPathOutputBase, 'r') as file2:
+            data2 = json.load(file2)
 
     if jsonPathOutputProyectado:
-        for i,num_runs in enumerate(data3['vehicle_performance']): #Start row = 1
-            new_row  = table.add_row()
-            new_row.cells[1].text = num_runs
-            for j,attribute in enumerate(data3['vehicle_performance'][num_runs]):
-                try:
-                    new_row.cells[j+2].text = str(int(data3['vehicle_performance'][num_runs][attribute]))
-                except TypeError:
-                    new_row.cells[j+2].text = str(0)
-            last_row_proyectado = i
+        with open(jsonPathOutputProyectado, 'r') as file3:
+            data3 = json.load(file3)
 
-    last_row_base += last_row_actual
-    last_row_proyectado += last_row_base
+    #Creating dataframe
+    if jsonPathActual:
+        rowDf, df = _filling_df2(df, data, rowDf, tipicidad, "Actual", scenario)
+    if jsonPathOutputBase:
+        rowDf, df = _filling_df2(df, data2, rowDf, tipicidad, "Propuesta Base", scenario)
+    if jsonPathOutputProyectado:
+        rowDf, df = _filling_df2(df, data3, rowDf, tipicidad, "Propuesta Proyectada", scenario)
 
-    table.cell(0,0).text = "Escenarios"
-    #Actual
-    table.cell(1,0).text = "Actual"
-    table.cell(1,0).merge(table.cell(last_row_actual+1,0))
-    #Output Base
-    table.cell(last_row_actual+2,0).text = "Propuesto Base"
-    table.cell(last_row_actual+2,0).merge(table.cell(last_row_base+2,0))
-    #Output Proyectado
-    table.cell(last_row_base+3,0).text = "Propuesto Proyectado"
-    table.cell(last_row_base+3,0).merge(table.cell(last_row_proyectado+3,0))
+    return rowDf, df
 
-    _align_content(table)
+def result_peatonal(jsonPathActual, jsonPathOutputBase, jsonPathOutputProyectado, scenario, tipicidad, df, rowDf) -> None:
+    if jsonPathActual:
+        with open(jsonPathActual, 'r') as file:
+            data = json.load(file)
 
-    table.style = 'Table Grid'
+    if jsonPathOutputBase:
+        with open(jsonPathOutputBase, 'r') as file2:
+            data2 = json.load(file2)
 
-    vehicularResultPath = os.path.join(subareaPath, "Tablas", f"vehicularResults_{name}_{unidecode(tipicidad)}.docx")
-    doc.save(vehicularResultPath)
-    new_text = f"Rendimiento de vehículos de la red en la {dictNames[name]} día {tipicidad.lower()}"
-    vehicularResultPathRef = _generate_table_ref(vehicularResultPath, new_text)
+    if jsonPathOutputProyectado:
+        with open(jsonPathOutputProyectado, 'r') as file3:
+            data3 = json.load(file3)
 
-    ################################
-    # Resultados peatonales global #
-    ################################
+    #Creating dataframe
+    if jsonPathActual:
+        rowDf, df = _filling_df3(df, data, rowDf, tipicidad, "Actual", scenario)
+    if jsonPathOutputBase:
+        rowDf, df = _filling_df3(df, data2, rowDf, tipicidad, "Propuesta Base", scenario)
+    if jsonPathOutputProyectado:
+        rowDf, df = _filling_df3(df, data3, rowDf, tipicidad, "Propuesta Proyectada", scenario)
 
+    return rowDf, df
+
+def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subareaPath: str):
     doc = Document()
-    table = doc.add_table(rows=1, cols=len(data['pedestrian_performance']['Avg'])+1+1)
+    table = doc.add_table(rows=1, cols=8)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     #Writing headers
-    table.cell(0,1).text = "SimRun"
-    for i, elem in enumerate(data['pedestrian_performance']['Avg']):
-        table.cell(0,i+2).text = f'{elem}'
+    headers = [
+        "Inters.\nEscenario", "Nombre de Acceso",
+        "Volumen\n(veh/h)", "Long. de Cola Prom.\n(m)", "Long. de Cola Max.\n(m)",
+        "Demora por Paradas\n(s/veh)", "Demora\n(s/veh)", "LOS\n(A-F)"
+        ]
     
-    #Actual
-    if jsonPathActual:
-        for i, num_runs in enumerate(data['pedestrian_performance']):
-            new_row = table.add_row()
-            new_row.cells[1].text = num_runs
-            for j, attribute in enumerate(data['pedestrian_performance'][num_runs]):
-                try:
-                    new_row.cells[j+2].text = str(round(float(data['pedestrian_performance'][num_runs][attribute]),4))
-                except TypeError:
-                    new_row.cells[j+2].text = str(0)
-            last_row_actual = i
+    for i, header in enumerate(headers):
+        table.cell(0, i).text = header
 
-    #Output Base
-    if jsonPathOutputBase:
-        for i, num_runs in enumerate(data2['pedestrian_performance']):
-            new_row = table.add_row()
-            new_row.cells[1].text = num_runs
-            for j, attribute in enumerate(data2['pedestrian_performance'][num_runs]):
-                try:
-                    new_row.cells[j+2].text = str(round(float(data2['pedestrian_performance'][num_runs][attribute]),4))
-                except TypeError:
-                    new_row.cells[j+2].text = str(0)
-            last_row_base = i
+    codigo = df["Intersección"].unique().tolist()[0]
 
-    #Output Proyectado
-    if jsonPathOutputProyectado:
-        for i, num_runs in enumerate(data3['pedestrian_performance']):
-            new_row = table.add_row()
-            new_row.cells[1].text = num_runs
-            for j, attribute in enumerate(data3['pedestrian_performance'][num_runs]):
-                try:
-                    new_row.cells[j+2].text = str(round(float(data3['pedestrian_performance'][num_runs][attribute]),4))
-                except TypeError:
-                    new_row.cells[j+2].text = str(0)
-            last_row_proyectado = i   
+    dfActual = df[df["State"] == "Actual"].reset_index(drop=True)
+    dfBase = df[df["State"] == "Propuesta Base"].reset_index(drop=True)
+    dfProyectado = df[df["State"] == "Propuesta Proyectada"].reset_index(drop=True)
 
-    last_row_base += last_row_actual
-    last_row_proyectado += last_row_base
+    start = 1
+    for j in range(dfActual.shape[0]):
+        newRow = table.add_row()
+        for i, column in enumerate(["Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax", "StopDelay", "Delay", "LOS"]):
+            if i == 0: continue
+            newRow.cells[i].text = str(dfActual.loc[j, column])
+            if column == "LOS":
+                color_hex = get_color_by_los(str(dfActual.loc[j, column]))
+                shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
+                newRow.cells[i]._element.get_or_add_tcPr().append(shading_elm)
 
-    table.cell(0,0).text = "Escenarios"
-    #Actual
-    table.cell(1,0).text = "Actual"
-    table.cell(1,0).merge(table.cell(last_row_actual+1, 0))
-    #Output Base
-    table.cell(last_row_actual+2,0).text = "Propuesto Base"
-    table.cell(last_row_actual+2,0).merge(table.cell(last_row_base+2,0))
-    #Output Proyectado
-    table.cell(last_row_base+3,0).text = "Propuesto Proyectado"
-    table.cell(last_row_base+3,0).merge(table.cell(last_row_proyectado+3,0))
+    end = dfActual.shape[0] + start -1
+
+    table.cell(start, 0).text = dfActual.iloc[0, 0] + "\nActual"
+    table.cell(start, 0).merge(table.cell(end, 0))
+
+    start = end+1
+    for j in range(dfBase.shape[0]):
+        newRow = table.add_row()
+        for i, column in enumerate(["Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax", "StopDelay", "Delay", "LOS"]):
+            if i == 0: continue
+            newRow.cells[i].text = str(dfBase.loc[j, column])
+            if column == "LOS":
+                color_hex = get_color_by_los(str(dfBase.loc[j, column]))
+                shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
+                newRow.cells[i]._element.get_or_add_tcPr().append(shading_elm)
+    end = dfBase.shape[0] + start - 1
+
+    table.cell(start, 0).text = dfBase.iloc[0,0] + "\nPropuesta\nBase"
+    table.cell(start, 0).merge(table.cell(end, 0))
+
+    start = end+1  
+    for j in range(dfProyectado.shape[0]):
+        newRow = table.add_row()
+        for i, column in enumerate(["Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax", "StopDelay", "Delay", "LOS"]):
+            if i == 0: continue
+            newRow.cells[i].text = str(dfProyectado.loc[j, column])
+            if column == "LOS":
+                color_hex = get_color_by_los(str(dfProyectado.loc[j, column]))
+                shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
+                newRow.cells[i]._element.get_or_add_tcPr().append(shading_elm)
+    end = dfProyectado.shape[0] + start - 1
+
+    table.cell(start, 0).text = dfProyectado.iloc[0,0] + "\nPropuesta\nProyectada"
+    table.cell(start, 0).merge(table.cell(end, 0))
+
+    #Aesthetics
+    _align_content(table)
+
+    for selected_row in [0]:
+        for cell in table.rows[selected_row].cells:
+            for paragraph in cell.paragraphs:
+                run = paragraph.runs[0]
+                run.font.bold = True
+
+    for row in table.rows:
+        for cell in row.cells:
+            for paragraph in cell.paragraphs:
+                run = paragraph.runs[0]
+                run.font.name = 'Arial Narrow'
+                run.font.size = Pt(9)
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    for id, x in zip([1],[1]):
+        for cell in table.columns[id].cells:
+            cell.width = Inches(x)
+
+    table.style = 'Table Grid'
+
+    #Saving table
+    result_nodo_path = os.path.join(subareaPath, "Tablas", f"nodos_{tipicidad}_{scenario}_{codigo}.docx")
+    doc.save(result_nodo_path)
+    new_text = f"Resultados de la intersección {codigo} en la {dictNames[scenario].lower()} del día {tipicidad.lower()}"
+    resultNode = _generate_table_ref(result_nodo_path, new_text)
+
+    return resultNode
+
+def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, subareaPath: str):
+    df = df.reset_index(drop=True)
+
+    doc = Document()
+    table = doc.add_table(rows = 1, cols = 9)
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    headers = [
+        "Escenarios", "Num. Sim.", "Demora\nPromedio", "Demora\nParadas\nPromedio", "Velocidad\nPromedio",
+        "Paradas\nPromedio", "Veh.\nAct.", "Veh.\nArr.", "Demora\nLatente"
+    ]
+    
+    for i, header in enumerate(headers):
+        table.cell(0, i).text = header
+
+    for j in range(df.shape[0]):                                                                                                                
+        newRow = table.add_row()
+        for i, column in enumerate([
+            "Escenario", "SimRun", "DelayAvg", "DelayStopAvg", "SpeedAvg",
+            "StopsAvg", "VehAct", "VehArr", "DemandLatent"
+        ]):
+            if i == 0: continue
+            if column == "SimRun":
+                newRow.cells[i].text = str(df.loc[j, column])
+            else:
+                newRow.cells[i].text = str(round(float(df.loc[j, column]),4))
+    
+    counts = df["Escenario"].value_counts()
+
+    countActual = counts["Actual"]
+    countBase = counts["Propuesta Base"]
+    countProyectada = counts["Propuesta Proyectada"]
+
+    if  countActual > 0:
+        table.cell(1,0).text = "Actual"
+        table.cell(1,0).merge(table.cell(12,0))
+
+    if  countBase > 0:
+        table.cell(13,0).text = "Propuesta Base"
+        table.cell(13,0).merge(table.cell(24,0))
+
+    if countProyectada > 0:
+        table.cell(25,0).text = "Propuesta Proyectada"
+        table.cell(25,0).merge(table.cell(36,0))
 
     _align_content(table)
 
+    for selected_row in [0]:
+        for cell in table.rows[selected_row].cells:
+            for paragraph in cell.paragraphs:
+                run = paragraph.runs[0]
+                run.font.bold = True
+
+    for row in table.rows:
+        for cell in row.cells:
+            for paragraph in cell.paragraphs:
+                run = paragraph.runs[0]
+                run.font.name = 'Arial Narrow'
+                run.font.size = Pt(9)
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
     table.style = 'Table Grid'
-    pedestrianResultPath = os.path.join(subareaPath, "Tablas", f"pedestrianResults_{name}_{unidecode(tipicidad)}.docx")
-    doc.save(pedestrianResultPath)
-    new_text = f"Rendimiento de peatones de la red en la {dictNames[name]} día {tipicidad.lower()}"
-    pedestrianResultPathRef = _generate_table_ref(pedestrianResultPath, new_text)
 
-    ##########################################
-    # Resultados de rendimiento de los nodos #
-    ##########################################
+    #Saving tableq
+    result_vehicular_path = os.path.join(subareaPath, "Tablas", f"vehicular_{tipicidad}_{scenario}.docx")
+    doc.save(result_vehicular_path)
+    new_text = f"Rendimiento de vehículos de la red en la {dictNames[scenario].lower()} día {tipicidad.lower()}"
+    resultVehicular = _generate_table_ref(result_vehicular_path, new_text)
 
-    #********** ACTUAL VALUES **********
+    return resultVehicular
 
-    #Computing number of columns
-    jumpRows = []
-    nodeNames = []
-    for nodeName in data["node_results"]:
-        jumpRows.append(len(data["node_results"][nodeName]))
-        nodeNames.append(nodeName)
-    
+def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, subareaPath: str) -> str:
+    df = df.reset_index(drop=True)
+
     doc = Document()
     table = doc.add_table(rows = 1, cols = 8)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    table.cell(0,0).text = "Indicadores de Evaluación"
-    table.cell(0,0).merge(table.cell(0,1))
+    headers = [
+        "Escenarios", "Num. Sim", "Dens. Prom.", "Flujo Prom.", "Vel. Norm. Prom.", "Vel. Prom.", "Tiempo Parada Prom.", "Tiempo Viaje Prom."
+    ]
 
-    for i, indicator in enumerate(["Volumen\n(veh)", "Long. de Cola Prom.\n(m)", "Long. de Cola Máx.\n(m)", "Demora por Paradas\n(s/veh)", "Demora\n(s/veh)", "LOS\n(A-F)"]):
-        table.cell(0, i+2).text = indicator
+    for i, header in enumerate(headers):
+        table.cell(0,i).text = header
 
-    for nodeName in data["node_results"]:
-        for _, indicatorList in data["node_results"][nodeName].items():
-            newRow = table.add_row()
-            sentido = indicatorList["Sentido"].split("-")[0]
-            nameTable = indicatorList["Nombre"]+f"\n({sentido})"
-            newRow.cells[1].text = nameTable
-            newRow.cells[2].text = str(int(float(indicatorList['Numero de Vehiculos'])))
-            newRow.cells[3].text = indicatorList['Longitud de Cola Prom.']
-            newRow.cells[4].text = indicatorList['Longitud de Cola Max.']
-            newRow.cells[5].text = indicatorList['Demora en Paradas Prom.']
-            newRow.cells[6].text = indicatorList['Demora Promedio']
-            newRow.cells[7].text = indicatorList['LOS']
+    for j in range(df.shape[0]):
+        newRow = table.add_row()
+        for i, column in enumerate([
+            "Escenario", "SimRun", "DensAvg", "FlowAvg", "NormSpeedAvg", "SpeedAvg", "StopTmAvg", "TravTmAvg"
+        ]):
+            if i == 0: continue
+            if column == "SimRun":
+                newRow.cells[i].text = str(df.loc[j, column])
+            else:
+                newRow.cells[i].text = str(round(float(df.loc[j, column]),4))
 
-    rowNum = 1
-    for nodeName, jump in zip(nodeNames, jumpRows):
-        if rowNum == 1:
-            table.cell(rowNum, 0).text = nodeName
-            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
-            rowNum += jump
-        else:
-            table.cell(rowNum, 0).text = nodeName
-            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
-            rowNum += jump
+    counts = df["Escenario"].value_counts()
 
-    #Bond
-    for i in range(len(table.columns)):
-        cell = table.cell(0,i)
-        for paragraph in cell.paragraphs:
-            run = paragraph.runs[0]
-            run.font.bold = True
+    countActual = counts["Actual"]
+    countBase = counts["Propuesta Base"]
+    countProyectada = counts["Propuesta Proyectada"]
+
+    if  countActual > 0:
+        table.cell(1,0).text = "Actual"
+        table.cell(1,0).merge(table.cell(12,0))
+
+    if  countBase > 0:
+        table.cell(13,0).text = "Propuesta Base"
+        table.cell(13,0).merge(table.cell(24,0))
+
+    if countProyectada > 0:
+        table.cell(25,0).text = "Propuesta Proyectada"
+        table.cell(25,0).merge(table.cell(36,0))
 
     _align_content(table)
 
-    #Width
-    for idColumn, widthColumn in zip([0, 1, 2, 6, 7], [1.2, 4.0, 1.5, 1.5, 1.5]):
-        for cell in table.columns[idColumn].cells:
-            cell.width = Cm(widthColumn)
+    for selected_row in [0]:
+        for cell in table.rows[selected_row].cells:
+            for paragraph in cell.paragraphs:
+                run = paragraph.runs[0]
+                run.font.bold = True
+
+    for row in table.rows:
+        for cell in row.cells:
+            for paragraph in cell.paragraphs:
+                run = paragraph.runs[0]
+                run.font.name = 'Arial Narrow'
+                run.font.size = Pt(9)
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     table.style = 'Table Grid'
 
-    nodeResultActualPath = os.path.join(subareaPath, "Tablas", f"nodeResults_{name}_{unidecode(tipicidad)}_actual.docx")
-    doc.save(nodeResultActualPath)
-    new_text = f"Resultados actuales de los nodos en la {dictNames[name]} del día {tipicidad.lower()}"
-    nodeResultActualPathRef = _generate_table_ref(nodeResultActualPath, new_text)
+    #Saving tableq
+    result_peatonal_path = os.path.join(subareaPath, "Tablas", f"peatonal_{tipicidad}_{scenario}.docx")
+    doc.save(result_peatonal_path)
+    new_text = f"Rendimiento de peatones de la red en la {dictNames[scenario].lower()} día {tipicidad.lower()}"
+    resultPeatonal = _generate_table_ref(result_peatonal_path, new_text)
 
-    #********** OUTPUT BASE VALUES **********
+    return resultPeatonal
 
-    #Computing number of columns
-    jumpRows = []
-    nodeNames = []
-    for nodeName in data2["node_results"]:
-        jumpRows.append(len(data2["node_results"][nodeName]))
-        nodeNames.append(nodeName)
+def generate_results(subareaPath: str) -> list[str]:
+    df = pd.DataFrame(
+        columns= [
+            "Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax",
+            "StopDelay", "Delay", "LOS", "Tipicidad", "State", "Scenario"
+        ]
+    )
     
-    doc = Document()
-    table = doc.add_table(rows = 1, cols = 8)
-    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    df2 = pd.DataFrame(
+        columns=[
+            "Escenario", "SimRun", "DelayAvg", "DelayStopAvg", "SpeedAvg", "StopsAvg", "VehAct", "VehArr", "DemandLatent", "Tipicidad", "Scenario"
+        ]
+    )
 
-    table.cell(0,0).text = "Indicadores de Evaluación"
-    table.cell(0,0).merge(table.cell(0,1))
+    df3 = pd.DataFrame(
+        columns=[
+            "Escenario", "SimRun", "DensAvg", "FlowAvg", "NormSpeedAvg", "SpeedAvg", "StopTmAvg", "TravTmAvg", "Tipicidad", "Scenario"
+        ]
+    )
 
-    for i, indicator in enumerate(["Volumen\n(veh)", "Long. de Cola Prom.\n(m)", "Long. de Cola Máx.\n(m)", "Demora por Paradas\n(s/veh)", "Demora\n(s/veh)", "LOS\n(A-F)"]):
-        table.cell(0, i+2).text = indicator
+    #Reading Folders
+    actualContent = _read_folders(subareaPath, "Actual")
+    outputbaseContent = _read_folders(subareaPath, "Output_Base")
+    outputproyectadoContent = _read_folders(subareaPath, "Output_Proyectado")
 
-    for nodeName in data2["node_results"]:
-        for _, indicatorList in data2["node_results"][nodeName].items():
-            newRow = table.add_row()
-            sentido = indicatorList["Sentido"].split("-")[0]
-            nameTable = indicatorList["Nombre"]+f"\n({sentido})"
-            newRow.cells[1].text = nameTable
-            newRow.cells[2].text = str(int(float(indicatorList['Numero de Vehiculos'])))
-            newRow.cells[3].text = indicatorList['Longitud de Cola Prom.']
-            newRow.cells[4].text = indicatorList['Longitud de Cola Max.']
-            newRow.cells[5].text = indicatorList['Demora en Paradas Prom.']
-            newRow.cells[6].text = indicatorList['Demora Promedio']
-            newRow.cells[7].text = indicatorList['LOS']
+    rowDf = 0
+    rowDf2 = 0
+    rowDf3 = 0
+    for scenario in ["HPM", "HPT", "HPN"]:
+        for tipicidad in ["Tipico", "Atipico"]:
+            jsonPathActual = actualContent[scenario][tipicidad]
+            jsonPathOutputBase = outputbaseContent[scenario][tipicidad]
+            jsonPathOutputProyectado = outputproyectadoContent[scenario][tipicidad]
 
-    rowNum = 1
-    for nodeName, jump in zip(nodeNames, jumpRows):
-        if rowNum == 1:
-            table.cell(rowNum, 0).text = nodeName
-            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
-            rowNum += jump
-        else:
-            table.cell(rowNum, 0).text = nodeName
-            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
-            rowNum += jump
+            rowDf, df = result_nodos(
+                jsonPathActual,
+                jsonPathOutputBase,
+                jsonPathOutputProyectado,
+                scenario,
+                tipicidad.lower(),
+                df,
+                rowDf
+            )
+            
+            rowDf2, df2 = result_vehicular(
+                jsonPathActual,
+                jsonPathOutputBase,
+                jsonPathOutputProyectado,
+                scenario,
+                tipicidad.lower(),
+                df2,
+                rowDf2
+            )
 
-    #Bond
-    for i in range(len(table.columns)):
-        cell = table.cell(0,i)
-        for paragraph in cell.paragraphs:
-            run = paragraph.runs[0]
-            run.font.bold = True
+            rowDf3, df3 = result_peatonal(
+                jsonPathActual,
+                jsonPathOutputBase,
+                jsonPathOutputProyectado,
+                scenario,
+                tipicidad.lower(),
+                df3,
+                rowDf3
+            )
 
-    _align_content(table)
+    ########################
+    # Resultados por nodos #
+    ########################
 
-    #Width
-    for idColumn, widthColumn in zip([0, 1, 2, 6, 7], [1.2, 4.0, 1.5, 1.5, 1.5]):
-        for cell in table.columns[idColumn].cells:
-            cell.width = Cm(widthColumn)
-
-    table.style = 'Table Grid'
-
-    nodeResultBasePath = os.path.join(subareaPath, "Tablas", f"nodeResults_{name}_{unidecode(tipicidad)}_base.docx")
-    doc.save(nodeResultBasePath)
-    new_text = f"Resultados propuestos base de los nodos en la {dictNames[name]} del día {tipicidad.lower()}"
-    nodeResultBasePathRef = _generate_table_ref(nodeResultBasePath, new_text)
-
-    #********** OUTPUT PROYECTADO VALUES **********
-
-    #Computing number of columns
-    jumpRows = []
-    nodeNames = []
-    for nodeName in data3["node_results"]:
-        jumpRows.append(len(data3["node_results"][nodeName]))
-        nodeNames.append(nodeName)
-    
-    doc = Document()
-    table = doc.add_table(rows = 1, cols = 8)
-    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-    table.cell(0,0).text = "Indicadores de Evaluación"
-    table.cell(0,0).merge(table.cell(0,1))
-
-    for i, indicator in enumerate(["Volumen\n(veh)", "Long. de Cola Prom.\n(m)", "Long. de Cola Máx.\n(m)", "Demora por Paradas\n(s/veh)", "Demora\n(s/veh)", "LOS\n(A-F)"]):
-        table.cell(0, i+2).text = indicator
-
-    for nodeName in data3["node_results"]:
-        for _, indicatorList in data3["node_results"][nodeName].items():
-            newRow = table.add_row()
-            sentido = indicatorList["Sentido"].split("-")[0]
-            nameTable = indicatorList["Nombre"]+f"\n({sentido})"
-            newRow.cells[1].text = nameTable
-            newRow.cells[2].text = str(int(float(indicatorList['Numero de Vehiculos'])))
-            newRow.cells[3].text = indicatorList['Longitud de Cola Prom.']
-            newRow.cells[4].text = indicatorList['Longitud de Cola Max.']
-            newRow.cells[5].text = indicatorList['Demora en Paradas Prom.']
-            newRow.cells[6].text = indicatorList['Demora Promedio']
-            newRow.cells[7].text = indicatorList['LOS']
-
-    rowNum = 1
-    for nodeName, jump in zip(nodeNames, jumpRows):
-        if rowNum == 1:
-            table.cell(rowNum, 0).text = nodeName
-            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
-            rowNum += jump
-        else:
-            table.cell(rowNum, 0).text = nodeName
-            table.cell(rowNum, 0).merge(table.cell(rowNum+jump-1, 0))
-            rowNum += jump
-
-    #Bond
-    for i in range(len(table.columns)):
-        cell = table.cell(0,i)
-        for paragraph in cell.paragraphs:
-            run = paragraph.runs[0]
-            run.font.bold = True
-
-    _align_content(table)
-
-    #Width
-    for idColumn, widthColumn in zip([0, 1, 2, 6, 7], [1.2, 4.0, 1.5, 1.5, 1.5]):
-        for cell in table.columns[idColumn].cells:
-            cell.width = Cm(widthColumn)
-
-    table.style = 'Table Grid'
-
-    nodeResultProyectadoPath = os.path.join(subareaPath, "Tablas", f"nodeResults_{name}_{unidecode(tipicidad)}_proyectado.docx")
-    doc.save(nodeResultProyectadoPath)
-    new_text = f"Resultados propuestos proyectados de los nodos en la {dictNames[name]} del día {tipicidad.lower()}"
-    nodeResultProyectadoPathRef = _generate_table_ref(nodeResultProyectadoPath, new_text)
-
-    ######################
-    # RESULTADOS FINALES #
-    ######################
-
-    return nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef, pedestrianResultPathRef, vehicularResultPathRef
-
-def generate_results(subareaPath) -> None:
-    actualPath = os.path.join(subareaPath, "Actual")
-    outputBasePath = os.path.join(subareaPath, "Output_Base")
-    outputProyectadoPath = os.path.join(subareaPath, "Output_Proyectado")
-    listWords = {
+    results_nodes = {
         "Tipico": {
-            "Vehicular": {
-                "Nodo": [],
-                "Red": [],
-            },
-            "Peatonal": {
-                "Red": [],
-            }
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
         },
         "Atipico": {
-            "Vehicular": {
-                "Nodo": [],
-                "Red": [],
-            },
-            "Peatonal": {
-                "Red": [],
-            }
-        }
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
     }
+
+    intersecciones = df['Intersección'].unique().tolist()
     for tipicidad in ["Tipico", "Atipico"]:
-        #Actual
-        tipicidadFolderActual = os.path.join(actualPath, tipicidad)
-        tipicidadContentActual = os.listdir(tipicidadFolderActual)
-        tipicidadContentActual = [file for file in tipicidadContentActual if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
+        for turno in ["HPM", "HPT", "HPN"]:
+            listPaths = []    
+            for ints in intersecciones:
+                filtered_df = df[
+                    (df["Intersección"] == ints) & 
+                    (df["Scenario"] == "HPM") &
+                    (df["Tipicidad"] == "Tipico")
+                    ]
+                tablaPath = create_tables_nodos(filtered_df, tipicidad, turno, subareaPath)
+                listPaths.append(tablaPath)
+            
+            nodoPath = os.path.join(subareaPath, "Tablas", f"nodeResults_{tipicidad}_{turno}_REF.docx")
+            if len(listPaths) > 1:
+                filePathMaster = listPaths[0]
+                filePathList = listPaths[1:]
+                _combine_all_docx(filePathMaster, filePathList, nodoPath)
+            else:
+                nodoPath = listPaths[0]
 
-        #Output Base
-        tipicidadFolderOutputBase = os.path.join(outputBasePath, tipicidad)
-        if os.path.exists(tipicidadFolderOutputBase):
-            tipicidadContentOutputBase = os.listdir(tipicidadFolderOutputBase)
-            tipicidadContentOutputBase = [file for file in tipicidadContentOutputBase if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
-        else: tipicidadContentOutputBase = None
+            results_nodes[tipicidad][turno] = nodoPath
 
-        #Output Projected
-        tipicidadFolderOutputProyectado = os.path.join(outputProyectadoPath, tipicidad)
-        if os.path.exists(tipicidadFolderOutputProyectado):
-            tipicidadContentOutputProyectado = os.listdir(tipicidadFolderOutputProyectado)
-            tipicidadContentOutputProyectado = [file for file in tipicidadContentOutputProyectado if not file.endswith(".ini") and file in ["HPM", "HPT", "HPN"]]
-        else: tipicidadContentOutputProyectado = None
+    ########################################
+    # Resultados por rendimiento vehicular #
+    ########################################
 
-        if tipicidadContentOutputBase != None and tipicidadContentOutputProyectado != None:
-            for scenarioActual, scenarioOutputBase, scenarioOutputProyectado in zip(tipicidadContentActual, tipicidadContentOutputBase, tipicidadContentOutputProyectado):
-                checkActual = False
-                checkOutputBase = False
-                checkOutputProyectado = False
-
-                #Actual 
-                scenarioPathActual = os.path.join(tipicidadFolderActual, scenarioActual)
-                scenarioContentActual = os.listdir(scenarioPathActual)
-                if "table.json" in scenarioContentActual:
-                    jsonPathActual = os.path.join(scenarioPathActual, "table.json")
-                    checkActual = True
-
-                #Output Base
-                scenarioPathOutputBase = os.path.join(tipicidadFolderOutputBase, scenarioOutputBase)
-                scenarioContentOutputBase = os.listdir(scenarioPathOutputBase)
-                if "table.json" in scenarioContentOutputBase:
-                    jsonPathOutputBase = os.path.join(scenarioPathOutputBase, "table.json")
-                    checkOutputBase = True
-
-                #Output Proyectado
-                scenarioPathOutputProyectado = os.path.join(tipicidadFolderOutputProyectado, scenarioOutputProyectado)
-                scenarioContentOutputProyectado = os.listdir(scenarioPathOutputProyectado)
-                if "table.json" in scenarioContentOutputProyectado:
-                    jsonPathOutputProyectado = os.path.join(scenarioPathOutputProyectado, "table.json")
-                    checkOutputProyectado = True
-
-                if checkActual and checkOutputBase and checkOutputProyectado:
-                    if tipicidad == "Tipico": textTipicidad = "típico"
-                    elif tipicidad == "Atipico": textTipicidad = "atípico"
-                    nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef, pedestrianResultPathRef, vehicularResultPathRef = read_json(
-                        jsonPathActual,
-                        jsonPathOutputBase,
-                        jsonPathOutputProyectado,
-                        subareaPath,
-                        scenarioActual,
-                        textTipicidad)
-                    #Output Base
-                    listWords[tipicidad]["Vehicular"]["Nodo"].extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef])
-                    listWords[tipicidad]["Peatonal"]["Red"].extend([pedestrianResultPathRef])
-                    listWords[tipicidad]["Vehicular"]["Red"].extend([vehicularResultPathRef])
-                    #listWords.extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef, pedestrianResultPathRef, vehicularResultPathRef])
-
-
-        elif tipicidadContentOutputBase != None:
-            for scenarioActual, scenarioOutputBase in zip(tipicidadContentActual, tipicidadContentOutputBase):
-                checkActual = False
-                checkOutputBase = False
-                #Actual 
-                scenarioPathActual = os.path.join(tipicidadFolderActual, scenarioActual)
-                scenarioContentActual = os.listdir(scenarioPathActual)
-                if "table.json" in scenarioContentActual:
-                    jsonPathActual = os.path.join(scenarioPathActual, "table.json")
-                    checkActual = True
-
-                #Output Base
-                scenarioPathOutputBase = os.path.join(tipicidadFolderOutputBase, scenarioOutputBase)
-                scenarioContentOutputBase = os.listdir(scenarioPathOutputBase)
-                if "table.json" in scenarioContentOutputBase:
-                    jsonPathOutputBase = os.path.join(scenarioPathOutputBase, "table.json")
-                    checkOutputBase = True
-
-                if checkActual and checkOutputBase:
-                    if tipicidad == "Tipico": textTipicidad = "típico"
-                    elif tipicidad == "Atipico": textTipicidad = "atípico"
-                    nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef, pedestrianResultPathRef, vehicularResultPathRef = read_json(
-                        jsonPathActual,
-                        jsonPathOutputBase,
-                        None,
-                        subareaPath,
-                        scenarioActual,
-                        textTipicidad)
-                    #Output Base
-                    listWords[tipicidad]["Vehicular"]["Nodo"].extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef])
-                    listWords[tipicidad]["Peatonal"]["Red"].extend([pedestrianResultPathRef])
-                    listWords[tipicidad]["Vehicular"]["Red"].extend([vehicularResultPathRef])
-                    #listWords.extend([nodeResultActualPathRef, nodeResultBasePathRef, pedestrianResultPathRef, vehicularResultPathRef])
-
-
-        else:
-            for scenarioActual in tipicidadContentActual:
-                checkActual = False
-                checkOutputBase = False
-                #Actual 
-                scenarioPathActual = os.path.join(tipicidadFolderActual, scenarioActual)
-                scenarioContentActual = os.listdir(scenarioPathActual)
-                if "table.json" in scenarioContentActual:
-                    jsonPathActual = os.path.join(scenarioPathActual, "table.json")
-                    checkActual = True
-
-                if checkActual:
-                    if tipicidad == "Tipico": textTipicidad = "típico"
-                    elif tipicidad == "Atipico": textTipicidad = "atípico"
-                    nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef, pedestrianResultPathRef, vehicularResultPathRef = read_json(
-                        jsonPathActual,
-                        None,
-                        None,
-                        subareaPath,
-                        scenarioActual,
-                        textTipicidad)
-                    #Output Base
-                    listWords[tipicidad]["Vehicular"]["Nodo"].extend([nodeResultActualPathRef, nodeResultBasePathRef, nodeResultProyectadoPathRef])
-                    listWords[tipicidad]["Peatonal"]["Red"].extend([pedestrianResultPathRef])
-                    listWords[tipicidad]["Vehicular"]["Red"].extend([vehicularResultPathRef])
-                    #listWords.extend([nodeResultActualPathRef, pedestrianResultPathRef, vehicularResultPathRef])
-
-    resultsPaths = {
+    results_vehicular = {
         "Tipico": {
-            "Vehicular": {
-                "Nodo": None,
-                "Red": None,
-            },
-            "Peatonal": {
-                "Red": None,
-            }
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
         },
         "Atipico": {
-            "Vehicular": {
-                "Nodo": None,
-                "Red": None,
-            },
-            "Peatonal": {
-                "Red": None,
-            }
-        }
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
     }
-    #print(listWords)
-    for tipicidad, typicalContent in listWords.items():
-        for vehicleType, vehicleContent in typicalContent.items():
-            for contentType, content in vehicleContent.items():
-                resultTablePath = _create_final_tables(subareaPath, f"results_{contentType}_{vehicleType}_{tipicidad}.docx", content)
-                resultsPaths[tipicidad][vehicleType][contentType] = resultTablePath
-        
-    return resultsPaths
 
-if __name__ == "__main__":
-    subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 099"
-    resultsPaths = generate_results(subareaPath)
+    for tipicidad in ["Tipico", "Atipico"]:
+        for turno in ["HPM", "HPT", "HPN"]:
+            filtered_df = df2[
+                (df2["Scenario"] == turno) &
+                (df2["Tipicidad"] == tipicidad)
+                ]
+    
+            vehicularResultPathRef = create_tables_vehicular(filtered_df, tipicidad, turno, subareaPath)
+            results_vehicular[tipicidad][turno] = vehicularResultPathRef
+            
+    #######################################
+    # Resultados por rendimiento peatonal #
+    #######################################
+
+    results_peatonal = {
+        "Tipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+        "Atipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+    }
+
+    for tipicidad in ["Tipico", "Atipico"]:
+        for turno in ["HPM", "HPT", "HPN"]:
+            filtered_df = df3[
+                (df3["Scenario"] == turno) &
+                (df3["Tipicidad"] == tipicidad)
+                ]
+    
+            peatonalResultPathRef = create_tables_peatonal(filtered_df, tipicidad, turno, subareaPath)
+            results_peatonal[tipicidad][turno] = peatonalResultPathRef
+
+    return results_nodes, results_vehicular, results_peatonal

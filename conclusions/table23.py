@@ -5,11 +5,22 @@ from docx.shared import Pt
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_ALIGN_VERTICAL
 import os
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import qn, nsdecls
 
 tipicoList = ["HPM", "HPT", "HPN"]
 atipicoList = ["HPM", "HPT", "HPN"]
+
+def get_color_by_los(los):
+    colores = {
+        "A": "00FF00", # Verde
+        "B": "ADFF2F", # Verde amarillento
+        "C": "FFFF00", # Amarillo
+        "D": "FFA500", # Naranja
+        "E": "FF4500", # Naranja rojizo
+        "F": "FF0000", # Rojo
+    }
+    return colores.get(los, "FFFFFF") #Blanco por defecto
 
 def _align_content(table) -> None:
     for row in table.rows:
@@ -151,27 +162,30 @@ def create_table23(subareaPath):
             #Actual
             new_row = table.add_row()
             new_row.cells[2].text = "Actual"
-            #new_row.cells[2].text = listNames[idScenario]
             new_row.cells[3].text = data['nodes_names'][j]                  #Nodo
             new_row.cells[4].text = str(int(data['nodes_totres'][j][4]))    #Número de Vehículos
             new_row.cells[5].text = str(int(data['nodes_totres'][j][3]))    #Cola Máx. Promedio
             new_row.cells[6].text = str(int(data['nodes_totres'][j][1]))    #Pare Promedio
             new_row.cells[7].text = str(int(data['nodes_totres'][j][0]))    #Demora Promedio
             new_row.cells[8].text = data['nodes_los'][j]
+            color_hex = get_color_by_los(data['nodes_los'][j])
+            shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
+            new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
             nroRow += 1
 
             #Base
             if checkBase:
                 new_row = table.add_row()
                 table.cell(nroRow-1,3).merge(table.cell(nroRow,3))
-                #table.cell(nroRow-1,2).merge(table.cell(nroRow,2))
                 new_row.cells[2].text = "Propuesto"
-                #new_row.cells[3].text = data2['nodes_names'][j]                 #Nodo
                 new_row.cells[4].text = str(int(data2['nodes_totres'][j][4]))    #Número de Vehículos
                 new_row.cells[5].text = str(int(data2['nodes_totres'][j][3]))    #Cola Máx. Promedio
                 new_row.cells[6].text = str(int(data2['nodes_totres'][j][1]))    #Pare Promedio
                 new_row.cells[7].text = str(int(data2['nodes_totres'][j][0]))    #Demora Promedio
                 new_row.cells[8].text = data2['nodes_los'][j]
+                color_hex = get_color_by_los(data2['nodes_los'][j])
+                shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
+                new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
                 nroRow += 1
 
             #Proyectado
@@ -180,12 +194,14 @@ def create_table23(subareaPath):
                 table.cell(nroRow-1,3).merge(table.cell(nroRow,3))
                 #table.cell(nroRow-1,2).merge(table.cell(nroRow,2))
                 new_row.cells[2].text = "Proyectado"
-                #new_row.cells[3].text = data2['nodes_names'][j]                 #Nodo
                 new_row.cells[4].text = str(int(data3['nodes_totres'][j][4]))    #Número de Vehículos
                 new_row.cells[5].text = str(int(data3['nodes_totres'][j][3]))    #Cola Máx. Promedio
                 new_row.cells[6].text = str(int(data3['nodes_totres'][j][1]))    #Pare Promedio
                 new_row.cells[7].text = str(int(data3['nodes_totres'][j][0]))    #Demora Promedio
                 new_row.cells[8].text = data3['nodes_los'][j]
+                color_hex = get_color_by_los(data3['nodes_los'][j])
+                shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
+                new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
                 nroRow += 1
 
         if i == 0:

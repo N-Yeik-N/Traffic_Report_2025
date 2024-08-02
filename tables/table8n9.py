@@ -191,7 +191,7 @@ def create_table9(path_subarea):
         filePathList = listParagraphPaths[1:]
         _combine_all_docx(filePathMaster, filePathList, paragraphsPath)
     else:
-        paragraphPath = listParagraphPaths[0] #TODO: TO TEST
+        paragraphPath = listParagraphPaths[0]
 
     return finalPath, paragraphsPath
 

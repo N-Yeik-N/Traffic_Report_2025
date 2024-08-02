@@ -381,32 +381,53 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(16,0).checkState()
         if checkObject: #NOTE: Results ready
             try:
-                resultsPaths = generate_results(self.path_subarea)
-                tabla_tip_veh_nodo_var = resultsPaths["Tipico"]["Vehicular"]["Nodo"]
-                tabla_tip_veh_red_var = resultsPaths["Tipico"]["Vehicular"]["Red"]
+                results_nodes, results_vehicular, results_peatonal = generate_results(self.path_subarea)
 
-                tabla_atip_veh_nodo_var = resultsPaths["Atipico"]["Vehicular"]["Nodo"]
-                tabla_atip_veh_red_var = resultsPaths["Atipico"]["Vehicular"]["Red"]
+                #Nodos
+                result_nodo_tip_hpm = doc.new_subdoc(results_nodes["Tipico"]["HPM"])
+                result_nodo_tip_hpt = doc.new_subdoc(results_nodes["Tipico"]["HPT"])
+                result_nodo_tip_hpn = doc.new_subdoc(results_nodes["Tipico"]["HPN"])
+                result_nodo_ati_hpm = doc.new_subdoc(results_nodes["Atipico"]["HPM"])
+                result_nodo_ati_hpt = doc.new_subdoc(results_nodes["Atipico"]["HPT"])
+                result_nodo_ati_hpn = doc.new_subdoc(results_nodes["Atipico"]["HPN"])
+                
+                #Vehicular
+                result_veh_tip_hpm = doc.new_subdoc(results_vehicular["Tipico"]["HPM"])
+                result_veh_tip_hpt = doc.new_subdoc(results_vehicular["Tipico"]["HPT"])
+                result_veh_tip_hpn = doc.new_subdoc(results_vehicular["Tipico"]["HPN"])
+                result_veh_ati_hpm = doc.new_subdoc(results_vehicular["Atipico"]["HPM"])
+                result_veh_ati_hpt = doc.new_subdoc(results_vehicular["Atipico"]["HPT"])
+                result_veh_ati_hpn = doc.new_subdoc(results_vehicular["Atipico"]["HPN"])
 
-                tabla_tip_pea_red_var = resultsPaths["Tipico"]["Peatonal"]["Red"]
-                tabla_atip_pea_red_var = resultsPaths["Atipico"]["Peatonal"]["Red"]
-
-                tabla_tip_veh_nodo = doc.new_subdoc(tabla_tip_veh_nodo_var)
-                tabla_tip_veh_red = doc.new_subdoc(tabla_tip_veh_red_var)
-
-                tabla_atip_veh_nodo = doc.new_subdoc(tabla_atip_veh_nodo_var)
-                tabla_atip_veh_red = doc.new_subdoc(tabla_atip_veh_red_var)
-
-                tabla_tip_pea_red = doc.new_subdoc(tabla_tip_pea_red_var)
-                tabla_atip_pea_red = doc.new_subdoc(tabla_atip_pea_red_var)
+                #Peatonal
+                result_pea_tip_hpm = doc.new_subdoc(results_peatonal["Tipico"]["HPM"])
+                result_pea_tip_hpt = doc.new_subdoc(results_peatonal["Tipico"]["HPT"])
+                result_pea_tip_hpn = doc.new_subdoc(results_peatonal["Tipico"]["HPN"])
+                result_pea_ati_hpm = doc.new_subdoc(results_peatonal["Atipico"]["HPM"])
+                result_pea_ati_hpt = doc.new_subdoc(results_peatonal["Atipico"]["HPT"])
+                result_pea_ati_hpn = doc.new_subdoc(results_peatonal["Atipico"]["HPN"])
 
                 VARIABLES.update({
-                    "tabla_tip_veh_nodo": tabla_tip_veh_nodo,
-                    "tabla_tip_veh_red": tabla_tip_veh_red,
-                    "tabla_atip_veh_nodo": tabla_atip_veh_nodo,
-                    "tabla_atip_veh_red": tabla_atip_veh_red,
-                    "tabla_tip_pea_red": tabla_tip_pea_red,
-                    "tabla_atip_pea_red": tabla_atip_pea_red,
+                    "result_nodo_tip_hpm": result_nodo_tip_hpm,
+                    "result_nodo_tip_hpt": result_nodo_tip_hpt,
+                    "result_nodo_tip_hpn": result_nodo_tip_hpn,
+                    "result_nodo_ati_hpm": result_nodo_ati_hpm,
+                    "result_nodo_ati_hpt": result_nodo_ati_hpt,
+                    "result_nodo_ati_hpn": result_nodo_ati_hpn,
+
+                    "result_veh_tip_hpm": result_veh_tip_hpm,
+                    "result_veh_tip_hpt": result_veh_tip_hpt,
+                    "result_veh_tip_hpn": result_veh_tip_hpn,
+                    "result_veh_ati_hpm": result_veh_ati_hpm,
+                    "result_veh_ati_hpt": result_veh_ati_hpt,
+                    "result_veh_ati_hpn": result_veh_ati_hpn,
+
+                    "result_pea_tip_hpm": result_pea_tip_hpm,
+                    "result_pea_tip_hpt": result_pea_tip_hpt,
+                    "result_pea_tip_hpn": result_pea_tip_hpn,
+                    "result_pea_ati_hpm": result_pea_ati_hpm,
+                    "result_pea_ati_hpt": result_pea_ati_hpt,
+                    "result_pea_ati_hpn": result_pea_ati_hpn
                     })
                 #SEND_MESSAGE = True
                 print("Tabla 20\tOK\tTablas de resultados peatonales, vehiculares y de nodos")
