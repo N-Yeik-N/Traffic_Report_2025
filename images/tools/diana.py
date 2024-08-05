@@ -10,6 +10,7 @@ def _diana(
         texto2: str,
         texto3: str,
         texto4: str,
+        texto5: str,
         path: str | Path,
 ) -> None:
     # Definir los límites de los anillos
@@ -62,6 +63,7 @@ def _diana(
     ax.text(limite_min + 1, limite_max - 4, texto2, fontsize=10, color='black', fontweight='bold')
     ax.text(limite_min + 1, limite_max - 6, texto3, fontsize=10, color='black', fontweight='bold')
     ax.text(limite_min + 1, limite_max - 8, texto4, fontsize=10, color='black', fontweight='bold')
+    ax.text(limite_min + 1, limite_max - 10, texto5, fontsize=10, color='black', fontweight='bold')
 
     # Eliminar los ejes
     ax.xaxis.set_label_position('bottom')
@@ -118,8 +120,9 @@ def create_dianas(excelPath) -> None:
         _diana(
             datos = data[1:],
             texto2 = f'Veh Type: {data[0]}',
-            texto3 = f'Muestra: {int((num_giros))}',
-            texto4 = f'GEH<5: {percentage:.1f}%',
+            texto3 = f'Total: {int(num_giros)*8}',
+            texto4 = f'Muestra: {int(num_giros)}',
+            texto5 = f'GEH<5: {percentage:.1f}%',
             path = directory,
         )
 

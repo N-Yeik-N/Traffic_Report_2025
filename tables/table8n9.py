@@ -58,22 +58,32 @@ def create_table9(path_subarea):
     rowCount = 1
     paragraphsDict = {}
     paragraphNumber = 0
-    for i, excelData in enumerate(phasesList):
+    for i, excelData in enumerate(phasesList): #TODO: Agregar solo del caso mas critico.
         listTipico = excelData.phasesData[:3]
         listCycleTipico = excelData.cycleTimeData[:3]
         startRow = rowCount
         checkFirst = True
         turnCount = 0
-        for turnList, cycleTime in zip(listTipico, listCycleTipico): #turnList = [[120,3,2], [50,3,2]]
+        for turnList, cycleTime, scenario in zip(listTipico, listCycleTipico, ["HPM", "HPT", "HPN"]): #turnList = [[120,3,2], [50,3,2]] 
             startRowCycle = rowCount
             for faseID, (verde, ambar, rojo) in enumerate(turnList): #[120, 3, 2]
+                if verde == '-':
+                    verdeValue = 0
+                else: verdeValue = verde
+                if ambar == '-':
+                    ambarValue = 0
+                else: ambarValue = ambar
+                if rojo == '-':
+                    rojoValue = 0
+                else: rojoValue = rojo
 
                 paragraphsDict[paragraphNumber] = {
                     "code": excelData.codigo,
-                    "fase": str(faseID+1),
-                    "verde": str(verde),
-                    "ambar": str(ambar),
-                    "rojo": str(rojo),
+                    "fase": "fase " + str(faseID+1),
+                    "verde": str(verdeValue),
+                    "ambar": str(ambarValue),
+                    "rojo": str(rojoValue),
+                    "scenario": scenario, 
                 }
                 paragraphNumber += 1
 
@@ -176,6 +186,7 @@ def create_table9(path_subarea):
             "tiempo_verde_act": paragraph["verde"],
             "tiempo_ambar_act": paragraph["ambar"],
             "tiempo_rojo_act": paragraph["rojo"],
+            "escenario_programacion": paragraph["scenario"],
         })
         paragraphPath = os.path.join(
             path_subarea,

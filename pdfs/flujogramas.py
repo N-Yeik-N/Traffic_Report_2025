@@ -30,11 +30,25 @@ def _read_side_volumes(excelPath: str, maxStage: str)-> dict:
     }
     for sheet in ["N", "S", "E", "O"]:
         ws = wb[sheet]
-        volByAccess[sheet] += round(sum([row[0].value for row in ws[listSlices[maxStage]]])/3, 2)
+        volByAccess[sheet] += int(sum([row[0].value for row in ws[listSlices[maxStage]]])/3)
     
     wb.close()
 
     return volByAccess
+
+def construir_texto_volumenes(volByAccess):
+    direcciones = {
+        "N": "Norte",
+        "S": "Sur",
+        "E": "Este",
+        "O": "Oeste",
+    }
+    partes = []
+
+    for acceso, nombre in direcciones.items():
+        if volByAccess.get(acceso, 0) > 0:
+            partes.append(f"el acceso {nombre} tiene un volumen vehicular de {int(volByAccess[acceso])} veh/h")
+    return ','.join(partes) + '.' if partes else ''
 
 def flujograma_vehicular(pathSubarea: str, maxStage, maxTipicidad) -> str:
     listCodes = get_codes(pathSubarea)
@@ -133,8 +147,8 @@ def create_paragraphs(subareaPath: str, maxTipicidad: str, maxStsage: str):
             if code in listCodes:
                 excelPath = os.path.join(tipicidadFolder, excelFile)
                 volByAccess = _read_side_volumes(excelPath, maxStsage)
-                for access in ["N", "S", "E", "O"]:
-                    paragraphs[code][access] = str(volByAccess[access])
+                texto_volumenes = construir_texto_volumenes(volByAccess)
+                paragraphs[code] = texto_volumenes 
 
     count = 1
     listParagraphPaths = []
@@ -142,10 +156,7 @@ def create_paragraphs(subareaPath: str, maxTipicidad: str, maxStsage: str):
         docTemplate = DocxTemplate("./templates/template_lista.docx")
         docTemplate.render({
             "codinterindividual": code,
-            "vol_norte": paragraph["N"],
-            "vol_sur": paragraph["S"],
-            "vol_este": paragraph["E"],
-            "vol_oeste": paragraph["O"],
+            "vol_by_access": paragraph,
         })
         paragraphPath = os.path.join(
             subareaPath,

@@ -42,6 +42,27 @@ def read_ped_excel(excelPath):
 
     return hourSums
 
+def read_ped_excel_and_volumes(excelPath):
+    wb = load_workbook(excelPath, read_only=True, data_only=True)
+    ws = wb['Data Peatonal']
+
+    hourSums = [row[0].value for row in ws[slice("VA20","VA83")]]
+    hourSums = [x if isinstance(x, int) else 0 for x in hourSums]
+
+    volumes = [row[0].value for row in ws[slice("UZ20","UZ83")]]
+    volumes = [x if isinstance(x, int) else 0 for x in volumes]
+
+    for _ in range(6):
+        hourSums[:0] = [0,0,0,0]
+        volumes[:0] = [0,0,0,0]
+
+    for _ in range(2):
+        hourSums.extend([0,0,0,0])
+        volumes.extend([0,0,0,0])
+    wb.close()
+
+    return hourSums, volumes
+
 def code_by_subarea(path_subarea):
     path_excel = r"data\Cronograma Vissim.xlsx"
     df = pd.read_excel(path_excel, sheet_name='Cronograma', header=0, usecols="A:E", skiprows=1)

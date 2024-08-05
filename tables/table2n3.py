@@ -1,17 +1,38 @@
 import os
 import pandas as pd
 from pathlib import Path
-from tables.tools.peakfinder import peakhour_finder, compute_ph_system
+from tables.tools.peakfinder import peakhour_finder_and_volumes, compute_ph_system
 from tables.tools.reading import *
 import re
+from dataclasses import dataclass
 
 #docx
+from docxtpl import DocxTemplate
+from docxcompose.composer import Composer
 from docx import Document
 from docx.shared import Pt, Inches, Cm
 from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
+
+    composer.save(finalPath)
+
+@dataclass
+class Paragraph:
+    tipicidad: str
+    turno: str
+    horaturno: str
+    codigo: str
+    maxvolveh: str
 
 def create_table2_vehicular(
         path_subarea: str,
@@ -423,9 +444,16 @@ def create_tables2n3(pathSubarea: str):
         "Atipico": [],
     }
 
+    totalSumCounts = [0 for _ in range(96)]
+    totalSumDict = {
+        "Tipico": totalSumCounts,
+        "Atipico": totalSumCounts,
+    }
+
     for tipicidad, listExcels in excelByTipicidad.items():
         for excelPath in listExcels:
-            excelHourInfo = peakhour_finder(excelPath)
+            excelHourInfo, sumQuarter = peakhour_finder_and_volumes(excelPath)
+            totalSumDict[tipicidad] = [x+y for x,y in zip(totalSumDict[tipicidad], sumQuarter)]
             listExcelData[tipicidad].append(excelHourInfo)
             dayData[tipicidad].append(excelHourInfo.fecha)
 
@@ -433,6 +461,12 @@ def create_tables2n3(pathSubarea: str):
         "Tipico": {},
         "Atipico": {},
     }
+
+    volSums = {
+        "Tipico": {},
+        "Atipico": {},
+    }
+
     for tipicidad, listHourData in listExcelData.items():
         #NOTE: Level: Typical o Atypical
         MORNING = []
@@ -449,9 +483,82 @@ def create_tables2n3(pathSubarea: str):
 
         peakHours[tipicidad].update({
             "Morning": hourSystem1,
-            "Evening": hourSystem2,
+            "Evening": hourSystem2,                    
             "Night": hourSystem3,
         })
+
+        #Total volumes:
+        volSum1 = int(sum(totalSumDict[tipicidad][hourSystem1:hourSystem1+4]))
+        volSum2 = int(sum(totalSumDict[tipicidad][hourSystem2:hourSystem2+4]))
+        volSum3 = int(sum(totalSumDict[tipicidad][hourSystem3:hourSystem3+4]))
+
+        volSums[tipicidad].update({
+            "Morning": volSum1,
+            "Evening": volSum2,
+            "Night": volSum3,
+        })
+
+    #Preparing paragraphs:
+    paragraph_dict = {
+        "Tipico": {
+            "Mañana": None,
+            "Tarde": None,
+            "Noche": None,
+        },
+        "Atipico": {
+            "Mañana": None,
+            "Tarde": None,
+            "Noche": None,
+        }
+    }
+
+    if len(codeBySubarea) == 1:
+        codigoTxt = codeBySubarea[0]
+    else:
+        codigoTxt = ', '.join(codeBySubarea[:-1]) + ' y ' + codeBySubarea[-1]
+
+    for tipicidad in ["Tipico", "Atipico"]:
+        for hour, hourEnglish in zip(["Mañana", "Tarde", "Noche"], ["Morning", "Evening", "Night"]):
+            paragraph_dict[tipicidad][hour] = Paragraph(
+                tipicidad = tipicidad,
+                turno = hour,
+                horaturno = str2hour(peakHours[tipicidad][hourEnglish]),
+                codigo = codigoTxt,
+                maxvolveh = str(volSums[tipicidad][hourEnglish]),
+            )
+
+    countParagraphs = 0
+    listParagraphsPaths = []
+    for tipicidad in ["Tipico", "Atipico"]:
+        for hour in ["Mañana", "Tarde", "Noche"]:
+            docTemplate = DocxTemplate("./templates/template_lista3.docx")
+            dataParagraph = paragraph_dict[tipicidad][hour]
+            if tipicidad == "Tipico":
+                tipicidadtxt = "típico"
+            else:
+                tipicidadtxt = "atípico"
+            docTemplate.render({
+                "tipicidad_ph": tipicidadtxt,
+                "turno_ph": dataParagraph.turno.lower(),
+                "horaturno": dataParagraph.horaturno,
+                "codintersection_ph": dataParagraph.codigo,
+                "maxvolveh": dataParagraph.maxvolveh
+            })
+            finalPath = os.path.join(
+                pathSubarea, "Tablas", f"paragraph_ph_{countParagraphs}.docx"
+            )
+            docTemplate.save(finalPath)
+            listParagraphsPaths.append(finalPath)
+            countParagraphs += 1
+
+    filePathMaster = listParagraphsPaths[0]
+    filePathList = listParagraphsPaths[1:]
+    paragraph_ph_path = os.path.join(pathSubarea, "Tablas", "paragraph_ph.docx")
+    _combine_all_docx(filePathMaster, filePathList, paragraph_ph_path)
+
+    #######################
+    # Creating paragraphs #
+    #######################
 
     #Creating .txt with peakhours:
     pathSubarea = Path(pathSubarea)
@@ -484,16 +591,24 @@ def create_tables2n3(pathSubarea: str):
 
     pattern = r"([A-Z]+-[0-9]+)"
 
+
+    volPedDict = {
+        "Tipico": totalSumCounts,
+        "Atipico": totalSumCounts,
+    }
+
     for tipicidad, listExcels in excelByTipicidad.items():
         for excelPath in listExcels:
             excelName = os.path.split(excelPath)[1][:-5]
             excelCodigo = re.search(pattern, excelName).group(1)
 
-            columVolumes = read_ped_excel(excelPath)
+            columVolumes, volumesPed = read_ped_excel_and_volumes(excelPath)
             data = PedestrianVolumes(
                 codigo = excelCodigo,
                 volTotal = columVolumes,
             )
+
+            volPedDict[tipicidad] = [x+y for x, y in zip(volPedDict[tipicidad], volumesPed)]
             listPedData[tipicidad].append(data)
 
     listPeakHoursPed = { #TODO: Check if this is correct
@@ -518,6 +633,62 @@ def create_tables2n3(pathSubarea: str):
                     )
                     listPeakHoursPed[tipicidad].append(data)
                     break
+
+    ######################################
+    # Creating paragraphs for pedestrian #
+    ######################################
+
+    paragraph_dict_ped = {
+        "Tipico": {},
+        "Atipico": {},
+    }
+
+    for tipicidad in ["Tipico", "Atipico"]:
+        ph1 = peakHours[tipicidad]["Morning"]
+        ph2 = peakHours[tipicidad]["Evening"]
+        ph3 = peakHours[tipicidad]["Night"]
+        volPedSum1 = int(sum(volPedDict[tipicidad][ph1:ph1+4]))
+        volPedSum2 = int(sum(volPedDict[tipicidad][ph2:ph2+4]))
+        volPedSum3 = int(sum(volPedDict[tipicidad][ph3:ph3+4]))
+
+        paragraph_dict_ped[tipicidad].update({
+            "Mañana": volPedSum1,
+            "Tarde": volPedSum2,
+            "Noche": volPedSum3,
+        })
+
+    countParagraphs = 0
+    listParagraphsPeds = []
+    for tipicidad in ["Tipico", "Atipico"]:
+        for hour in ["Mañana", "Tarde", "Noche"]:
+            docTemplate = DocxTemplate("./templates/template_lista4.docx")
+            maxVolPed = paragraph_dict_ped[tipicidad][hour]
+            dataParagraph = paragraph_dict[tipicidad][hour]
+            if tipicidad == "Tipico":
+                tipicidadtxt = "típico"
+            else:
+                tipicidadtxt = "atípico"
+
+            docTemplate.render({
+                "tipicidad_ph": tipicidadtxt,
+                "turno_ph": hour.lower(),
+                "horaturno": dataParagraph.horaturno,
+                "codintersection_ph": dataParagraph.codigo,
+                "maxvolped": str(maxVolPed),
+            })
+
+            finalPathPed = os.path.join(
+                pathSubarea, "Tablas", f"paragraph_ph_ped_{countParagraphs}.docx"
+            )
+
+            docTemplate.save(finalPathPed)
+            listParagraphsPeds.append(finalPathPed)
+            countParagraphs += 1
+
+    filePathMaster = listParagraphsPeds[0]
+    filePathList = listParagraphsPeds[1:]
+    paragraph_ph_ped = os.path.join(pathSubarea, "Tablas", "paragraph_ph_ped.docx")
+    _combine_all_docx(filePathMaster, filePathList, paragraph_ph_ped)
 
     ###############################
     # Creating table 2: vehicular #
@@ -574,4 +745,4 @@ def create_tables2n3(pathSubarea: str):
         print("Error - Fechas de conteo: ", inst)
         finalPath3 = None
 
-    return finalPath2_vehicular, finalPath2_peatonal, finalPath3, typicalDay, atypicalDay
+    return finalPath2_vehicular, finalPath2_peatonal, finalPath3, typicalDay, atypicalDay, paragraph_ph_path, paragraph_ph_ped

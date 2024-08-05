@@ -122,7 +122,7 @@ class MyWindow(QMainWindow, Ui_Form):
         if checkObject: #NOTE: Ready tabla1
             try:
                 table1_path = create_table1(self.path_subarea)
-                table1 = doc.new_subdoc(table1_path)
+                table1 = doc.new_subdoc(table1_path)          
                 VARIABLES.update({"tabla1": table1})
                 print("Tabla 1\t\tOK\tDatos generales de intersecciones y códigos")
             except Exception as e:
@@ -134,19 +134,27 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(1,0).checkState()
         if checkObject: #NOTE: Ready tabla2n3
             try:
-                table2_vehicular, table2_peatonal, table3_path, dcontet, dcontea = create_tables2n3(self.path_subarea)
+                table2_vehicular, table2_peatonal, table3_path, dcontet, dcontea, paragraph_path, paragraph_ped = create_tables2n3(self.path_subarea)
                 table2Vehicular = doc.new_subdoc(table2_vehicular)
                 table2Peatonal = doc.new_subdoc(table2_peatonal)
+                paragraphs_ph_veh_doc = doc.new_subdoc(paragraph_path)
+                paragraphs_ph_ped_doc = doc.new_subdoc(paragraph_ped)
                 table3 = doc.new_subdoc(table3_path)
-                VARIABLES.update({"tabla2_vehicular": table2Vehicular, "tabla2_peatonal": table2Peatonal, "tabla3": table3, "dcontet": dcontet, "dcontea": dcontea})
+                VARIABLES.update({
+                    "tabla2_vehicular": table2Vehicular, "tabla2_peatonal": table2Peatonal,
+                    "tabla3": table3, "dcontet": dcontet, "dcontea": dcontea,
+                    "paragraphs_ph": paragraphs_ph_veh_doc,
+                    "paragraphs_ph_ped": paragraphs_ph_ped_doc,
+                    })
                 print("Tabla 2\t\tOK\tTabla de las horas puntas")
                 print("Tabla 3\t\tOK\tTabla de fechas de conteos")
+                print("Párrafos\tOK\tPárrafos del capítulo Hora Punta Vehicular")
             except Exception as e:
                 print("Tabla 2\t\tERROR\tTabla de las horas puntas")
                 print("Tabla 3\t\tERROR\tTabla de fechas de conteos")
                 LOGGER.warning("Error Tabla 2 o 3")
                 LOGGER.warning(str(e))
-                #raise e
+                raise e
 
         checkObject = self.ui.tableWidget.item(2,0).checkState()
         if checkObject: #NOTE: Ready tabla4
