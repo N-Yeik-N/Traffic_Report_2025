@@ -159,7 +159,7 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(2,0).checkState()
         if checkObject: #NOTE: Ready tabla4
             try:
-                table4_path, table5_path = create_table4n5(self.path_subarea)
+                table4_path, table5_path, queue_conclusions_path = create_table4n5(self.path_subarea)
                 table4 = doc.new_subdoc(table4_path)
                 VARIABLES.update({"tabla4": table4})
                 print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
@@ -179,12 +179,24 @@ class MyWindow(QMainWindow, Ui_Form):
                 VARIABLES.update({"tabla5": table5})
                 print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
             except FileNotFoundError as e:
+                raise e
                 print("Tabla 5\t\tERROR\tNo existen archivos de colas")
             except UnboundLocalError as e:
                 print("Tabla 5\t\tERROR\tNo existen archivos de colas")
             except Exception as e:
                 print("Tabla 5\t\tERROR\tDatos estadísticas de longitud de cola")
                 LOGGER.warning("Error Tabla 5")
+                LOGGER.warning(str(e))
+
+            try:
+                queue_conclusions = doc.new_subdoc(queue_conclusions_path)
+                VARIABLES.update({"queue_conclusions": queue_conclusions})
+                print("Colas\t\tOK\tConclusiones")
+            except FileNotFoundError as e:
+                print("Colas\t\tERROR\tNo existen archivos de colas")
+            except Exception as e:
+                print("Colas\t\tERROR\tNo se pudo obtener las conclusiones")
+                LOGGER.warning("Error Conclusiones")
                 LOGGER.warning(str(e))
         
         checkObject = self.ui.tableWidget.item(4,0).checkState()

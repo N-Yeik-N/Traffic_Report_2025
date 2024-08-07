@@ -3,6 +3,7 @@ from tables.tools.tale import tale_by_excel
 from pathlib import Path
 
 #docx
+from docxcompose.composer import Composer
 from docxtpl import DocxTemplate
 from docx import Document
 from docx.shared import Pt, Inches
@@ -10,6 +11,16 @@ from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
+
+    composer.save(finalPath)
 
 def append_document_content(source_doc, target_doc) -> None:
     for element in source_doc.element.body:
@@ -59,7 +70,10 @@ def create_table4n5(path_subarea):
     tipico_date = list(set(tipico_date))
     atipico_date = list(set(atipico_date))
 
-    #Creating table 4
+    ####################
+    # Creating table 4 #
+    ####################
+
     doc = Document()
     table = doc.add_table(rows=7, cols=5)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -130,13 +144,32 @@ def create_table4n5(path_subarea):
     table4_path = Path(path_subarea) / "Tablas" / "table4.docx"
     doc.save(table4_path)
 
-    #Creating table 5
+    ####################
+    # Creating table 5 #
+    ####################
+
+    infoConclusions = {
+        "Tipico": {},
+        "Atipico": {},
+    }
+
     count = 1
     list_REF = []
     for tipicidad, dataList in data_by_tipicidad.items():
         for data in dataList:
-            if tipicidad == "Tipico":
-                df = data[2]
+            df = data[2]
+
+            #Obtaining maximum queue:
+            maxRowIndex = df['Max'].idxmax()
+            maxRow = df.loc[maxRowIndex]
+
+            infoConclusions[tipicidad][data[0]] = {
+                "max_access": maxRow['Access'],
+                "max_queue": maxRow['Max'],
+            }
+
+            if tipicidad == "Tipico": #NOTE: Why only Tipico?
+
                 doc = Document()
                 
                 table = doc.add_table(rows=1, cols=6)
@@ -226,4 +259,52 @@ def create_table4n5(path_subarea):
 
     table5_path = Path(path_subarea) / "Tablas" / "table5.docx"
     doc_target.save(table5_path)
-    return table4_path, table5_path
+
+    ################################
+    # Creating conclusions answers #
+    ################################
+
+    #code, access and value (.00)
+
+    dictConclusions = {tipicidad: {code: {} for code in list_codes} for tipicidad in ["Tipico", "Atipico"]}
+    for tipicidad, groupData in infoConclusions.items():
+        for code, dataValues in groupData.items():
+            maxValue = 0
+            for key, valor in dataValues.items():
+                if key == 'max_access':
+                    accessv = valor
+                elif key == 'max_queue':
+                    if valor > maxValue:
+                        maxValue = valor
+                        dictConclusions[tipicidad][code] = {"Acceso": accessv, "Max_Cola": maxValue}
+
+    maxValuesDict = {}
+
+    for key in dictConclusions['Tipico']:
+        tipicoValue = dictConclusions['Tipico'][key]['Max_Cola']
+        atipicoValue = dictConclusions['Atipico'][key]['Max_Cola']
+        if tipicoValue >= atipicoValue:
+            maxValuesDict[key] = dictConclusions['Tipico'][key]
+        else:
+            maxValuesDict[key] = atipicoValue['Atipico'][key]
+    
+    listQueueDocx = []
+    wordNumber = 0
+    for code, dicData in maxValuesDict.items():
+        docTemplate = DocxTemplate("./templates/template_lista5.docx")
+        docTemplate.render({
+            "codinterseccion": code,
+            "max_acceso": dicData['Acceso'],
+            "max_long_cola": str(f"{dicData['Max_Cola']:.2f}"),
+        })
+        docPath = Path(path_subarea) / "Tablas" / f"queue_conclusion_{wordNumber}.docx"
+        docTemplate.save(docPath)
+        listQueueDocx.append(docPath)
+        wordNumber += 1
+
+    filePathMaster = listQueueDocx[0]
+    filePathList = listQueueDocx[1:]
+    queueDocxPath = Path(path_subarea) / "Tablas" / "queue_conclusion.docx"
+    _combine_all_docx(filePathMaster, filePathList, queueDocxPath)
+
+    return table4_path, table5_path, queueDocxPath

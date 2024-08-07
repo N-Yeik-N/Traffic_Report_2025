@@ -13,12 +13,12 @@ from docx.oxml.ns import qn, nsdecls
 
 def get_color_by_los(los: str) -> str:
     colores = {
-        "A": "00FF00", # Verde
-        "B": "ADFF2F", # Verde amarillento
-        "C": "FFFF00", # Amarillo
-        "D": "FFA500", # Naranja
-        "E": "FF4500", # Naranja rojizo
-        "F": "FF0000", # Rojo
+        "A": "00B050", # Verde
+        "B": "B5E6A2", # Verde amarillento
+        "C": "FFFF99", # Amarillo
+        "D": "FFD961", # Naranja
+        "E": "EB844B", # Naranja rojizo
+        "F": "FF3B3B", # Rojo
     }
     return colores.get(los, "FFFFFF") #Blanco por defecto
 
@@ -37,7 +37,7 @@ def _filling_df(df: pd.DataFrame, data: json, rowDf: int, tipicidad: str, state:
     for _, nodeName in enumerate(data["nodes_names"]):
         name = nodeName[0]
         for _, listAcess in data["node_results"][name].items():
-            nombre = listAcess["Nombre"]
+            nombre = listAcess["Nombre"]+"\n"+listAcess["Sentido"]
             volumen = int(float(listAcess["Numero de Vehiculos"]))
             cola_prom = listAcess["Longitud de Cola Prom."]
             cola_max = listAcess["Longitud de Cola Max."]
