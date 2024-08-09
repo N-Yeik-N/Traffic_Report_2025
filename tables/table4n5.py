@@ -164,6 +164,7 @@ def create_table4n5(path_subarea):
             maxRow = df.loc[maxRowIndex]
 
             infoConclusions[tipicidad][data[0]] = {
+                "max_direction": maxRow['Direction'],
                 "max_access": maxRow['Access'],
                 "max_queue": maxRow['Max'],
             }
@@ -184,7 +185,7 @@ def create_table4n5(path_subarea):
                     for j in range(len(df.columns)):
                         if j == 0: continue
                         try:
-                            valor = str(round(df.iloc[i,j],2))
+                            valor = f"{df.iloc[i,j]:.2f}"
                         except:
                             valor = str(df.iloc[i,j])
                         new_row[j].text = valor
@@ -260,51 +261,4 @@ def create_table4n5(path_subarea):
     table5_path = Path(path_subarea) / "Tablas" / "table5.docx"
     doc_target.save(table5_path)
 
-    ################################
-    # Creating conclusions answers #
-    ################################
-
-    #code, access and value (.00)
-
-    dictConclusions = {tipicidad: {code: {} for code in list_codes} for tipicidad in ["Tipico", "Atipico"]}
-    for tipicidad, groupData in infoConclusions.items():
-        for code, dataValues in groupData.items():
-            maxValue = 0
-            for key, valor in dataValues.items():
-                if key == 'max_access':
-                    accessv = valor
-                elif key == 'max_queue':
-                    if valor > maxValue:
-                        maxValue = valor
-                        dictConclusions[tipicidad][code] = {"Acceso": accessv, "Max_Cola": maxValue}
-
-    maxValuesDict = {}
-
-    for key in dictConclusions['Tipico']:
-        tipicoValue = dictConclusions['Tipico'][key]['Max_Cola']
-        atipicoValue = dictConclusions['Atipico'][key]['Max_Cola']
-        if tipicoValue >= atipicoValue:
-            maxValuesDict[key] = dictConclusions['Tipico'][key]
-        else:
-            maxValuesDict[key] = atipicoValue['Atipico'][key]
-    
-    listQueueDocx = []
-    wordNumber = 0
-    for code, dicData in maxValuesDict.items():
-        docTemplate = DocxTemplate("./templates/template_lista5.docx")
-        docTemplate.render({
-            "codinterseccion": code,
-            "max_acceso": dicData['Acceso'],
-            "max_long_cola": str(f"{dicData['Max_Cola']:.2f}"),
-        })
-        docPath = Path(path_subarea) / "Tablas" / f"queue_conclusion_{wordNumber}.docx"
-        docTemplate.save(docPath)
-        listQueueDocx.append(docPath)
-        wordNumber += 1
-
-    filePathMaster = listQueueDocx[0]
-    filePathList = listQueueDocx[1:]
-    queueDocxPath = Path(path_subarea) / "Tablas" / "queue_conclusion.docx"
-    _combine_all_docx(filePathMaster, filePathList, queueDocxPath)
-
-    return table4_path, table5_path, queueDocxPath
+    return table4_path, table5_path

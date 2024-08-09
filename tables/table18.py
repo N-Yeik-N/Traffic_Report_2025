@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from unidecode import unidecode
+from openpyxl import load_workbook
 
 
 #docx
@@ -178,6 +179,24 @@ def create_table18(subarea_path) -> None:
         "Tipico": ["HPMAD", "HVMAD", "HPM", "HVM", "HPT", "HVT", "HPN", "HVN"],
         "Atipico": ["HVMAD", "HPM", "HPT", "HPN", "HVN"],
     }
+
+    #Program Results:
+    programResultsPath = Path(subarea_path) / "Program_Results.xlsx"
+    wb = load_workbook(programResultsPath, read_only=True, data_only=True)
+    listSlices = [
+        slice("V2", "AJ3"),
+        slice("V5", "AJ5"),
+        slice("V7", "AJ7"),
+        slice("V9", "AJ10"),
+        slice("V14", "AJ14")
+    ]
+
+
+    for slicev in listSlices:
+        pass
+
+    wb.close()
+
     for tipicidad in tipicidades:
         for i, scenario in enumerate(scenarioByTipicidad[tipicidad]):
             if i == 0: #What the hell is this for?

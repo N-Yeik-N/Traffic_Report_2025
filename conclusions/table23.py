@@ -134,7 +134,9 @@ def create_table23(subareaPath):
     table.cell(0,1).merge(table.cell(0,2))
 
     #Creating Headers
-    for i, texto in enumerate(["Nodo", "Número de\nVehículos\n(veh)", "Cola Máx.\nPromedio\n(m)", "Demora por parada\nPromedio\n(s/veh)", "Demora\nPromedio\n(s/veh)", "LOS"]):
+    for i, texto in enumerate([
+        "Nodo", "Número de\nVehículos\n(veh)", "Cola Máx.\nPromedio\n(m)", "Demora por parada\nPromedio\n(s/veh)", "Demora\nPromedio\n(s/veh)", "LOS"
+        ]):
         table.cell(0,i+3).text = texto
 
     nroRow = 1

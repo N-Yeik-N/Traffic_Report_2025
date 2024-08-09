@@ -213,7 +213,3 @@ def create_table19(subarea_path) -> None:
     _combine_all_docx(filePathMaster, filePathList, programPath)
 
     return programPath
-
-# if __name__ == '__main__':
-#     path = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-#     read_programs(path)
