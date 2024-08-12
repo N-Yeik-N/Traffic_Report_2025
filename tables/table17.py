@@ -73,7 +73,10 @@ def create_table17(subareaPath):
         table.cell(i+1,0).text = texto
 
     for i, geh in enumerate(gehValues):
-        table.cell(i+1,1).text = f"{geh:.2f}"
+        try:
+            table.cell(i+1,1).text = f"{float(geh):.2f}"
+        except:
+            table.cell(i+1,1).text = geh
 
     for i, valor1_1 in enumerate(criterion1_1):
         table.cell(i+1,2).text = valor1_1

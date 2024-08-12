@@ -3,6 +3,8 @@ import pandas as pd
 from pathlib import Path
 from tables.tools.traffic_lights import get_info
 from tables.tools.cycles import get_dates_cycles
+#from tools.traffic_lights import get_info
+#from tools.cycles import get_dates_cycles
 
 #docx
 from docxtpl import DocxTemplate
@@ -152,6 +154,7 @@ def create_table9(path_subarea):
     doc.save(table9_path)
 
     doc_template = DocxTemplate(r"templates\template_tablas.docx")
+
     if len(codeList) == 1:
         texto = f"Tiempos de ciclo de la intersección {codeList[0]}"
     elif len(codeList) > 1:
@@ -195,6 +198,15 @@ def create_table9(path_subarea):
         )
         docTemplate.save(paragraphPath)
         listParagraphPaths.append(paragraphPath)
+
+    for code in codeList:
+        for key, dictPhase in paragraphsDict.items():
+            if key != code: continue
+
+            faseID = int(dictPhase["fase"][-1])
+
+    #TODO: Algo estaba viendo aquí ¿Qué era mi rey?
+    #NOTE: Así, lo de ver si son iguales y si es así, simplemente evitar doble creación.
 
     paragraphsPath = os.path.join(path_subarea, "Tablas", "programaciones_parrafos.docx")
     if len(listParagraphPaths) > 1:

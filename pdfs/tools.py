@@ -74,13 +74,13 @@ def create_histogramas_subdocs(resultList: list, path_subarea: str | Path, agent
 
     return histograma_path
 
-def create_flujogramas_vehicular_subdocs(resultList: list, path_subarea: str | Path) -> str:
+def create_flujogramas_vehicular_subdocs(resultList: list, path_subarea: str | Path, maxStage: str, maxTipicidad: str) -> str:
     PATH_TEMPLATE = r".\templates\template_imagenes.docx"
 
     listWords = []
     for code, imagePath in resultList:
         doc = DocxTemplate(PATH_TEMPLATE)
-        texto = f"Flujograma vehicular de la intersección {code} HPM día típico"
+        texto = f"Flujograma vehicular de la intersección {code} del turno {maxStage} del día {maxTipicidad}"
         image = InlineImage(doc, imagePath, width=Inches(6))
 
         variables = {
@@ -101,7 +101,7 @@ def create_flujogramas_vehicular_subdocs(resultList: list, path_subarea: str | P
 
     return flujogramas_path
 
-def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Path) -> str:
+def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Path, maxStage: str, maxTipicidad: str) -> str:
     PATH_TEMPLATE = r".\templates\template_imagenes.docx"
 
     listWords = []

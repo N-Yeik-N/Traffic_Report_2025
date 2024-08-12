@@ -37,7 +37,8 @@ def _filling_df(df: pd.DataFrame, data: json, rowDf: int, tipicidad: str, state:
     for _, nodeName in enumerate(data["nodes_names"]):
         name = nodeName[0]
         for _, listAcess in data["node_results"][name].items():
-            nombre = listAcess["Nombre"]+"\n"+listAcess["Sentido"]
+            sentidoOrigin = listAcess["Sentido"].split("-")
+            nombre = listAcess["Nombre"]+"\n"+sentidoOrigin[0]
             volumen = int(float(listAcess["Numero de Vehiculos"]))
             cola_prom = listAcess["Longitud de Cola Prom."]
             cola_max = listAcess["Longitud de Cola Max."]
@@ -105,7 +106,7 @@ def _align_content(table) -> None:
             for paragraph in cell.paragraphs:
                 paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 for run in paragraph.runs:
-                    run.font.size = Pt(9)
+                    run.font.size = Pt(11)
                     run.font.name = 'Arial'
 
     for i in range(len(table.columns)):
@@ -306,7 +307,7 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
             for paragraph in cell.paragraphs:
                 run = paragraph.runs[0]
                 run.font.name = 'Arial Narrow'
-                run.font.size = Pt(9)
+                run.font.size = Pt(11)
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
@@ -348,8 +349,10 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
             if i == 0: continue
             if column == "SimRun":
                 newRow.cells[i].text = str(df.loc[j, column])
-            else:
-                newRow.cells[i].text = str(round(float(df.loc[j, column]),4))
+            elif column in ["DelayAvg", "DelayStopAvg", "SpeedAvg", "StopsAvg"]:
+                newRow.cells[i].text = str(round(float(df.loc[j, column]),2))
+            elif column in ["VehAct", "VehArr", "DemandLatent"]:
+                newRow.cells[i].text = str(int(float(df.loc[j, column])))
     
     counts = df["Escenario"].value_counts()
 
@@ -382,7 +385,7 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
             for paragraph in cell.paragraphs:
                 run = paragraph.runs[0]
                 run.font.name = 'Arial Narrow'
-                run.font.size = Pt(9)
+                run.font.size = Pt(11)
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
@@ -418,8 +421,11 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
             if i == 0: continue
             if column == "SimRun":
                 newRow.cells[i].text = str(df.loc[j, column])
-            else:
-                newRow.cells[i].text = str(round(float(df.loc[j, column]),4))
+            elif column in ["DensAvg", "FlowAvg", "NormSpeedAvg", "SpeedAvg", "StopTmAvg", "TravTmAvg"]:
+                try:
+                    newRow.cells[i].text = f"{float(df.loc[j, column]):.4f}"
+                except:
+                    newRow.cells[i].text = str(df.loc[j, column])
 
     counts = df["Escenario"].value_counts()
 
@@ -452,7 +458,7 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
             for paragraph in cell.paragraphs:
                 run = paragraph.runs[0]
                 run.font.name = 'Arial Narrow'
-                run.font.size = Pt(9)
+                run.font.size = Pt(11)
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 

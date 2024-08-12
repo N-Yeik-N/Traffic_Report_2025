@@ -104,7 +104,7 @@ def flujograma_vehicular(pathSubarea: str, maxStage, maxTipicidad) -> str:
             convert_pdf_to_image(pdfPath, folderVehicular, namePDF),
         ])
 
-    flujogramaPath = create_flujogramas_vehicular_subdocs(dataInfo, pathSubarea)
+    flujogramaPath = create_flujogramas_vehicular_subdocs(dataInfo, pathSubarea, maxStage, maxTipicidad)
 
     return flujogramaPath
 
@@ -237,14 +237,6 @@ def flujograma_peatonal(path_subarea, maxStage, maxTipicidad) -> str:
     for code, imagePath in listPathImages.items():
         resultList.append((code, imagePath[0]))
 
-    flujograma_path = create_flujograma_peatonal_subdocs(resultList, path_subarea)
+    flujograma_path = create_flujograma_peatonal_subdocs(resultList, path_subarea, maxStage, maxTipicidad)
 
     return flujograma_path
-
-# if __name__ == "__main__":
-#     pathSubarea = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 016"
-#     maxTipicidad = "típico"
-#     create_paragraphs(pathSubarea, maxTipicidad, "Mañana")
-    # maxStage = "Mañana"
-    # maxTipicidad = "típico"
-    # flujogramaPath =flujograma_vehicular(pathSubarea, maxStage, maxTipicidad)

@@ -29,7 +29,7 @@ def _align_content(table) -> None:
             for paragraph in cell.paragraphs:
                 paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 for run in paragraph.runs:
-                    run.font.size = Pt(7)
+                    run.font.size = Pt(11)
                     run.font.name = 'Arial'
 
     for i in range(len(table.columns)):
@@ -135,7 +135,7 @@ def create_table23(subareaPath):
 
     #Creating Headers
     for i, texto in enumerate([
-        "Nodo", "Número de\nVehículos\n(veh)", "Cola Máx.\nPromedio\n(m)", "Demora por parada\nPromedio\n(s/veh)", "Demora\nPromedio\n(s/veh)", "LOS"
+        "Nodo", "Número de\nVehículos\n(veh)", "Cola Máx.\nPromedio\n(m)", "Demora por parada\nPromedio\n(s/veh)", "Demora\nPromedio\n(s/veh)", "LOS\n(A-F)"
         ]):
         table.cell(0,i+3).text = texto
 

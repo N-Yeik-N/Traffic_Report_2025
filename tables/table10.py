@@ -131,7 +131,7 @@ def create_table10(path_subarea):
                 for paragraph in cell.paragraphs:
                     run = paragraph.runs[0]
                     run.font.name = 'Arial Narrow'
-                    run.font.size = Pt(10)
+                    run.font.size = Pt(11)
                     
         listCols = [i for i in range(4+maxPhaseNumber*3)]
         listCols = listCols[4:]
