@@ -101,7 +101,7 @@ def create_flujogramas_vehicular_subdocs(resultList: list, path_subarea: str | P
 
     return flujogramas_path
 
-def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Path, maxStage: str, maxTipicidad: str) -> str:
+def create_flujograma_peatonal_subdocs(resultList: list, path_subarea: str | Path) -> str:
     PATH_TEMPLATE = r".\templates\template_imagenes.docx"
 
     listWords = []
