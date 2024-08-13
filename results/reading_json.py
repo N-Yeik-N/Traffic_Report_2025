@@ -560,8 +560,8 @@ def generate_results(subareaPath: str) -> list[str]:
             for ints in intersecciones:
                 filtered_df = df[
                     (df["Intersección"] == ints) & 
-                    (df["Scenario"] == "HPM") &
-                    (df["Tipicidad"] == "Tipico")
+                    (df["Scenario"] == turno) &
+                    (df["Tipicidad"] == tipicidad)
                     ]
                 tablaPath = create_tables_nodos(filtered_df, tipicidad, turno, subareaPath)
                 listPaths.append(tablaPath)
