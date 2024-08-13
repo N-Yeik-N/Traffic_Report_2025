@@ -280,6 +280,7 @@ def histogramas_vehiculares(subareaPath: str) -> str:
     for tipicidad in ["Tipico", "Atipico"]:
         typicalPath = os.path.join(fieldData, tipicidad)
         excelList = os.listdir(typicalPath)
+        excelList = [file for file in excelList if file.endswith(".xlsm") and not file.startswith("~$")]
         VOLUME_SYSTEM = None
         VOLUME_TOTAL = None
         for excel in excelList:
