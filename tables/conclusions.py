@@ -167,7 +167,7 @@ def get_conclusions(subareaPath: str):
                 checkSignalAfter = dataBase["nodes_signalized"][i][0] 
 
                 if checkSignalBefore == "NONSIGNALIZED" and checkSignalAfter == "SIGNALIZED":
-                    signalCheckTxt = "En el escenario actual no existían semáforos, pero en el escenario propuesto sí existen."
+                    signalCheckTxt = " En el escenario actual no existían semáforos, pero en el escenario propuesto sí existen."
                 elif checkSignalBefore == "SIGNALIZED" and checkSignalAfter == "SIGNALIZED":
                     signalCheckTxt = ""
 

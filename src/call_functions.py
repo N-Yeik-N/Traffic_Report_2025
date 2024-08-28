@@ -73,10 +73,10 @@ def location(path_subarea) -> list[dict, list]:
         codinterseccion = texto
 
     if len(intersecciones) > 1:
-        descsubarea = "las intersecciones pertenecientes"
+        descsubarea = "las intersecciones que conforman"
         prestablas = "las siguientes tablas"
     else:
-        descsubarea = "la intersección perteneciente"
+        descsubarea = "la intersección que conforma"
         prestablas = "la siguiente tabla"
 
     VARIABLES = {
