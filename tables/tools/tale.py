@@ -47,6 +47,9 @@ def tale_by_excel(path):
             df.loc[len(df)] = [turno, sentido, acceso, max, mean, std]
             #df = df.concat({"Turn": turno, "Direction": sentido, "Access": acceso, "Max": max, "Mean": mean, "Std": std}, ignore_index=True)
 
+    df["Max"] = pd.to_numeric(df["Max"], errors = 'coerce')
+    df["Mean"] = pd.to_numeric(df["Mean"], errors = 'coerce')
+    df["Std"] = pd.to_numeric(df["Std"], errors = 'coerce')
     date = ws['D4'].value
 
     wb.close()

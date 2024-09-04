@@ -252,7 +252,13 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
         newRow = table.add_row()
         for i, column in enumerate(["Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax", "StopDelay", "Delay", "LOS"]):
             if i == 0: continue
-            newRow.cells[i].text = str(dfActual.loc[j, column])
+            if column in ["QueueAvg", "QueueMax"]:
+                newRow.cells[i].text = str(round(float(dfActual.loc[j, column])))
+            elif column in ["StopDelay", "Delay"]:
+                newRow.cells[i].text = str(round(float(dfActual.loc[j, column]), 1))
+            else:
+                newRow.cells[i].text = str(dfActual.loc[j, column])
+            
             if column == "LOS":
                 color_hex = get_color_by_los(str(dfActual.loc[j, column]))
                 shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
@@ -268,7 +274,12 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
         newRow = table.add_row()
         for i, column in enumerate(["Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax", "StopDelay", "Delay", "LOS"]):
             if i == 0: continue
-            newRow.cells[i].text = str(dfBase.loc[j, column])
+            if column in ["QueueAvg", "QueueMax"]:
+                newRow.cells[i].text = str(round(float(dfBase.loc[j, column])))
+            elif column in ["StopDelay", "Delay"]:
+                newRow.cells[i].text = str(round(float(dfBase.loc[j, column]), 1))
+            else:
+                newRow.cells[i].text = str(dfBase.loc[j, column])
             if column == "LOS":
                 color_hex = get_color_by_los(str(dfBase.loc[j, column]))
                 shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
@@ -283,7 +294,12 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
         newRow = table.add_row()
         for i, column in enumerate(["Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax", "StopDelay", "Delay", "LOS"]):
             if i == 0: continue
-            newRow.cells[i].text = str(dfProyectado.loc[j, column])
+            if column in ["QueueAvg", "QueueMax"]:
+                newRow.cells[i].text = str(round(float(dfProyectado.loc[j, column])))
+            elif column in ["StopDelay", "Delay"]:
+                newRow.cells[i].text = str(round(float(dfProyectado.loc[j, column]), 1))
+            else:
+                newRow.cells[i].text = str(dfProyectado.loc[j, column])
             if column == "LOS":
                 color_hex = get_color_by_los(str(dfProyectado.loc[j, column]))
                 shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
@@ -560,8 +576,8 @@ def generate_results(subareaPath: str) -> list[str]:
             for ints in intersecciones:
                 filtered_df = df[
                     (df["Intersección"] == ints) & 
-                    (df["Scenario"] == "HPM") &
-                    (df["Tipicidad"] == "Tipico")
+                    (df["Scenario"] == turno) &
+                    (df["Tipicidad"] == tipicidad)
                     ]
                 tablaPath = create_tables_nodos(filtered_df, tipicidad, turno, subareaPath)
                 listPaths.append(tablaPath)

@@ -37,7 +37,7 @@ def location(path_subarea) -> list[dict, list]:
     intersecciones = df_general[df_general['Sub_Area'] == int(numsubarea)]["Interseccion"].unique().tolist()
     codintersecciones = df_general[df_general['Sub_Area'] == int(numsubarea)]["Code"].unique().tolist()
     if len(intersecciones) == 1:
-        presinter = "presenta la ubicacion de la intersección"
+        presinter = "presenta la ubicación de la intersección"
         presinter2 = "la intersección"
     else:
         presinter = "presentan las ubicaciones de las siguientes intersecciones:"
@@ -73,10 +73,10 @@ def location(path_subarea) -> list[dict, list]:
         codinterseccion = texto
 
     if len(intersecciones) > 1:
-        descsubarea = "las intersecciones pertenecientes"
+        descsubarea = "las intersecciones que conforman"
         prestablas = "las siguientes tablas"
     else:
-        descsubarea = "la intersección perteneciente"
+        descsubarea = "la intersección que conforma"
         prestablas = "la siguiente tabla"
 
     VARIABLES = {

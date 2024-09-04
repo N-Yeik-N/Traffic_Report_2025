@@ -14,41 +14,21 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
         composer.append(doc_temp)
     composer.save(finalPath)
 
-def _read_side_volumes(excelPath: str, maxStage: str)-> dict:
-    listSlices = {
-        "Mañana": slice("HM42", "HM53"), #Mañana
-        "Tarde": slice("HN64", "HN75"), #Tarde
-        "Noche": slice("HN86", "HN97"), #Noche
-    }
-
+def _read_side_volumes(excelPath: str, maxStage: str)-> dict:    
     wb = load_workbook(excelPath, read_only=True, data_only=True)
-    volByAccess = {
-        "N": 0,
-        "S": 0,
-        "E": 0,
-        "O": 0,
-    }
-    for sheet in ["N", "S", "E", "O"]:
-        ws = wb[sheet]
-        volByAccess[sheet] += int(sum([row[0].value for row in ws[listSlices[maxStage]]])/3)
-    
+    ws = wb[f'V_{maxStage[:2]}']
+    volByAccess = dict({(row[0].value, row[1].value) for row in ws["BT35:BU42"]})
     wb.close()
 
     return volByAccess
 
 def construir_texto_volumenes(volByAccess):
-    direcciones = {
-        "N": "Norte",
-        "S": "Sur",
-        "E": "Este",
-        "O": "Oeste",
-    }
     partes = []
 
-    for acceso, nombre in direcciones.items():
+    for acceso, volumen in volByAccess.items():
         if volByAccess.get(acceso, 0) > 0:
-            partes.append(f"el acceso {nombre} tiene un volumen vehicular de {int(volByAccess[acceso])} veh/h")
-    return ','.join(partes) + '.' if partes else ''
+            partes.append(f"el acceso {acceso} tiene un volumen vehicular de {volumen} veh/h")
+    return ', '.join(partes) + '.' if partes else ''
 
 def flujograma_vehicular(pathSubarea: str, maxStage, maxTipicidad) -> str:
     listCodes = get_codes(pathSubarea)
@@ -108,7 +88,7 @@ def flujograma_vehicular(pathSubarea: str, maxStage, maxTipicidad) -> str:
 
     return flujogramaPath
 
-def create_paragraphs(subareaPath: str, maxTipicidad: str, maxStsage: str):
+def create_paragraphs(subareaPath: str, maxTipicidad: str, maxStage: str):
     listCodes = get_codes(subareaPath)
     pathParts = subareaPath.split("/")
     proyectFolder = '/'.join(pathParts[:-2])
@@ -146,7 +126,7 @@ def create_paragraphs(subareaPath: str, maxTipicidad: str, maxStsage: str):
             code = match[1]
             if code in listCodes:
                 excelPath = os.path.join(tipicidadFolder, excelFile)
-                volByAccess = _read_side_volumes(excelPath, maxStsage)
+                volByAccess = _read_side_volumes(excelPath, maxStage)
                 texto_volumenes = construir_texto_volumenes(volByAccess)
                 paragraphs[code] = texto_volumenes 
 

@@ -155,9 +155,9 @@ def get_conclusions(subareaPath: str):
                 losActual = dataActual["nodes_los"][i]
                 losPropuesto = dataBase["nodes_los"][i]
                 losProyectado = dataProyectado["nodes_los"][i]
-                delaysActual = f'{dataActual["nodes_totres"][i][0]:.2f}'
-                delaysPropuesto = f'{dataBase["nodes_totres"][i][0]:.2f}'
-                delaysProyectado = f'{dataProyectado["nodes_totres"][i][0]:.2f}'
+                delaysActual = f'{dataActual["nodes_totres"][i][0]:.1f}'
+                delaysPropuesto = f'{dataBase["nodes_totres"][i][0]:.1f}'
+                delaysProyectado = f'{dataProyectado["nodes_totres"][i][0]:.1f}'
 
                 if scenario == "HPM": peakhour = "hora punta mañana"
                 elif scenario == "HPT": peakhour = "hora punta tarde"
@@ -167,7 +167,7 @@ def get_conclusions(subareaPath: str):
                 checkSignalAfter = dataBase["nodes_signalized"][i][0] 
 
                 if checkSignalBefore == "NONSIGNALIZED" and checkSignalAfter == "SIGNALIZED":
-                    signalCheckTxt = "En el escenario actual no existían semáforos, pero en el escenario propuesto sí existen."
+                    signalCheckTxt = " En el escenario actual no existían semáforos, pero en el escenario propuesto sí existen."
                 elif checkSignalBefore == "SIGNALIZED" and checkSignalAfter == "SIGNALIZED":
                     signalCheckTxt = ""
 
@@ -189,8 +189,8 @@ def get_conclusions(subareaPath: str):
                 listConclusionsLOS.append(finalPath)
 
                 #Párrafos de cola
-                actualQueue = f'{dataActual["nodes_totres"][i][3]:.2f}'
-                propQueue = f'{dataBase["nodes_totres"][i][3]:.2f}'
+                actualQueue = f'{dataActual["nodes_totres"][i][3]:.0f}'
+                propQueue = f'{dataBase["nodes_totres"][i][3]:.0f}'
 
                 docTemplate = DocxTemplate("./templates/template_lista5.docx")
                 docTemplate.render({
