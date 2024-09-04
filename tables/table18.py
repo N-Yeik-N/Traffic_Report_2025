@@ -37,6 +37,42 @@ horarios = {
     ],
 }
 
+def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
+    programResultExcel = os.path.join(sig_path, "Program_Results.xlsx")
+    wb = load_workbook(programResultExcel, read_only=True, data_only=True)
+
+    codigo = os.path.split(sig_path)[1][:-4]
+    ws = wb[codigo]
+
+    listSlices = [
+        (slice("V2", "AJ2"), "HPMAD", "Tipico"),
+        (slice("V3", "AJ3"), "HVMAD", "Tipico"),
+        (slice("V5", "AJ5"), "HVM", "Tipico"),
+        (slice("V7", "AJ7"), "HVT", "Tipico"),
+        (slice("V9", "AJ9"), "HVN", "Tipico"),  
+        (slice("V10", "AJ10"), "HVMAD", "Atipico"),
+        (slice("V14", "AJ14"), "HVN", "Atipico"),
+    ]
+
+    for slicev, scenario, tipicidad in listSlices:
+        if scenarioValue == scenario and tipicidad == tipicidadValue:
+            rowList = [elem.value for row in ws[slicev] for elem in row if elem.value is not None] 
+            greens = [elem for i, elem in enumerate(rowList) if i % 3 == 0]
+            ambars = [elem for i, elem in enumerate(rowList) if i % 3 == 1]
+            reds = [elem for i, elem in enumerate(rowList) if i % 3 == 2]
+            sig_info = {
+                "sig_name": codigo,
+                "turn": scenario,
+                "tipicidad": tipicidad,
+                "cycle_time": sum(rowList),
+                "offset": 0,
+                "greens": greens,
+                "ambars": ambars,
+                "reds": reds
+            }
+            break
+    return sig_info
+
 def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
     number_of_sections = len(filePathsList)
     master = Document(filePathMaster)
@@ -102,7 +138,7 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
 
 def _create_table(sigs_info, tipicidad, tablasPath) -> None:
     doc = Document()
-    sig_info_0 = sigs_info[2] #HPM
+    sig_info_0 = sigs_info[2] #NOTE: Número de fases de la HPM <<<<<<<<<<<<<<<<<<<<<<<<<<
     greens_0 = sig_info_0['greens']
     len_greens =len(greens_0)
 
@@ -183,23 +219,10 @@ def create_table18(subarea_path) -> None:
     #Program Results:
     programResultsPath = Path(subarea_path) / "Program_Results.xlsx"
     wb = load_workbook(programResultsPath, read_only=True, data_only=True)
-    listSlices = [
-        slice("V2", "AJ3"),
-        slice("V5", "AJ5"),
-        slice("V7", "AJ7"),
-        slice("V9", "AJ10"),
-        slice("V14", "AJ14")
-    ]
-
-
-    for slicev in listSlices:
-        pass
-
-    wb.close()
 
     for tipicidad in tipicidades:
         for i, scenario in enumerate(scenarioByTipicidad[tipicidad]):
-            if i == 0: #What the hell is this for?
+            if i == 0: #What the hell is this for? To list sig files
                 scenario_path = output_folder / tipicidad / scenario
                 sig_files = os.listdir(scenario_path)
                 sig_files = [file for file in sig_files if file.endswith(".sig")]
@@ -210,12 +233,18 @@ def create_table18(subarea_path) -> None:
             sigs_info = []
             for scenario in scenarioByTipicidad[tipicidad]:
                 sig_path = output_folder / tipicidad / scenario / sig_file
-                sig_info = _create_data(sig_path, scenario, tipicidad) #Data necesaria por fases de una intersección.
-                sigs_info.append(sig_info) #Data por cada horario de los programas (HVMAD, HPM, ...)
+                if scenario in ["HPMAD", "HVMAD", "HVM", "HVT", "HVN"]:
+                    sig_info = _create_from_excel(sig_path, scenario, tipicidad, wb)
+                else:
+                    sig_info = _create_data(sig_path, scenario, tipicidad)
+                sigs_info.append(sig_info)
 
-            finalPath, code, tipicidad = _create_table(sigs_info, tipicidad, tablasPath)
+            #HACK: Existe la posibilidad de que haya problemas en la creación de la tablas por el tamaño de las fases entre horas valles y puntas.
+            finalPath, code, tipicidad = _create_table(sigs_info, tipicidad, tablasPath) #TODO: Analizar si funciona con tamaños de fases distintos.
             texto = f"Programación semafórica de la intersección {code} día {tipicidad}"
-            listData.append((texto, finalPath, code, tipicidad)) 
+            listData.append((texto, finalPath, code, tipicidad))
+
+    wb.close()
 
     listWordPaths = []
     for text, pathTable, code, tipicidad in listData:

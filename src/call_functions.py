@@ -92,7 +92,36 @@ def location(path_subarea) -> list[dict, list]:
         "presinter3": presinter3,
     }
 
-    return VARIABLES, codintersecciones
+    #Create anexos list
+    doc = Document("./templates/template_anexos.docx")
+    doc.add_heading(
+        'ANEXOS', level = 1
+    )
+
+    dictFolders = {
+        "Vehicular": "DATA VEHICULAR",
+        "Peatonal": "DATA PEATONAL",
+        "Longitud de Cola": "DATA DE LONGITUD DE COLA",
+        "Embarque y Desembarque": "DATA DE TIEMPO DE EMBARQUE Y DESEMBARQUE",
+        "Tiempo de Ciclo Semaforico": "DATA DE TIEMPO DE CICLO Y FASES SEMAFÓRICAS",
+    }
+
+    anexosFolder = os.path.join(path_subarea, "Anexos")
+    anexosContent = os.listdir(anexosFolder)
+    for idx, (folderName, subtitle) in enumerate(dictFolders.items()):
+        if folderName in anexosContent:
+            doc.add_heading(f"ANEXO {idx+1}: {subtitle}", level = 2)
+
+    doc.add_heading(f"ANEXO {idx+1}: FICHA DE DIAGNÓSTICO", level = 2)
+
+    if not os.path.exists(os.path.join(path_subarea, "Tablas")):
+        os.mkdir(os.path.join(path_subarea, "Tablas"))
+
+    anexosFinalPath = os.path.join(path_subarea, "Tablas", "anexosList.docx")
+
+    doc.save(anexosFinalPath)
+
+    return VARIABLES, codintersecciones, anexosFinalPath
 
 def histogramas(path_subarea) -> str:
     listCodes = get_codes(path_subarea)

@@ -116,7 +116,7 @@ class MyWindow(QMainWindow, Ui_Form):
         doc = DocxTemplate("templates/template.docx")
 
         #Location
-        VARIABLES, codintersecciones = location(self.path_subarea)
+        VARIABLES, codintersecciones, anexosFinalPath = location(self.path_subarea)
 
         #Table paths:
         checkObject = self.ui.tableWidget.item(0,0).checkState()
@@ -131,6 +131,13 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning("Error Tabla 1")
                 LOGGER.warning(str(e))
                 #raise e
+            try:
+                anexosWord = doc.new_subdoc(anexosFinalPath)
+                VARIABLES.update({"anexosList": anexosWord})
+            except Exception as e:
+                print("Anexos:\t\tERROR\tLista de anexos reales con error")
+                LOGGER.warning("Error Anexos")
+                LOGGER.warning(str(e))
                 
         checkObject = self.ui.tableWidget.item(1,0).checkState()
         if checkObject: #NOTE: Ready tabla2n3
@@ -213,7 +220,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 try:
                     print(f"Tabla 7\t\tError\tDebes pegar la tabla manualmente:\n{table7_path}")
                 except:
-                    print("Tabla 7\t\tError\tNo existe datos de embarque y desembarque")
+                    print("Tabla 7\t\OK\tNo existe datos de embarque y desembarque")
             except Exception as e:
                 print("Tabla 7\t\tERROR\tDatos estadísticas de embarque y desembarque")
                 LOGGER.warning("Error Tabla 7")
@@ -472,7 +479,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Sigs actual\tERROR")
                 LOGGER.warning("Sigs actual")
                 LOGGER.warning(str(e))
-                #raise e
+                raise e
 
         checkObject = self.ui.tableWidget.item(19,0).checkState()
         if checkObject: #TODO: ready get sigs propuesto
