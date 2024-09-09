@@ -382,7 +382,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 #raise e
 
         checkObject = self.ui.tableWidget.item(15,0).checkState() #TODO: CHECK
-        if checkObject: #TODO: Me parece que cambiará de nombre, es lo mismo que el 19.
+        if checkObject: #TODO: CAMBIAR CUANDO LEE DE PROGRAM_RESULTS, NO ESTA VACÍO, HAY 0s EN FASES ENTERAS PARA FILTRAR
             try: #Cambiar a solo horas punta
                 table18_path = create_table18(self.path_subarea)
                 table18 = doc.new_subdoc(table18_path)
@@ -392,7 +392,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 18\tERROR\tProgramación de sigs Output - base")
                 LOGGER.warning("Error Tabla 18")
                 LOGGER.warning(str(e))
-                #raise e
+                raise e
 
         checkObject = self.ui.tableWidget.item(16,0).checkState()
         if checkObject: #NOTE: Results ready

@@ -3,7 +3,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from unidecode import unidecode
 from openpyxl import load_workbook
-
+import pandas as pd
 
 #docx
 from docxtpl import DocxTemplate
@@ -37,10 +37,68 @@ horarios = {
     ],
 }
 
-def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
-    programResultExcel = os.path.join(sig_path, "Program_Results.xlsx")
-    wb = load_workbook(programResultExcel, read_only=True, data_only=True)
+def _translation_greens(sigPath: str) -> None:
+    tree = ET.parse(sigPath)
+    networkTag = tree.getroot()
 
+    #Movements
+    sgList = []
+    for sg in networkTag.findall("./sgs/sg"):
+        sgList.append(int(sg.get("id")))
+
+    #Stages data
+    dfStages = pd.DataFrame(
+        columns=[int(stage.attrib["id"]) for stage in networkTag.findall('./stages/stage')],
+        index=sgList,
+    )
+
+    #Filling data of stages and movements
+    for stageTag in networkTag.findall("./stages/stage"):
+        idStage = int(stageTag.get("id"))
+        for activation in stageTag.findall("./activations/activation"):
+            index = int(activation.get("sg_id"))
+            value = True if activation.get("activation") == "ON" else False
+            dfStages.loc[index, idStage] = value
+    
+    #Finding movements what starts in the beginning
+    check = False
+    for sg in sgList:
+        if dfStages.loc[sg, 1] and not dfStages.loc[sg, dfStages.columns[-1]]: #Only in the first phase
+            selected_sg = sg
+            check = True
+            break
+
+    if not check:
+        print(f"Mensaje para el más feo: No hay movimientos que acaben en la última fase y NO inicien en la primera fase")
+        print("ERROR: ", sigPath)
+
+    #Finding interstageprog for the selected signal group
+    space = 0
+    interstageprogTag = networkTag.findall("./interstageProgs/interstageProg")
+    for sg in interstageprogTag[-1].findall("./sgs/sg"):
+        idSg = int(sg.get("sg_id"))
+        if selected_sg == idSg:
+            for cmd in sg.findall("./cmds/cmd"):
+                if cmd.get("display") == "3":
+                    space += int(cmd.get("begin"))//1000
+                    break
+    
+    for stageProg in networkTag.findall("./stageProgs/stageProg"):
+        interstage = stageProg.findall("./interstages/interstage")
+        if len(interstage) == len(dfStages.columns):
+            cycleTime = int(stageProg.attrib["cycletime"])//1000
+            lastTime = int(interstage[-1].attrib["begin"])//1000
+            upperLimit = cycleTime - space
+            movement = upperLimit - lastTime
+            for interstage in stageProg.findall("./interstages/interstage"):
+                value = interstage.attrib["begin"]
+                #Para Yeik: Sub Area 043
+                interstage.attrib["begin"] = str(int((int(value)//1000 + movement)*1000))
+
+    ET.indent(tree)
+    tree.write(sigPath, encoding="UTF-8", xml_declaration=True)
+
+def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
     codigo = os.path.split(sig_path)[1][:-4]
     ws = wb[codigo]
 
@@ -83,65 +141,89 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
     composer.save(finalPath)
 
 def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
+    #Traslación de verdes:
+    _translation_greens(sig_path)
+
     tree = ET.parse(sig_path)
     sc_tag = tree.getroot()
-    for stageProg in sc_tag.findall("./stageProgs/stageProg"):
-        cycle_time = int(stageProg.attrib['cycletime'])//1000
-        offset = int(stageProg.attrib['offset'])//1000
-        greens = []
-        for interstage in stageProg.findall("./interstages/interstage"):
-            greens.append(int(interstage.attrib['begin'])//1000)
+    
+    #Computing amber and red-red
+    greens = []
 
-    #Mínimo ambars
-    min_ambars = []
-    min_greens = []
-    for sg in sc_tag.findall("./sgs/sg"):
-        for defaultDuration in sg.findall("./defaultDurations/defaultDuration"):
-            if defaultDuration.attrib['display'] == '4':
-                min_ambars.append(int(defaultDuration.attrib['duration'])//1000)
-            if defaultDuration.attrib['display'] == '3':
-                min_greens.append(int(defaultDuration.attrib['duration'])//1000)
+    #Greens
+    maxPhase = (None, 0) #NOTE: Index of stageProg / number of phases
+    for i, stageProg in enumerate(sc_tag.findall("./stageProgs/stageProg")):
+        interstages = stageProg.findall("./interstages/interstage")
+        numberPhases = len(interstages)
+        if numberPhases > maxPhase[1]:
+            maxPhase = (i, numberPhases)
 
-    try:
-        min_ambars = min_ambars[:len(greens)]
-        min_greens = min_greens[:len(greens)]
-    except Exception as inst:
-        print("Este error es algo complejo, espero no te salga mi king.")
-        raise inst
+    stageProg = sc_tag.findall("./stageProgs/stageProg")[maxPhase[0]]
+    cycleTime = int(stageProg.get('cycletime'))//1000
+    offset = int(stageProg.get('offset'))//1000
+    for interstage in stageProg.findall("./interstages/interstage"):
+        greens.append(int(interstage.get('begin'))//1000)
 
-    cycle_interstages = []
+    firstValue = greens[0]
+    greens = [y-x for x,y in zip(greens[:-1], greens[1:])]
+    greens[:0] = [firstValue]
+
+    decreaseGreens = []
     for interstageProg in sc_tag.findall("./interstageProgs/interstageProg"):
-        cycle_interstages.append(int(interstageProg.attrib['cycletime'])//1000)
+        check = False
+        for sg in interstageProg.findall("./sgs/sg"):
+            if check: break
+            if sg.get("signal_sequence") == "1": continue
+            for i, cmd in enumerate(sg.findall("./cmds/cmd")):
+                if i == 0 and cmd.get("display") == "3": break
+                if i == 1 and cmd.get("display") == "3":
+                    decreaseGreens.append(int(cmd.get("begin"))//1000)
+                    check = True
+                    break
 
-    min_reds = [x-y-z for x,y,z in zip(cycle_interstages, min_ambars, min_greens)] #NOTE: Aquí esta la razón por la que sale negativo, revisar.
+    #Ambers
+    ambers = []
+    for interstageProg in sc_tag.findall("./interstageProgs/interstageProg"):
+        checkPhase = False
+        for sg in interstageProg.findall("./sgs/sg"):
+            fixedState = sg.find("./fixedstates/fixedstate")
+            if fixedState is not None and not checkPhase:
+                ambers.append(int(fixedState.get("duration"))//1000)
+                checkPhase = True
+                break
+        if not checkPhase: ambers.append(0)
 
-    filtered_green = []
-    for (i, green), ambar, red in zip(enumerate(greens),min_ambars,min_reds):
-        if i == 0: filtered_green.append(green)
-        else: filtered_green.append(green - greens[i-1] - ambar - red)
+    #Modifying greens values:
+    firstValue = greens[0]
+    greens = [y-x for x,y in zip(decreaseGreens, greens[1:])]
+    greens[:0] = [firstValue]
 
-    if sum(filtered_green) + sum(min_ambars) + sum(min_reds) != cycle_time:
-        filtered_green[0] = filtered_green[0]+ cycle_time-(sum(filtered_green) + sum(min_ambars) + sum(min_reds))
+    #Reds
+    reds = [y-x for x,y in zip(ambers, decreaseGreens)]
 
     sig_info = {
         "sig_name": os.path.split(sig_path)[1][:-4],
         "turn": scenario,
         "tipicidad": tipicidad,
-        "cycle_time": cycle_time,
+        "cycle_time": cycleTime,
         "offset": offset,
-        "greens": filtered_green,
-        "ambars": min_ambars,
-        "reds": min_reds,
+        "greens": greens,
+        "ambars": ambers,
+        "reds": reds,
     }
 
     return sig_info
 
 def _create_table(sigs_info, tipicidad, tablasPath) -> None:
     doc = Document()
-    sig_info_0 = sigs_info[2] #NOTE: Número de fases de la HPM <<<<<<<<<<<<<<<<<<<<<<<<<<
-    greens_0 = sig_info_0['greens']
-    len_greens =len(greens_0)
+    maximum = 0
+    for sigInfo in sigs_info:
+        valueLen = len(sigInfo['greens'])
+        if valueLen > maximum: maximum = valueLen
 
+    len_greens = maximum
+
+    print("TAMAÑO DE VASES DE VERDE:", len_greens)
     table = doc.add_table(rows = 1, cols= 1+4+len_greens*3)
     table.cell(0,0).text = "Int."
     table.cell(0,1).text = "N° Plan"
@@ -239,6 +321,8 @@ def create_table18(subarea_path) -> None:
                     sig_info = _create_data(sig_path, scenario, tipicidad)
                 sigs_info.append(sig_info)
 
+            print("Analizando Sig File:", sig_file)
+            for elem in sigs_info: print(elem)
             #HACK: Existe la posibilidad de que haya problemas en la creación de la tablas por el tamaño de las fases entre horas valles y puntas.
             finalPath, code, tipicidad = _create_table(sigs_info, tipicidad, tablasPath) #TODO: Analizar si funciona con tamaños de fases distintos.
             texto = f"Programación semafórica de la intersección {code} día {tipicidad}"
@@ -267,3 +351,7 @@ def create_table18(subarea_path) -> None:
     _combine_all_docx(filePathMaster, filePathList, programPath)
 
     return programPath
+
+# if __name__ == '__main__':
+#     sigPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 034\Output_Base\Tipico\HPT\SS-87.sig"
+#     _create_data(sigPath, "HPM", "Tipico")
