@@ -399,11 +399,14 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
     for row in table.rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
-                run.font.name = 'Arial Narrow'
-                run.font.size = Pt(11)
-                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                try:
+                    run = paragraph.runs[0]
+                    run.font.name = 'Arial Narrow'
+                    run.font.size = Pt(11)
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                except:
+                    pass
 
     table.style = 'Table Grid'
 
@@ -472,11 +475,14 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
     for row in table.rows:
         for cell in row.cells:
             for paragraph in cell.paragraphs:
-                run = paragraph.runs[0]
-                run.font.name = 'Arial Narrow'
-                run.font.size = Pt(11)
-                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                try:
+                    run = paragraph.runs[0]
+                    run.font.name = 'Arial Narrow'
+                    run.font.size = Pt(11)
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                except:
+                    pass
 
     table.style = 'Table Grid'
 

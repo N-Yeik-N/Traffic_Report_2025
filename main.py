@@ -451,7 +451,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 20\tERROR\tTablas de resultados peatonales, vehiculares y de nodos")
                 LOGGER.warning("Error Tabla 20")
                 LOGGER.warning(str(e))
-                #raise e
+                raise e
 
         checkObject = self.ui.tableWidget.item(17,0).checkState()
 

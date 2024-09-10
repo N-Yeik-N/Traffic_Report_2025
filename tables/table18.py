@@ -223,7 +223,7 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
 
     len_greens = maximum
 
-    print("TAMAÑO DE VASES DE VERDE:", len_greens)
+    # print("TAMAÑO DE VASES DE VERDE:", len_greens)
     table = doc.add_table(rows = 1, cols= 1+4+len_greens*3)
     table.cell(0,0).text = "Int."
     table.cell(0,1).text = "N° Plan"
@@ -304,12 +304,11 @@ def create_table18(subarea_path) -> None:
 
     for tipicidad in tipicidades:
         for i, scenario in enumerate(scenarioByTipicidad[tipicidad]):
-            if i == 0: #What the hell is this for? To list sig files
-                scenario_path = output_folder / tipicidad / scenario
-                sig_files = os.listdir(scenario_path)
-                sig_files = [file for file in sig_files if file.endswith(".sig")]
-            else:
-                break
+            if scenario in ["HPMAD", "HVMAD", "HVM", "HVT", "HVN"]: continue
+            scenario_path = output_folder / tipicidad / scenario
+            sig_files = os.listdir(scenario_path)
+            sig_files = [file for file in sig_files if file.endswith(".sig")]
+            break
 
         for sig_file in sig_files:
             sigs_info = []
@@ -321,8 +320,8 @@ def create_table18(subarea_path) -> None:
                     sig_info = _create_data(sig_path, scenario, tipicidad)
                 sigs_info.append(sig_info)
 
-            print("Analizando Sig File:", sig_file)
-            for elem in sigs_info: print(elem)
+            # print("Analizando Sig File:", sig_file)
+            # for elem in sigs_info: print(elem)
             #HACK: Existe la posibilidad de que haya problemas en la creación de la tablas por el tamaño de las fases entre horas valles y puntas.
             finalPath, code, tipicidad = _create_table(sigs_info, tipicidad, tablasPath) #TODO: Analizar si funciona con tamaños de fases distintos.
             texto = f"Programación semafórica de la intersección {code} día {tipicidad}"
