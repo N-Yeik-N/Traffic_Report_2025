@@ -280,7 +280,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Histograma\tERROR\tVehiculares")
                 LOGGER.warning("Errores de histogramas vehiculares")
                 LOGGER.warning(str(e))
-                #raise e
+                raise e
 
             try:
                 histogramas_pea_tip, histogramas_pea_atip = histogramas_peatonales(self.path_subarea)
@@ -295,7 +295,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Histograma\tERROR\tPeatonales")
                 LOGGER.warning("Errores de histogramas peatonales")
                 LOGGER.warning(str(e))
-                #raise e
+                raise e
 
         checkObject = self.ui.tableWidget.item(9,0).checkState()
         if checkObject: #NOTE: Ready flujograma_veh_sist and paragraphs

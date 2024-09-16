@@ -48,22 +48,20 @@ def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList:
     shortText = "pea" if pedestrian else "veh"
     headers = ["TURNO ", "\nHora Punta Sistema\n"]
     stageDay = ["MAÑANA", "TARDE", "NOCHE"]
+    maxTotal = 0
+    relevantBars = []
     for (id1, id2), stage in zip(selectedIndexes, stageDay):
-        bar1 = bars[id1]
-        bar2 = bars[id2]
-        relevantBars = [
+        relevantBars.append([
             (id1-1, bars[id1-1].get_height()),
             (id1, bars[id1].get_height()),
             (id2, bars[id2].get_height()),
             (id2+1, bars[id2+1].get_height()),
-            ]
-        
-        maxIndex, maxVol = max(relevantBars, key=lambda x: x[1])
+            ])
 
-        midPoint_X = (bar1.get_x() + bar1.get_width() / 2 + bar2.get_x() + bar2.get_width() / 2) / 2
-        midPoint_Y = maxVol*1.41
-        text = headers[0] + stage + '\n' + str(int((tuple(sum(x) for x in zip(*relevantBars))[1]))) + " " + shortText + "s/h" + headers[1] + _convert_quarter2hour(str(labels[relevantBars[-1][0]])) # Copilot sum
-        ax.text(midPoint_X, midPoint_Y, text, ha='center', va='center', fontsize = 10, bbox=dict(facecolor='white', alpha=0.5))
+    for (id1, id2), stage, relevantBarGroup in zip(selectedIndexes, stageDay, relevantBars):
+        midPoint_X = (bars[id1].get_x() + bars[id1].get_width() / 2 + bars[id2].get_x() + bars[id2].get_width() / 2) / 2
+        text = headers[0] + stage + '\n' + str(int((tuple(sum(x) for x in zip(*relevantBarGroup))[1]))) + " " + shortText + "s/h" + headers[1] + _convert_quarter2hour(str(labels[relevantBarGroup[-1][0]])) # Copilot sum
+        ax.text(midPoint_X, max(volumes)*1.38, text, ha='center', va='center', fontsize = 10, bbox=dict(facecolor='white', alpha=0.5))
 
     # Girar las etiquetas del eje x
     ax.set_xticks(range(len(labels)))
@@ -85,7 +83,7 @@ def _draw_hist(subareaPath, volumes: list, nameIntersection: str, peakHoursList:
 
     # Configurar etiquetas y título
     ax.set_ylabel(f'Volumen ({shortText}/15 min)')
-    ax.set_title(f'HISTOGRAMA {fullText}\n{nameIntersection}')
+    ax.set_title(f'HISTOGRAMA {fullText}\n{nameIntersection}', fontweight='bold')
 
     # Mostrar el gráfico
     plt.tight_layout()
