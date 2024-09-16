@@ -56,7 +56,10 @@ def get_sigs_actual(
             scenarioContent = [file for file in scenarioContent if file.endswith(".png")]
             for pngFile in scenarioContent:
                 if re.search(pattern, pngFile):
-                    pngList_by_Code[pngFile[:-4]].append(os.path.join(scenarioPath, pngFile))
+                    try:
+                        pngList_by_Code[pngFile[:-4]].append(os.path.join(scenarioPath, pngFile))
+                    except KeyError:
+                        print(f"Existe el {pngFile[:-4]} pero no se va a considerar.")
 
     #Obtaining name of intersections:
     dataExcel = "./data/Datos Generales.xlsx"
