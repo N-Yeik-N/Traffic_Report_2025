@@ -116,7 +116,16 @@ class MyWindow(QMainWindow, Ui_Form):
         doc = DocxTemplate("templates/template.docx")
 
         #Location
-        VARIABLES, codintersecciones, anexosFinalPath = location(self.path_subarea)
+        VARIABLES, codintersecciones, anexosFinalPath, finalPathListOperational = location(self.path_subarea)
+
+        #Lists:
+        try:
+            operational_list_word = doc.new_subdoc(finalPathListOperational)
+            VARIABLES.update({"operational_list": operational_list_word})
+        except Exception as e:
+            print("Listas de operaciones:\tERROR\tLista de operaciones con error")
+            LOGGER.warning("Error Listas de operaciones")
+            LOGGER.warning(str(e))
 
         #Table paths:
         checkObject = self.ui.tableWidget.item(0,0).checkState()

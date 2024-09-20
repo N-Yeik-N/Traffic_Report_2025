@@ -79,6 +79,34 @@ def location(path_subarea) -> list[dict, list]:
         descsubarea = "la intersección que conforma"
         prestablas = "la siguiente tabla"
 
+    ######################################
+    # Individual names and intersections #
+    ######################################
+
+    buildListsFolder = os.path.join(path_subarea, "Tablas", "Listas")
+    filePathsList = []
+    for intersectionName, intersectionCode in zip(intersecciones, codintersecciones):
+        docTemplate = DocxTemplate("./templates/template_operacional.docx")
+        docTemplate.render(
+            {
+                "name_intersection": intersectionName,
+                "code_intersection": intersectionCode,
+            }
+        )
+        savePath = os.path.join(path_subarea, "Tablas", "Listas", f"operational_list_{intersectionCode}.docx")
+        docTemplate.save(savePath)
+        filePathsList.append(savePath)
+
+    finalPathListOperational = os.path.join(path_subarea, "Tablas", "Listas", "operational_lists.docx")
+
+    filePathMaster = filePathsList[0]
+    if len(filePathsList) > 1:
+        filePathMaster = filePathsList[0]
+        filePathsList = filePathsList[1:]
+        _combine_all_docx(filePathMaster, filePathsList, finalPathListOperational)
+    elif len(filePathsList) == 1:
+        finalPathListOperational = filePathMaster    
+
     VARIABLES = {
         "numsubarea": numsubarea,
         "nameproject": nameproject,
@@ -90,6 +118,7 @@ def location(path_subarea) -> list[dict, list]:
         "presinter2": presinter2,
         "prestablas": prestablas,
         "presinter3": presinter3,
+        "operational_lists": 
     }
 
     #Create anexos list
@@ -121,7 +150,7 @@ def location(path_subarea) -> list[dict, list]:
 
     doc.save(anexosFinalPath)
 
-    return VARIABLES, codintersecciones, anexosFinalPath
+    return VARIABLES, codintersecciones, anexosFinalPath, finalPathListOperational
 
 def histogramas(path_subarea) -> str:
     listCodes = get_codes(path_subarea)
