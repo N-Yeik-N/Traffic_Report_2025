@@ -1,16 +1,19 @@
 import os
-from tables.tools.boarding import board_by_excel, create_table
+#from tables.tools.boarding import board_by_excel, create_table
+from tools.boarding import board_by_excel, create_table
 from docx import Document
 from pathlib import Path
+from dataclasses import asdict
+import pandas as pd
 
 def append_document_content(source_doc, target_doc) -> None:
     for element in source_doc.element.body:
         target_doc.element.body.append(element)
 
 def create_table7(path_subarea) -> None:
-    path_parts = path_subarea.split("/") #<--- LINUX
-    subarea_id = path_parts[-1]
-    proyect_folder = '/'.join(path_parts[:-2]) #<--- LINUX
+    path_subarea = Path(path_subarea)
+    subarea_id = path_subarea.name
+    proyect_folder = path_subarea.parents[1]
 
     field_data = os.path.join(
         proyect_folder,
@@ -28,12 +31,20 @@ def create_table7(path_subarea) -> None:
         excels_by_tipicidad[tipicidad] = list_excels
 
     tables_by_tipicidad = {}
+    listDfs = []
     for tipicidad, excel_list in excels_by_tipicidad.items():
         tables_by_code = {}
         for excel in excel_list:
-            codigo, tableList = board_by_excel(excel)
+            codigo, tableList, name = board_by_excel(excel)
+            if tipicidad == "Tipico":
+                dataDict = tableList.copy()
+                dataDict = [asdict(obj) for obj in dataDict]
+                df = pd.DataFrame(dataDict) #<--- TODO: Estoy guardando lo que va a ser usado, ahora debes usar solo el promedio.
+            listDfs.append((df, codigo, name))
             tables_by_code[codigo] = tableList
         tables_by_tipicidad[tipicidad] = tables_by_code
+
+    return None
 
     count = 1
     list_REF = []
@@ -57,3 +68,7 @@ def create_table7(path_subarea) -> None:
 
     doc_target.save(table7_path)
     return table7_path
+
+if __name__ == '__main__':
+    subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 041"
+    create_table7(subareaPath)

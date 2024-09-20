@@ -118,7 +118,6 @@ def location(path_subarea) -> list[dict, list]:
         "presinter2": presinter2,
         "prestablas": prestablas,
         "presinter3": presinter3,
-        "operational_lists": 
     }
 
     #Create anexos list

@@ -51,10 +51,11 @@ def tale_by_excel(path):
     df["Mean"] = pd.to_numeric(df["Mean"], errors = 'coerce')
     df["Std"] = pd.to_numeric(df["Std"], errors = 'coerce')
     date = ws['D4'].value
+    name = ws['D3'].value
 
     wb.close()
 
-    return code, date, df
+    return code, date, df, name
 
 def _get_statistics(slice_turn, ws, quant):
     df = pd.DataFrame([[cell.value for cell in row] for row in ws[slice_turn]]).iloc[:,:quant]

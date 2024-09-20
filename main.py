@@ -176,7 +176,7 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(2,0).checkState()
         if checkObject: #NOTE: Ready tabla4
             try:
-                table4_path, table5_path = create_table4n5(self.path_subarea)
+                table4_path, table5_path, finalPathQueue = create_table4n5(self.path_subarea)
                 table4 = doc.new_subdoc(table4_path)
                 VARIABLES.update({"tabla4": table4})
                 print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
@@ -203,6 +203,15 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 5\t\tERROR\tDatos estadísticas de longitud de cola")
                 LOGGER.warning("Error Tabla 5")
                 LOGGER.warning(str(e))
+            
+        try:
+            queueList = doc.new_subdoc(finalPathQueue)
+            if queueList:
+                VARIABLES.update({"queueList", queueList})
+        except Exception as e:
+            print("Colas\t\tERROR\tDescripción en listas de Colas")
+            LOGGER.warning("ERROR Lista de Colas")
+            LOGGER.warning(str(e))
         
         checkObject = self.ui.tableWidget.item(4,0).checkState()
         if checkObject: #NOTE: Ready tabla6

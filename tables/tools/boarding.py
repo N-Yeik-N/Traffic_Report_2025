@@ -27,6 +27,7 @@ def board_by_excel(path) -> tuple[str, list]:
     wb = load_workbook(path, read_only=True, data_only=True)
     ws = wb['Base Data']
     codigo = ws['C4'].value
+    name = ws['C3'].value
     #fecha = ws['C5'].value
     columnas = ["Turno", "Sentido", "Acceso", "Tipo de Vehiculo", "Tiempo"]
     df = pd.DataFrame([[cell.value for cell in row] for row in ws['C8:G157']], columns= columnas)
@@ -61,7 +62,7 @@ def board_by_excel(path) -> tuple[str, list]:
 
                 tableList.append(info)
 
-    return codigo, tableList
+    return codigo, tableList, name
 
 def create_table(
         tableData,  #Lista de un dataclass con la información por fila.

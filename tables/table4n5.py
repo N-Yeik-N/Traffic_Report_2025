@@ -1,5 +1,6 @@
 import os
 from tables.tools.tale import tale_by_excel
+#from tools.tale import tale_by_excel
 from pathlib import Path
 
 #docx
@@ -27,9 +28,9 @@ def append_document_content(source_doc, target_doc) -> None:
         target_doc.element.body.append(element)
 
 def create_table4n5(path_subarea):
-    path_parts = path_subarea.split("/")
-    subarea_id = path_parts[-1]
-    proyect_folder = '/'.join(path_parts[:-2])
+    path_subarea = Path(path_subarea)
+    subarea_id = path_subarea.name
+    proyect_folder = path_subarea.parents[1]
 
     field_data = os.path.join(
         proyect_folder,
@@ -51,10 +52,88 @@ def create_table4n5(path_subarea):
     for tipicidad, excelList in excels_by_tipicidad.items():
         dataList = []
         for excel in excelList:
-            codigo, date, dict_info = tale_by_excel(excel)
+            codigo, date, dict_info, name = tale_by_excel(excel)
             list_codes.append(codigo)
             dataList.append([codigo, date, dict_info])
         data_by_tipicidad[tipicidad] = dataList
+
+    ###############
+    # Queues list #
+    ###############
+
+    generalTextSingular = "En el turno {TURN}, el sentido {SENT} presenta una longitud de cola máxima de {LONGCOLAMAX}m, siendo el sentido más crítico ({NUMAUTOS} autos en cola aproximadamente)."
+    generalTextPlural = "En el turno {TURN}, los sentidos {SENT} presentan una longitud de cola máxima de {LONGCOLAMAX}m, siendo los sentidos más críticos ({NUMAUTOS} autos en cola aproximadamente)."
+
+    if not os.path.exists(os.path.join(
+        path_subarea, "Tablas", "Queues"
+    )):
+        os.makedirs(os.path.join(
+            path_subarea, "Tablas", "Queues"
+        ))
+
+    queueWordLists = []
+    for codigo, _, df, name in dataList:
+        queueDict = {}
+        max_values = df.groupby('Turn')['Max'].transform('max')
+        dfResult = df[df['Max'] == max_values]
+        for turn in ["Mañana", "Tarde", "Noche"]:
+            dfTurn = dfResult[dfResult['Turn'] == turn].reset_index(drop=True)
+            if dfTurn.shape[0] == 0:
+                queueDict[turn] = f"No hay datos para el turno {turn.lower()}."
+            elif dfTurn.shape[0] == 1:
+                SENT = dfTurn.iloc[0]['Direction']
+                LONGCOLAMAX = int(dfTurn.iloc[0]['Max'])
+                NUMAUTOS = LONGCOLAMAX//5.5
+                variables = {
+                    "TURN": turn.lower(),
+                    "SENT": SENT.lower(),
+                    "LONGCOLAMAX": LONGCOLAMAX,
+                    "NUMAUTOS": int(NUMAUTOS),
+                }
+                resultText = generalTextSingular.format(**variables)
+
+            elif dfTurn.shape[0] >= 2:
+                listSENT = [dfTurn.iloc[i]['Direction'] for i in range(dfTurn.shape[0])]
+                if len(listSENT) > 2:
+                    SENT = ', '.join(listSENT[:-1]) + ' y ' + listSENT[-1]
+                elif len(listSENT) == 2:
+                    SENT = ' y '.join(listSENT)
+                LONGCOLAMAX = int(dfTurn.iloc[0]['Max'])
+                NUMAUTOS = LONGCOLAMAX//5.5
+                variables = {
+                    "TURN": turn.lower(),
+                    "SENT": SENT.lower(),
+                    "LONGCOLAMAX": LONGCOLAMAX,
+                    "NUMAUTOS": int(NUMAUTOS),
+                } 
+                resultText = generalTextPlural.format(**variables)
+
+            queueDict[turn] = resultText
+
+        doc = DocxTemplate("./templates/template_queue.docx")
+        VARIABLES = {
+            "codinterseccion": codigo,
+            "nominterseccion": name,
+            "morning": queueDict["mañana"],
+            "afternoon": queueDict["tarde"],
+            "night": queueDict["noche"],
+        }
+        doc.render(VARIABLES)
+        queuePath = os.path.join(
+            path_subarea, "Tablas", "Queues", f"{codigo}.docx"
+        )
+        doc.save(queuePath)
+        queueWordLists.append(queuePath)
+    
+    finalPathQueue = os.path.join(path_subarea, "Tablas", "queues_list.docx")
+    if len(queueWordLists) == 1:
+        finalPathQueue = queueWordLists[0]
+    elif queueWordLists > 1:
+        filePathMaster = queueWordLists[0]
+        filePathsList = queueWordLists[1:]
+        _combine_all_docx(filePathMaster, filePathsList, finalPathQueue)
+    else:
+        finalPathQueue = None
 
     list_codes = list(set(list_codes))
     
@@ -261,4 +340,4 @@ def create_table4n5(path_subarea):
     table5_path = Path(path_subarea) / "Tablas" / "table5.docx"
     doc_target.save(table5_path)
 
-    return table4_path, table5_path
+    return table4_path, table5_path, finalPathQueue
