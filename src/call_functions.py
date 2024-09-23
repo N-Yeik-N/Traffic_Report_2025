@@ -27,7 +27,7 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
 
     composer.save(finalPath)
 
-def location(path_subarea) -> list[dict, list]:
+def location(path_subarea: str) -> list[dict, list]:
     numsubarea = os.path.split(path_subarea)[1][-3:]
     df_general = pd.read_excel("./data/Datos Generales.xlsx", sheet_name="DATOS", header=0, usecols="A:E")
     nro_entregable = df_general[df_general['Sub_Area'] == int(numsubarea)]["Entregable"].unique()[0]
@@ -47,8 +47,12 @@ def location(path_subarea) -> list[dict, list]:
     if len(intersecciones) == 1:
         nominterseccion = intersecciones[0]
         presinter3 = "El nodo de la intersección"
+        presinter4 = "la intersección"
+        presinter5 = "el diagrama"
     else:
         presinter3 = "Todos los nodos de las intersecciones"
+        presinter4 = "las intersecciones"
+        presinter5 = "los diagramas"
         for i, nombre_inter in enumerate(intersecciones):
             if i == len(intersecciones)-1:
                 texto += ' y ' + nombre_inter
@@ -84,6 +88,7 @@ def location(path_subarea) -> list[dict, list]:
     ######################################
 
     buildListsFolder = os.path.join(path_subarea, "Tablas", "Listas")
+    buildListsFolder.mkdir(parents=True, exist_ok=True)
     filePathsList = []
     for intersectionName, intersectionCode in zip(intersecciones, codintersecciones):
         docTemplate = DocxTemplate("./templates/template_operacional.docx")
@@ -118,6 +123,8 @@ def location(path_subarea) -> list[dict, list]:
         "presinter2": presinter2,
         "prestablas": prestablas,
         "presinter3": presinter3,
+        "presinter4": presinter4,
+        "presinter5": presinter5,
     }
 
     #Create anexos list
@@ -149,7 +156,7 @@ def location(path_subarea) -> list[dict, list]:
 
     doc.save(anexosFinalPath)
 
-    return VARIABLES, codintersecciones, anexosFinalPath, finalPathListOperational
+    return VARIABLES, codintersecciones, anexosFinalPath, finalPathListOperational, intersecciones
 
 def histogramas(path_subarea) -> str:
     listCodes = get_codes(path_subarea)

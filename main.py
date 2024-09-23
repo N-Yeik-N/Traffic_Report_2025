@@ -33,6 +33,16 @@ from PyQt5 import QtCore
 import datetime
 import locale
 
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
+
+    composer.save(finalPath)
+
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 fecha_actual = datetime.datetime.now()
 month = fecha_actual.strftime("%B")
@@ -116,7 +126,29 @@ class MyWindow(QMainWindow, Ui_Form):
         doc = DocxTemplate("templates/template.docx")
 
         #Location
-        VARIABLES, codintersecciones, anexosFinalPath, finalPathListOperational = location(self.path_subarea)
+        VARIABLES, codintersecciones, anexosFinalPath, finalPathListOperational, intersecciones = location(self.path_subarea)
+
+        #Diagrams of phases list
+        try:
+            diagramPath = os.path.join(self.path_subarea, "Tablas", "Diagramas")
+            diagramPath.mkdir(parents=True, exist_ok=True)
+            listDiagramsWords = []
+            for codeInt, nameInt in zip(codintersecciones, intersecciones):
+                docTemplate = DocxTemplate("templates/template_imagenes_simple.docx")
+                docTemplate.render({"interseccion": nameInt, "code": codeInt})
+                partialFinalPath = os.path.join(diagramPath, f"diagrama_{codeInt}.docx")
+                docTemplate.save(partialFinalPath)
+                listDiagramsWords.append(partialFinalPath)
+            
+            filePathMaster = listDiagramsWords[0]
+            filePathList = listDiagramsWords[1:]
+            finalPathDiagrams = os.path.join(diagramPath, "diagramas_list.docx")
+            _combine_all_docx(filePathMaster, filePathList, finalPathDiagrams)
+            diagramaList = doc.new_subdoc(finalPathDiagrams)
+            VARIABLES.update({"diagramaList": diagramaList})
+            pass
+        except Exception as e:
+            pass
 
         #Lists:
         try:
@@ -228,7 +260,7 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(5,0).checkState()
         if checkObject: #NOTE: Ready tabla7
             try:
-                table7_path = create_table7(self.path_subarea)
+                table7_path, embarkingListPath = create_table7(self.path_subarea)
                 table7 = doc.new_subdoc(table7_path)
                 VARIABLES.update({"tabla7": table7})
                 print("Tabla 7\t\tOK\tDatos estadísticas de embarque y desembarque")
@@ -242,6 +274,16 @@ class MyWindow(QMainWindow, Ui_Form):
             except Exception as e:
                 print("Tabla 7\t\tERROR\tDatos estadísticas de embarque y desembarque")
                 LOGGER.warning("Error Tabla 7")
+                LOGGER.warning(str(e))
+
+            try:
+                if not embarkingListPath:
+                    embarkingPath = doc.new_subdoc(embarkingListPath)
+                    VARIABLES.update({"embarkingList": embarkingPath})
+                print("Embarque\t\tOK\tLista de descripción")
+            except Exception as e:
+                print("Embarque\t\tERROR\tLista de descripción")
+                LOGGER.warning("Error lista de embarque")
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(6,0).checkState()

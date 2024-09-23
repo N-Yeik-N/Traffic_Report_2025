@@ -1,14 +1,26 @@
 import os
-#from tables.tools.boarding import board_by_excel, create_table
-from tools.boarding import board_by_excel, create_table
+from tables.tools.boarding import board_by_excel, create_table
+#from tools.boarding import board_by_excel, create_table
 from docx import Document
 from pathlib import Path
 from dataclasses import asdict
 import pandas as pd
+from docxtpl import DocxTemplate
+from docxcompose.composer import Composer
 
 def append_document_content(source_doc, target_doc) -> None:
     for element in source_doc.element.body:
         target_doc.element.body.append(element)
+
+def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
+    number_of_sections = len(filePathsList)
+    master = Document(filePathMaster)
+    composer = Composer(master)
+    for i in range(0, number_of_sections):
+        doc_temp = Document(filePathsList[i])
+        composer.append(doc_temp)
+
+    composer.save(finalPath)
 
 def create_table7(path_subarea) -> None:
     path_subarea = Path(path_subarea)
@@ -40,11 +52,50 @@ def create_table7(path_subarea) -> None:
                 dataDict = tableList.copy()
                 dataDict = [asdict(obj) for obj in dataDict]
                 df = pd.DataFrame(dataDict) #<--- TODO: Estoy guardando lo que va a ser usado, ahora debes usar solo el promedio.
-            listDfs.append((df, codigo, name))
+                df['maximo'] = pd.to_numeric(df['maximo'], errors='coerce')
+                df['promedio'] = pd.to_numeric(df['promedio'], errors='coerce')
+                df['desviacion'] = pd.to_numeric(df['desviacion'], errors='coerce')
+                listDfs.append((df, codigo, name))
             tables_by_code[codigo] = tableList
         tables_by_tipicidad[tipicidad] = tables_by_code
 
-    return None
+    ###########################
+    # Creating embarking list #
+    ###########################
+
+    embarkingFolder = path_subarea / "Tablas" / "Embarking"
+    embarkingFolder.mkdir(parents=True, exist_ok=True)
+
+    listWordsEmbarking = []
+    for df, code, name in listDfs:
+        dfMeanByTurn = df.groupby('turno')['promedio'].mean().round(2)
+        doc = DocxTemplate("templates/template_embarquelist.docx")
+        variables = {
+            "codinterseccion": code,
+            "nominterseccion": name,
+            "temprom_morning": dfMeanByTurn['Mañana'],
+            "temprom_afternoon": dfMeanByTurn['Medio dia'],
+            "temprom_night": dfMeanByTurn['Noche']
+        }
+        doc.render(variables)
+        savePath = path_subarea / "Tablas" / "Embarking" / f"table7_{code}.docx"
+        doc.save(savePath)
+        listWordsEmbarking.append(savePath)
+
+    embarkingListPath = path_subarea / "Tablas" / "Embarking" / "embarking_list.docx"
+
+    if len(listWordsEmbarking) == 0:
+        embarkingListPath = None
+    elif len(listWordsEmbarking) == 1:
+        embarkingListPath = listWordsEmbarking[0]
+    elif len(listWordsEmbarking) > 1:
+        filePathMaster = listWordsEmbarking[0]
+        filePathList = listWordsEmbarking[1:]
+        _combine_all_docx(filePathMaster, filePathList, embarkingListPath)
+
+    ####################
+    # Creating table 7 #
+    ####################
 
     count = 1
     list_REF = []
@@ -67,8 +118,4 @@ def create_table7(path_subarea) -> None:
         doc_target = Document(table7_path)
 
     doc_target.save(table7_path)
-    return table7_path
-
-if __name__ == '__main__':
-    subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 041"
-    create_table7(subareaPath)
+    return table7_path, embarkingListPath
