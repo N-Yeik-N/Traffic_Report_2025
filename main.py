@@ -203,7 +203,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 3\t\tERROR\tTabla de fechas de conteos")
                 LOGGER.warning("Error Tabla 2 o 3")
                 LOGGER.warning(str(e))
-                raise e
 
         checkObject = self.ui.tableWidget.item(2,0).checkState()
         if checkObject: #NOTE: Ready tabla4
@@ -239,7 +238,8 @@ class MyWindow(QMainWindow, Ui_Form):
         try:
             queueList = doc.new_subdoc(finalPathQueue)
             if queueList:
-                VARIABLES.update({"queueList", queueList})
+                VARIABLES.update({"queueList": queueList})
+                print("Colas\t\tOK\tDescripción en listas de Colas")
         except Exception as e:
             print("Colas\t\tERROR\tDescripción en listas de Colas")
             LOGGER.warning("ERROR Lista de Colas")
@@ -280,9 +280,9 @@ class MyWindow(QMainWindow, Ui_Form):
                 if not embarkingListPath:
                     embarkingPath = doc.new_subdoc(embarkingListPath)
                     VARIABLES.update({"embarkingList": embarkingPath})
-                print("Embarque\t\tOK\tLista de descripción")
+                print("Embarque\tOK\tLista de descripción")
             except Exception as e:
-                print("Embarque\t\tERROR\tLista de descripción")
+                print("Embarque\tERROR\tLista de descripción")
                 LOGGER.warning("Error lista de embarque")
                 LOGGER.warning(str(e))
 
@@ -297,7 +297,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 8:\t\tERROR\tTabla de fechas de tiempos de ciclo y fases")
                 LOGGER.warning("Error Tabla 8")
                 LOGGER.warning(str(e))
-                #raise e
 
         checkObject = self.ui.tableWidget.item(7,0).checkState()
         if checkObject: #NOTE: Ready table9 and parrafos_programacion
@@ -311,7 +310,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 9\t\tERROR\tGráficas de programaciones semafóricas")
                 LOGGER.warning("Error Tabla 9")
                 LOGGER.warning(str(e))
-                #raise e
 
         checkObject = self.ui.tableWidget.item(8,0).checkState()
         if checkObject: #NOTE: Ready histogramas and maxTipicidad, maxTurno            
@@ -399,7 +397,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 12\tERROR\tTabla para ser llenada de interacciones peatonales")
                 LOGGER.warning("Error Tabla 12")
                 LOGGER.warning(str(e))
-                #raise e
 
         checkObject = self.ui.tableWidget.item(12,0).checkState()
         if checkObject: #NOTE: Ready Tabla OD only when GEH-R2.xlsm exists
@@ -409,11 +406,14 @@ class MyWindow(QMainWindow, Ui_Form):
                 VARIABLES.update({"tabla14": table14})
                 VARIABLES.update(VARIABLES_OD)
                 print("Tabla 14\tOK\tTabla de OD de situación actual")
+            except IndexError as e:
+                print("Tabla 14\tERROR\tNo hay matrices en la carpeta Actual")
+                LOGGER.warning("Error tabla 14")
+                LOGGER.warning("No hay matrices en alguna de las carpetas Actual")
             except Exception as e:
                 print("Tabla 14\tERROR\tTabla de orígenes y destinos de situación actual")
                 LOGGER.warning("Error Tabla 14")
                 LOGGER.warning(str(e))
-                #raise e
 
         checkObject = self.ui.tableWidget.item(13,0).checkState()
         if checkObject: #NOTE: Ready tabla16
@@ -457,7 +457,7 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(16,0).checkState()
         if checkObject: #NOTE: Results ready
             try:
-                results_nodes, results_vehicular, results_peatonal = generate_results(self.path_subarea)
+                results_nodes, results_vehicular, results_peatonal, paragraphsNodes, paragraphsVehicular, paragraphsPeatonal = generate_results(self.path_subarea)
 
                 #Nodos
                 result_nodo_tip_hpm = doc.new_subdoc(results_nodes["Tipico"]["HPM"])
@@ -466,6 +466,13 @@ class MyWindow(QMainWindow, Ui_Form):
                 result_nodo_ati_hpm = doc.new_subdoc(results_nodes["Atipico"]["HPM"])
                 result_nodo_ati_hpt = doc.new_subdoc(results_nodes["Atipico"]["HPT"])
                 result_nodo_ati_hpn = doc.new_subdoc(results_nodes["Atipico"]["HPN"])
+
+                paragraph_nodo_tip_hpm = doc.new_subdoc(paragraphsNodes["Tipico"]["HPM"])
+                paragraph_nodo_tip_hpt = doc.new_subdoc(paragraphsNodes["Tipico"]["HPT"])
+                paragraph_nodo_tip_hpn = doc.new_subdoc(paragraphsNodes["Tipico"]["HPN"])
+                paragraph_nodo_ati_hpm = doc.new_subdoc(paragraphsNodes["Atipico"]["HPM"])
+                paragraph_nodo_ati_hpt = doc.new_subdoc(paragraphsNodes["Atipico"]["HPT"])
+                paragraph_node_ati_hpn = doc.new_subdoc(paragraphsNodes["Atipico"]["HPN"])
                 
                 #Vehicular
                 result_veh_tip_hpm = doc.new_subdoc(results_vehicular["Tipico"]["HPM"])
@@ -475,6 +482,13 @@ class MyWindow(QMainWindow, Ui_Form):
                 result_veh_ati_hpt = doc.new_subdoc(results_vehicular["Atipico"]["HPT"])
                 result_veh_ati_hpn = doc.new_subdoc(results_vehicular["Atipico"]["HPN"])
 
+                paragraph_veh_tip_hpm = doc.new_subdoc(paragraphsVehicular["Tipico"]["HPM"])
+                paragraph_veh_tip_hpt = doc.new_subdoc(paragraphsVehicular["Tipico"]["HPT"])
+                paragraph_veh_tip_hpn = doc.new_subdoc(paragraphsVehicular["Tipico"]["HPN"])
+                paragraph_veh_ati_hpm = doc.new_subdoc(paragraphsVehicular["Atipico"]["HPM"])
+                paragraph_veh_ati_hpt = doc.new_subdoc(paragraphsVehicular["Atipico"]["HPT"])
+                paragraph_veh_ati_hpn = doc.new_subdoc(paragraphsVehicular["Atipico"]["HPN"])
+
                 #Peatonal
                 result_pea_tip_hpm = doc.new_subdoc(results_peatonal["Tipico"]["HPM"])
                 result_pea_tip_hpt = doc.new_subdoc(results_peatonal["Tipico"]["HPT"])
@@ -482,6 +496,13 @@ class MyWindow(QMainWindow, Ui_Form):
                 result_pea_ati_hpm = doc.new_subdoc(results_peatonal["Atipico"]["HPM"])
                 result_pea_ati_hpt = doc.new_subdoc(results_peatonal["Atipico"]["HPT"])
                 result_pea_ati_hpn = doc.new_subdoc(results_peatonal["Atipico"]["HPN"])
+
+                paragraph_pea_tip_hpm = doc.new_subdoc(paragraphsPeatonal["Tipico"]["HPM"])
+                paragraph_pea_tip_hpt = doc.new_subdoc(paragraphsPeatonal["Tipico"]["HPT"])
+                paragraph_pea_tip_hpn = doc.new_subdoc(paragraphsPeatonal["Tipico"]["HPN"])
+                paragraph_pea_ati_hpm = doc.new_subdoc(paragraphsPeatonal["Atipico"]["HPM"])
+                paragraph_pea_ati_hpt = doc.new_subdoc(paragraphsPeatonal["Atipico"]["HPT"])
+                paragraph_pea_ati_hpn = doc.new_subdoc(paragraphsPeatonal["Atipico"]["HPN"])
 
                 VARIABLES.update({
                     "result_nodo_tip_hpm": result_nodo_tip_hpm,
@@ -491,6 +512,13 @@ class MyWindow(QMainWindow, Ui_Form):
                     "result_nodo_ati_hpt": result_nodo_ati_hpt,
                     "result_nodo_ati_hpn": result_nodo_ati_hpn,
 
+                    "paragraph_nodo_tip_hpm": paragraph_nodo_tip_hpm,
+                    "paragraph_nodo_tip_hpt": paragraph_nodo_tip_hpt,
+                    "paragraph_nodo_tip_hpn": paragraph_nodo_tip_hpn,
+                    "paragraph_nodo_ati_hpm": paragraph_nodo_ati_hpm,
+                    "paragraph_nodo_ati_hpt": paragraph_nodo_ati_hpt,
+                    "paragraph_node_ati_hpn": paragraph_node_ati_hpn,
+
                     "result_veh_tip_hpm": result_veh_tip_hpm,
                     "result_veh_tip_hpt": result_veh_tip_hpt,
                     "result_veh_tip_hpn": result_veh_tip_hpn,
@@ -498,14 +526,28 @@ class MyWindow(QMainWindow, Ui_Form):
                     "result_veh_ati_hpt": result_veh_ati_hpt,
                     "result_veh_ati_hpn": result_veh_ati_hpn,
 
+                    "paragraph_veh_tip_hpm": paragraph_veh_tip_hpm,
+                    "paragraph_veh_tip_hpt": paragraph_veh_tip_hpt,
+                    "paragraph_veh_tip_hpn": paragraph_veh_tip_hpn,
+                    "paragraph_veh_ati_hpm": paragraph_veh_ati_hpm,
+                    "paragraph_veh_ati_hpt": paragraph_veh_ati_hpt,
+                    "paragraph_veh_ati_hpn": paragraph_veh_ati_hpn,
+
                     "result_pea_tip_hpm": result_pea_tip_hpm,
                     "result_pea_tip_hpt": result_pea_tip_hpt,
                     "result_pea_tip_hpn": result_pea_tip_hpn,
                     "result_pea_ati_hpm": result_pea_ati_hpm,
                     "result_pea_ati_hpt": result_pea_ati_hpt,
-                    "result_pea_ati_hpn": result_pea_ati_hpn
+                    "result_pea_ati_hpn": result_pea_ati_hpn,
+
+                    "paragraph_pea_tip_hpm": paragraph_pea_tip_hpm,
+                    "paragraph_pea_tip_hpt": paragraph_pea_tip_hpt,
+                    "paragraph_pea_tip_hpn": paragraph_pea_tip_hpn,
+                    "paragraph_pea_ati_hpm": paragraph_pea_ati_hpm,
+                    "paragraph_pea_ati_hpt": paragraph_pea_ati_hpt,
+                    "paragraph_pea_ati_hpn": paragraph_pea_ati_hpn,
                     })
-                #SEND_MESSAGE = True
+
                 print("Tabla 20\tOK\tTablas de resultados peatonales, vehiculares y de nodos")
             except Exception as e:
                 print("Tabla 20\tERROR\tTablas de resultados peatonales, vehiculares y de nodos")
@@ -517,13 +559,18 @@ class MyWindow(QMainWindow, Ui_Form):
 
         if checkObject: #NOTE: Ready tabla23
             try: 
-                table23_path = create_table23(self.path_subarea)
-                table23 = doc.new_subdoc(table23_path)
-                VARIABLES.update({"tabla23": table23})
-                print("Tabla 23\tOK\tTabla resumen de resultados")
+                summaryVehicleTable, summaryPedestrianTable = create_table23(self.path_subarea)
+                #table23 = doc.new_subdoc(summaryVehicleTable)
+                summaryVehicle = doc.new_subdoc(summaryVehicleTable)
+                summaryPedestrian = doc.new_subdoc(summaryPedestrianTable)
+                VARIABLES.update({
+                    "summaryVehicle": summaryVehicle,
+                    "summaryPedestrian": summaryPedestrian,
+                    })
+                print("Resumenes\tOK\tTabla resumen de resultados")
             except Exception as e:
-                print("Tabla 23\tERROR\tTabla resumen de resultados")
-                LOGGER.warning("Error Tabla 23")
+                print("Resumenes\tERROR\tTabla resumen de resultados")
+                LOGGER.warning("Error en tablas de resumenes de resultados")
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(18,0).checkState()
@@ -539,7 +586,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Sigs actual\tERROR")
                 LOGGER.warning("Sigs actual")
                 LOGGER.warning(str(e))
-                raise e
 
         checkObject = self.ui.tableWidget.item(19,0).checkState()
         if checkObject: #TODO: ready get sigs propuesto
@@ -554,7 +600,6 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Sigs propuesto\tERROR")
                 LOGGER.warning("Sigs propuesto")
                 LOGGER.warning(str(e))
-                #raise e
 
         checkObject = self.ui.tableWidget.item(20,0).checkState()
         if checkObject:

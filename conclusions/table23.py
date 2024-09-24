@@ -126,6 +126,10 @@ def create_table23(subareaPath):
                             jsonFileProyectado = os.path.join(scenarioPathProyectado, "table.json")
                             listJSONPathProyectado.append(jsonFileProyectado)
 
+    #####################
+    # Vehicular results #
+    #####################
+
     doc = Document()
     table = doc.add_table(rows = 1, cols = 9)
 
@@ -232,9 +236,86 @@ def create_table23(subareaPath):
 
     _align_content(table)
 
-    finalPath = os.path.join(subareaPath, "Tablas", "resumenTable.docx")
+    finalPathVehicle = os.path.join(subareaPath, "Tablas", "resumenTable.docx")
     table.style = 'Table Grid'
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
-    doc.save(finalPath)
-    return finalPath
+    doc.save(finalPathVehicle)
+
+    ######################
+    # Pedestrian results #
+    ######################
+
+    doc = Document()
+    table = doc.add_table(rows = 19, cols=6)
+
+    #Headers
+    table.cell(0,0).text = "Tipicidad"
+    table.cell(0,1).text = "Escenario"
+    table.cell(0,1).merge(table.cell(0,2))
+    table.cell(0,3).text = "Vel. Prom.\n(km/h)"
+    table.cell(0,4).text = "Tiempo Parada Prom.\n(seg/peat)"
+    table.cell(0,5).text = "Tiempo Viaje Prom.\n(seg/peat)"
+
+    #Tipically and turn
+    table.cell(1,0).text = "TÍPICO"
+    table.cell(1,0).merge(table.cell(9,0))
+
+    table.cell(10,0).text = "ATÍPICO"
+    table.cell(10,0).merge(table.cell(10,18))
+
+    #Labels per scenario
+    for i in range(6):
+        table.cell(1+3*i,2).text = "Actual"
+        table.cell(2+3*i,2).text = "Propuesto"
+        table.cell(3+3*i,2).text = "Proyectado"
+
+    jump = 0
+    for tipicidad in ["Tipico", "Atipico"]:
+        for turno in ["HPM", "HPT", "HPN"]:
+            #Paths
+            actualPath = os.path.join(
+                subareaPath, "Actual", tipicidad, turno, 'table.json'
+            )
+            basePath = os.path.join(
+                subareaPath, "Output_Base", tipicidad, turno, 'table.json'
+            )
+            proyectadoPath = os.path.join(
+                subareaPath, "Output_Proyectado", tipicidad, turno, 'table.json'
+            )
+
+            with open(actualPath, 'r') as file1:
+                data1 = json.load(file1)
+            with open(basePath, 'r') as file2:
+                data2 = json.load(file2)
+            with open(proyectadoPath, 'r') as file3:
+                data3 = json.load(file3)
+
+            for i in range(3):
+                table.cell(1+3*jump,3).text = str(round(float(data1['pedestrian_performance']['Avg']['SpeedAvg']),2))
+                table.cell(1+3*jump,4).text = str(int(float(data1['pedestrian_performance']['Avg']['StopTmAvg'])))
+                table.cell(1+3*jump,5).text = str(int(float(data1['pedestrian_performance']['Avg']['TravTmAvg'])))
+                table.cell(2+3*jump,3).text = str(round(float(data2['pedestrian_performance']['Avg']['SpeedAvg']),2))
+                table.cell(2+3*jump,4).text = str(int(float(data2['pedestrian_performance']['Avg']['StopTmAvg'])))
+                table.cell(2+3*jump,5).text = str(int(float(data2['pedestrian_performance']['Avg']['TravTmAvg'])))
+                table.cell(3+3*jump,3).text = str(round(float(data3['pedestrian_performance']['Avg']['SpeedAvg']),2))
+                table.cell(3+3*jump,4).text = str(int(float(data3['pedestrian_performance']['Avg']['StopTmAvg'])))
+                table.cell(3+3*jump,5).text = str(int(float(data3['pedestrian_performance']['Avg']['TravTmAvg'])))
+            jump += 1
+
+    _align_content(table)
+    table.style = 'Table Grid'
+    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    for row in table.rows:
+        for cell in row.cells[:3]:
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.bold = True
+
+    finalPathPedestrian = os.path.join(
+        subareaPath, "Tablas", "Results", "resumenPedestrianTable.docx"
+    )
+    doc.save(finalPathPedestrian)
+
+    return finalPathVehicle, finalPathPedestrian

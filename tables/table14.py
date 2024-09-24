@@ -175,6 +175,7 @@ def create_table14(path_subarea, maxTurn, maxTipicidad):
             if len(excelMatrix) > 1: print("Error: Hay más de una matriz en: ", scenario)
             listMatrixes.append(scenarioFolder / excelMatrix[0])
 
+
         matrixes_by_tipicidad[tipicidad] = listMatrixes
     
     listPathsByTipicidad = []

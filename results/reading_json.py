@@ -686,7 +686,7 @@ def generate_results(subareaPath: str) -> list[str]:
         },
     }
 
-    paragraphNodes = {
+    paragraphsNodes = {
         "Tipico": {
             "HPM": None,
             "HPT": None,
@@ -723,7 +723,7 @@ def generate_results(subareaPath: str) -> list[str]:
             filePathList = paragraphsList[1:]
             _combine_all_docx(filePathMaster, filePathList, paragraphNodePath)
 
-            paragraphNodes[tipicidad][turno] = paragraphNodePath
+            paragraphsNodes[tipicidad][turno] = paragraphNodePath
             
             nodoPath = os.path.join(subareaPath, "Tablas", f"nodeResults_{tipicidad}_{turno}_REF.docx")
             if len(listPaths) > 1:
@@ -821,8 +821,4 @@ def generate_results(subareaPath: str) -> list[str]:
 
             paragraphsPeatonal[tipicidad][turno] = os.path.join(resultFolder, f"PEATONAL_{tipicidad.upper()}_{turno}.docx")
 
-    return results_nodes, results_vehicular, results_peatonal
-
-# if __name__ == '__main__':
-#     subareaPath = r"D:\Work\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 041"
-#     results_nodes, results_vehicular, results_peatonal = generate_results(subareaPath)
+    return results_nodes, results_vehicular, results_peatonal, paragraphsNodes, paragraphsVehicular, paragraphsPeatonal

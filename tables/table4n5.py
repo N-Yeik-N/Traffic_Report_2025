@@ -54,7 +54,7 @@ def create_table4n5(path_subarea):
         for excel in excelList:
             codigo, date, dict_info, name = tale_by_excel(excel)
             list_codes.append(codigo)
-            dataList.append([codigo, date, dict_info])
+            dataList.append([codigo, date, dict_info, name])
         data_by_tipicidad[tipicidad] = dataList
 
     ###############
@@ -114,9 +114,9 @@ def create_table4n5(path_subarea):
         VARIABLES = {
             "codinterseccion": codigo,
             "nominterseccion": name,
-            "morning": queueDict["mañana"],
-            "afternoon": queueDict["tarde"],
-            "night": queueDict["noche"],
+            "morning": queueDict["Mañana"],
+            "afternoon": queueDict["Tarde"],
+            "night": queueDict["Noche"],
         }
         doc.render(VARIABLES)
         queuePath = os.path.join(
@@ -128,7 +128,7 @@ def create_table4n5(path_subarea):
     finalPathQueue = os.path.join(path_subarea, "Tablas", "queues_list.docx")
     if len(queueWordLists) == 1:
         finalPathQueue = queueWordLists[0]
-    elif queueWordLists > 1:
+    elif len(queueWordLists) > 1:
         filePathMaster = queueWordLists[0]
         filePathsList = queueWordLists[1:]
         _combine_all_docx(filePathMaster, filePathsList, finalPathQueue)

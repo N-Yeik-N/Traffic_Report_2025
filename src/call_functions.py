@@ -88,7 +88,8 @@ def location(path_subarea: str) -> list[dict, list]:
     ######################################
 
     buildListsFolder = os.path.join(path_subarea, "Tablas", "Listas")
-    buildListsFolder.mkdir(parents=True, exist_ok=True)
+    os.makedirs(buildListsFolder, exist_ok=True)
+     
     filePathsList = []
     for intersectionName, intersectionCode in zip(intersecciones, codintersecciones):
         docTemplate = DocxTemplate("./templates/template_operacional.docx")
