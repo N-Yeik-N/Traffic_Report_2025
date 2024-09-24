@@ -472,7 +472,7 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
 
     table.style = 'Table Grid'
 
-    #Saving tableq
+    #Saving table
     result_vehicular_path = os.path.join(subareaPath, "Tablas", f"vehicular_{tipicidad}_{scenario}.docx")
     doc.save(result_vehicular_path)
     new_text = f"Rendimiento de vehículos de la red en la {dictNames[scenario].lower()} día {tipicidad.lower()}"
@@ -482,6 +482,29 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
 
 def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, subareaPath: str) -> str:
     df = df.reset_index(drop=True)
+
+    #######################
+    # Creating paragraphs #
+    #######################
+
+    dfAvg = df[df["SimRun"] == "Avg"].reset_index(drop=True)
+    VARIABLES = {
+        "speedavg_actual": dfAvg.loc[0]["SpeedAvg"],
+        "stoptmavg_actual": dfAvg.loc[0]["StopTmAvg"],
+        "speedavg_propuesto": dfAvg.loc[1]["SpeedAvg"],
+        "stoptmavg_propuesto": dfAvg.loc[1]["StopTmAvg"],
+        "speedavg_proyectado": dfAvg.loc[2]["SpeedAvg"],
+        "stoptmavg_proyectado": dfAvg.loc[2]["StopTmAvg"],
+    }
+
+    paragraphDoc = DocxTemplate("./templates/template_lista_peatonal.docx")
+    paragraphDoc.render(VARIABLES)
+    paragraphPath = os.path.join(subareaPath, "Tablas", "Results", f"PEATONAL_{tipicidad.upper()}_{scenario}.docx")
+    paragraphDoc.save(paragraphPath)
+
+    ##################
+    # Creating table #
+    ##################
 
     doc = Document()
     table = doc.add_table(rows = 1, cols = 8)
@@ -755,14 +778,25 @@ def generate_results(subareaPath: str) -> list[str]:
 
             resultContent = os.listdir(resultFolder)
             paragraphsVehicular[tipicidad][turno] = os.path.join(resultFolder, f"VEHICULAR_{tipicidad.upper()}_{turno}.docx")
-
-    #print(paragraphsVehicular)
             
     #######################################
     # Resultados por rendimiento peatonal #
     #######################################
 
     results_peatonal = {
+        "Tipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+        "Atipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+    }
+
+    paragraphsPeatonal = {
         "Tipico": {
             "HPM": None,
             "HPT": None,
@@ -785,8 +819,10 @@ def generate_results(subareaPath: str) -> list[str]:
             peatonalResultPathRef = create_tables_peatonal(filtered_df, tipicidad, turno, subareaPath)
             results_peatonal[tipicidad][turno] = peatonalResultPathRef
 
+            paragraphsPeatonal[tipicidad][turno] = os.path.join(resultFolder, f"PEATONAL_{tipicidad.upper()}_{turno}.docx")
+
     return results_nodes, results_vehicular, results_peatonal
 
-if __name__ == '__main__':
-    subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 041"
-    results_nodes, results_vehicular, results_peatonal = generate_results(subareaPath)
+# if __name__ == '__main__':
+#     subareaPath = r"D:\Work\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 041"
+#     results_nodes, results_vehicular, results_peatonal = generate_results(subareaPath)
