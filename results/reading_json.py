@@ -38,7 +38,7 @@ def _filling_df(df: pd.DataFrame, data: json, rowDf: int, tipicidad: str, state:
         name = nodeName[0]
         for _, listAcess in data["node_results"][name].items():
             sentidoOrigin = listAcess["Sentido"].split("-")
-            nombre = listAcess["Nombre"]+"\n"+sentidoOrigin[0]
+            nombre = listAcess["Nombre"]+" - "+sentidoOrigin[0]
             volumen = int(float(listAcess["Numero de Vehiculos"]))
             cola_prom = listAcess["Longitud de Cola Prom."]
             cola_max = listAcess["Longitud de Cola Max."]
@@ -226,7 +226,12 @@ def result_peatonal(jsonPathActual, jsonPathOutputBase, jsonPathOutputProyectado
 
     return rowDf, df
 
-def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subareaPath: str):
+def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subareaPath: str, namesByCode: dict):
+
+    ########################
+    # Obtaining dataframes #
+    ########################
+
     doc = Document()
     table = doc.add_table(rows=1, cols=8)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -246,6 +251,35 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     dfActual = df[df["State"] == "Actual"].reset_index(drop=True)
     dfBase = df[df["State"] == "Propuesta Base"].reset_index(drop=True)
     dfProyectado = df[df["State"] == "Propuesta Proyectada"].reset_index(drop=True)
+
+    #########################
+    # Creation of paragraph #
+    #########################
+
+    idxMaxDelay = dfActual['Delay'].idxmax()
+    nombreMaxDelay = dfActual.loc[idxMaxDelay, 'Nombre']
+    valueMaxDelay = dfActual.loc[idxMaxDelay, 'Delay']
+    nombre, sentido = nombreMaxDelay.split(" - ")
+
+    VARIABLES = {
+        "nominterseccion": namesByCode[codigo],
+        "codinterseccion": codigo,
+        "nomacceso": nombre,
+        "sentido": sentido,
+        "delaymax": round(float(valueMaxDelay),2),
+    }
+
+    resultsFolder = os.path.join(subareaPath, "Tablas", "Results")
+    os.makedirs(resultsFolder, exist_ok=True)
+    commentPath = os.path.join(resultsFolder, f"{codigo}_{tipicidad.upper()}_{scenario}.docx")
+
+    docComment = DocxTemplate("./templates/template_lista_nodos.docx")
+    docComment.render(VARIABLES)
+    docComment.save(commentPath)
+
+    #################################
+    # Creation of node result table #
+    #################################
 
     start = 1
     for j in range(dfActual.shape[0]):
@@ -343,6 +377,34 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
 
 def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, subareaPath: str):
     df = df.reset_index(drop=True)
+
+    #######################
+    # Obtaining variables #
+    #######################
+
+    dfAvg = df[df['SimRun'] == 'Avg'].reset_index(drop=True)
+    SELECTEDDATA = {
+        "delaypromactual": round(dfAvg.loc[0]["DelayAvg"],2),
+        "speedpromactual": round(dfAvg.loc[0]["SpeedAvg"],2),
+        "delayprombase": round(dfAvg.loc[1]["DelayAvg"],2),
+        "speedprombase": round(dfAvg.loc[1]["SpeedAvg"],2),
+        "delaypromproy": round(dfAvg.loc[2]["DelayAvg"],2),
+        "speedpromproy": round(dfAvg.loc[2]["SpeedAvg"],2),
+    }
+
+    resultsFolder = os.path.join(subareaPath, "Tablas", "Results")
+    os.makedirs(resultsFolder, exist_ok=True)
+    commentPath = os.path.join(
+        resultsFolder, f"VEHICULAR_{tipicidad.upper()}_{scenario}.docx"
+    )
+
+    docComment = DocxTemplate("./templates/template_lista_vehicular.docx")
+    docComment.render(SELECTEDDATA)
+    docComment.save(commentPath)
+
+    ##################
+    # Creating Table #
+    ##################
 
     doc = Document()
     table = doc.add_table(rows = 1, cols = 9)
@@ -495,6 +557,32 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
     return resultPeatonal
 
 def generate_results(subareaPath: str) -> list[str]:
+
+    resultFolder = os.path.join(subareaPath, "Tablas", "Results")
+    os.makedirs(resultFolder, exist_ok=True)
+
+    #############################################
+    # Obtaining dictionary with names and codes #
+    #############################################
+
+    subareaID = os.path.split(subareaPath)[1]
+    subareaID = int(subareaID[-3:])
+    namesByCode = {}
+
+    #Obtaining cleaning names finding codes
+    excelPath = "./data/Datos Generales.xlsx"
+    dfGenData = pd.read_excel(excelPath, sheet_name='DATOS', header=0, usecols=["Code", "Interseccion", "Sub_Area"])
+    dfDatos = dfGenData[dfGenData['Sub_Area'] == subareaID].reset_index()
+
+    for _, row in dfDatos.iterrows():
+        code = row['Code']
+        name = row['Interseccion']
+        namesByCode[code] = name
+
+    #######################
+    # Reading .json files #
+    #######################
+
     df = pd.DataFrame(
         columns= [
             "Intersección", "Nombre", "Volumen", "QueueAvg", "QueueMax",
@@ -575,6 +663,19 @@ def generate_results(subareaPath: str) -> list[str]:
         },
     }
 
+    paragraphNodes = {
+        "Tipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+        "Atipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+    }
+
     intersecciones = df['Intersección'].unique().tolist()
     for tipicidad in ["Tipico", "Atipico"]:
         for turno in ["HPM", "HPT", "HPN"]:
@@ -585,8 +686,21 @@ def generate_results(subareaPath: str) -> list[str]:
                     (df["Scenario"] == turno) &
                     (df["Tipicidad"] == tipicidad)
                     ]
-                tablaPath = create_tables_nodos(filtered_df, tipicidad, turno, subareaPath)
+                tablaPath = create_tables_nodos(filtered_df, tipicidad, turno, subareaPath, namesByCode)
                 listPaths.append(tablaPath)
+
+            # Finding list of paragraphs by peak hour #
+            resultContent = os.listdir(resultFolder)
+            paragraphsList = [os.path.join(resultFolder, file) for file
+                            in resultContent 
+                            if f"_{tipicidad.upper()}_" in file and f"_{turno}.docx" in file]
+            
+            paragraphNodePath = os.path.join(subareaPath, "Tablas", "Results", f"{tipicidad.upper()}_{turno}.docx")
+            filePathMaster = paragraphsList[0]
+            filePathList = paragraphsList[1:]
+            _combine_all_docx(filePathMaster, filePathList, paragraphNodePath)
+
+            paragraphNodes[tipicidad][turno] = paragraphNodePath
             
             nodoPath = os.path.join(subareaPath, "Tablas", f"nodeResults_{tipicidad}_{turno}_REF.docx")
             if len(listPaths) > 1:
@@ -597,12 +711,26 @@ def generate_results(subareaPath: str) -> list[str]:
                 nodoPath = listPaths[0]
 
             results_nodes[tipicidad][turno] = nodoPath
+            
 
     ########################################
     # Resultados por rendimiento vehicular #
     ########################################
 
     results_vehicular = {
+        "Tipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+        "Atipico": {
+            "HPM": None,
+            "HPT": None,
+            "HPN": None,
+        },
+    }
+
+    paragraphsVehicular = {
         "Tipico": {
             "HPM": None,
             "HPT": None,
@@ -624,6 +752,11 @@ def generate_results(subareaPath: str) -> list[str]:
     
             vehicularResultPathRef = create_tables_vehicular(filtered_df, tipicidad, turno, subareaPath)
             results_vehicular[tipicidad][turno] = vehicularResultPathRef
+
+            resultContent = os.listdir(resultFolder)
+            paragraphsVehicular[tipicidad][turno] = os.path.join(resultFolder, f"VEHICULAR_{tipicidad.upper()}_{turno}.docx")
+
+    #print(paragraphsVehicular)
             
     #######################################
     # Resultados por rendimiento peatonal #
@@ -653,3 +786,7 @@ def generate_results(subareaPath: str) -> list[str]:
             results_peatonal[tipicidad][turno] = peatonalResultPathRef
 
     return results_nodes, results_vehicular, results_peatonal
+
+if __name__ == '__main__':
+    subareaPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 041"
+    results_nodes, results_vehicular, results_peatonal = generate_results(subareaPath)
