@@ -262,7 +262,17 @@ def create_table23(subareaPath):
     table.cell(1,0).merge(table.cell(9,0))
 
     table.cell(10,0).text = "ATÍPICO"
-    table.cell(10,0).merge(table.cell(10,18))
+    table.cell(10,0).merge(table.cell(18,0))
+
+    for i in range(2):
+        table.cell(1+9*i,1).text = "HPM"
+        table.cell(1+9*i,1).merge(table.cell(1+9*i+2,1))
+        
+        table.cell(4+9*i,1).text = "HPT"
+        table.cell(4+9*i,1).merge(table.cell(4+9*i+2,1))
+
+        table.cell(7+9*i,1).text = "HPN"
+        table.cell(7+9*i,1).merge(table.cell(7+9*i+2,1))
 
     #Labels per scenario
     for i in range(6):
@@ -292,13 +302,13 @@ def create_table23(subareaPath):
                 data3 = json.load(file3)
 
             for i in range(3):
-                table.cell(1+3*jump,3).text = str(round(float(data1['pedestrian_performance']['Avg']['SpeedAvg']),2))
+                table.cell(1+3*jump,3).text = f"{float(data1['pedestrian_performance']['Avg']['SpeedAvg']):.2f}"
                 table.cell(1+3*jump,4).text = str(int(float(data1['pedestrian_performance']['Avg']['StopTmAvg'])))
                 table.cell(1+3*jump,5).text = str(int(float(data1['pedestrian_performance']['Avg']['TravTmAvg'])))
-                table.cell(2+3*jump,3).text = str(round(float(data2['pedestrian_performance']['Avg']['SpeedAvg']),2))
+                table.cell(2+3*jump,3).text = f"{float(data2['pedestrian_performance']['Avg']['SpeedAvg']):.2f}"
                 table.cell(2+3*jump,4).text = str(int(float(data2['pedestrian_performance']['Avg']['StopTmAvg'])))
                 table.cell(2+3*jump,5).text = str(int(float(data2['pedestrian_performance']['Avg']['TravTmAvg'])))
-                table.cell(3+3*jump,3).text = str(round(float(data3['pedestrian_performance']['Avg']['SpeedAvg']),2))
+                table.cell(3+3*jump,3).text = f"{float(data3['pedestrian_performance']['Avg']['SpeedAvg']):.2f}"
                 table.cell(3+3*jump,4).text = str(int(float(data3['pedestrian_performance']['Avg']['StopTmAvg'])))
                 table.cell(3+3*jump,5).text = str(int(float(data3['pedestrian_performance']['Avg']['TravTmAvg'])))
             jump += 1

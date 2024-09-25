@@ -131,7 +131,7 @@ class MyWindow(QMainWindow, Ui_Form):
         #Diagrams of phases list
         try:
             diagramPath = os.path.join(self.path_subarea, "Tablas", "Diagramas")
-            diagramPath.mkdir(parents=True, exist_ok=True)
+            os.makedirs(diagramPath, exist_ok=True)
             listDiagramsWords = []
             for codeInt, nameInt in zip(codintersecciones, intersecciones):
                 docTemplate = DocxTemplate("templates/template_imagenes_simple.docx")
@@ -146,9 +146,11 @@ class MyWindow(QMainWindow, Ui_Form):
             _combine_all_docx(filePathMaster, filePathList, finalPathDiagrams)
             diagramaList = doc.new_subdoc(finalPathDiagrams)
             VARIABLES.update({"diagramaList": diagramaList})
-            pass
+            print("Diagramas\tOK\tDiagramas generados")
         except Exception as e:
-            pass
+            print("Diagramas:\tERROR\tDiagramas no generados")
+            LOGGER.warning("Error Diagramas de fases")
+            LOGGER.warning(str(e))
 
         #Lists:
         try:
@@ -517,7 +519,7 @@ class MyWindow(QMainWindow, Ui_Form):
                     "paragraph_nodo_tip_hpn": paragraph_nodo_tip_hpn,
                     "paragraph_nodo_ati_hpm": paragraph_nodo_ati_hpm,
                     "paragraph_nodo_ati_hpt": paragraph_nodo_ati_hpt,
-                    "paragraph_node_ati_hpn": paragraph_node_ati_hpn,
+                    "paragraph_nodo_ati_hpn": paragraph_node_ati_hpn,
 
                     "result_veh_tip_hpm": result_veh_tip_hpm,
                     "result_veh_tip_hpt": result_veh_tip_hpt,

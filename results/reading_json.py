@@ -249,6 +249,8 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     codigo = df["Intersección"].unique().tolist()[0]
 
     dfActual = df[df["State"] == "Actual"].reset_index(drop=True)
+    #dfActual['Delay'] = dfActual['Delay'].astype(float)
+    dfActual['Delay'] = pd.to_numeric(dfActual['Delay'], errors='coerce')
     dfBase = df[df["State"] == "Propuesta Base"].reset_index(drop=True)
     dfProyectado = df[df["State"] == "Propuesta Proyectada"].reset_index(drop=True)
 
@@ -266,7 +268,7 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
         "codinterseccion": codigo,
         "nomacceso": nombre,
         "sentido": sentido,
-        "delaymax": round(float(valueMaxDelay),2),
+        "delaymax": f"{float(valueMaxDelay):.2f}",
     }
 
     resultsFolder = os.path.join(subareaPath, "Tablas", "Results")
@@ -489,12 +491,12 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
 
     dfAvg = df[df["SimRun"] == "Avg"].reset_index(drop=True)
     VARIABLES = {
-        "speedavg_actual": dfAvg.loc[0]["SpeedAvg"],
-        "stoptmavg_actual": dfAvg.loc[0]["StopTmAvg"],
-        "speedavg_propuesto": dfAvg.loc[1]["SpeedAvg"],
-        "stoptmavg_propuesto": dfAvg.loc[1]["StopTmAvg"],
-        "speedavg_proyectado": dfAvg.loc[2]["SpeedAvg"],
-        "stoptmavg_proyectado": dfAvg.loc[2]["StopTmAvg"],
+        "speedavg_actual": round(float(dfAvg.loc[0]["SpeedAvg"]),2),
+        "stoptmavg_actual": round(float(dfAvg.loc[0]["StopTmAvg"]),2),
+        "speedavg_propuesto": round(float(dfAvg.loc[1]["SpeedAvg"]),2),
+        "stoptmavg_propuesto": round(float(dfAvg.loc[1]["StopTmAvg"]),2),
+        "speedavg_proyectado": round(float(dfAvg.loc[2]["SpeedAvg"]),2),
+        "stoptmavg_proyectado": round(float(dfAvg.loc[2]["StopTmAvg"]),2),
     }
 
     paragraphDoc = DocxTemplate("./templates/template_lista_peatonal.docx")
@@ -713,14 +715,17 @@ def generate_results(subareaPath: str) -> list[str]:
                 listPaths.append(tablaPath)
 
             # Finding list of paragraphs by peak hour #
-            resultContent = os.listdir(resultFolder)
-            paragraphsList = [os.path.join(resultFolder, file) for file
-                            in resultContent 
-                            if f"_{tipicidad.upper()}_" in file and f"_{turno}.docx" in file]
+            paragraphNodeList = []
+            for ints in intersecciones:
+                paragraphNodeList.append(
+                    os.path.join(
+                        resultFolder, f"{ints}_{tipicidad.upper()}_{turno}.docx"
+                    )
+                )
             
-            paragraphNodePath = os.path.join(subareaPath, "Tablas", "Results", f"{tipicidad.upper()}_{turno}.docx")
-            filePathMaster = paragraphsList[0]
-            filePathList = paragraphsList[1:]
+            paragraphNodePath = os.path.join(subareaPath, "Tablas", "Results", f"NodesList_{tipicidad.upper()}_{turno}.docx")
+            filePathMaster = paragraphNodeList[0]
+            filePathList = paragraphNodeList[1:]
             _combine_all_docx(filePathMaster, filePathList, paragraphNodePath)
 
             paragraphsNodes[tipicidad][turno] = paragraphNodePath
@@ -776,7 +781,6 @@ def generate_results(subareaPath: str) -> list[str]:
             vehicularResultPathRef = create_tables_vehicular(filtered_df, tipicidad, turno, subareaPath)
             results_vehicular[tipicidad][turno] = vehicularResultPathRef
 
-            resultContent = os.listdir(resultFolder)
             paragraphsVehicular[tipicidad][turno] = os.path.join(resultFolder, f"VEHICULAR_{tipicidad.upper()}_{turno}.docx")
             
     #######################################
