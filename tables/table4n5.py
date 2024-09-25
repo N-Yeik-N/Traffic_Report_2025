@@ -72,7 +72,7 @@ def create_table4n5(path_subarea):
         ))
 
     queueWordLists = []
-    for codigo, _, df, name in dataList:
+    for codigo, _, df, name in data_by_tipicidad["Tipico"]:
         queueDict = {}
         max_values = df.groupby('Turn')['Max'].transform('max')
         dfResult = df[df['Max'] == max_values]
