@@ -248,6 +248,10 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
             new_row.cells[4+1+3*j].text = f"{greens}"
             new_row.cells[4+2+3*j].text = f"{ambars}"
             new_row.cells[4+3+3*j].text = f"{reds}"
+        if i == 8:
+            new_row = table.add_row()
+            new_row.cells[0].text = "DÍA ATÍPICO"
+            new_row.cells[0].merge(new_row.cells[len(new_row.cells)-1])
     
     table.cell(1,0).merge(table.cell(i+1,0))
 
