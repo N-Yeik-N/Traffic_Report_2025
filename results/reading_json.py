@@ -414,7 +414,7 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
 
     headers = [
         "Escenarios", "Num. Sim.", "Demora\nPromedio", "Demora\nParadas\nPromedio", "Velocidad\nPromedio",
-        "Paradas\nPromedio", "Veh.\nAct.", "Veh.\nArr.", "Demora\nLatente"
+        "Paradas\nPromedio", "Veh.\nAct.", "Veh.\nArr.", "Demanda\nLatente"
     ]
     
     for i, header in enumerate(headers):

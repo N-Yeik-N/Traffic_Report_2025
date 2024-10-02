@@ -175,8 +175,8 @@ def create_table4n5(path_subarea):
         table.cell(4+i,1).text = atipico_date[0]
 
     for i in range(3):
-        table.cell(1+i,2).text = "Tipico"
-        table.cell(4+i,2).text = "Atipico"
+        table.cell(1+i,2).text = "Típico"
+        table.cell(4+i,2).text = "Atípico"
 
     for i in range(2):
         table.cell(1+3*i,3).text = "Mañana"

@@ -279,7 +279,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 LOGGER.warning(str(e))
 
             try:
-                if not embarkingListPath:
+                if embarkingListPath:
                     embarkingPath = doc.new_subdoc(embarkingListPath)
                     VARIABLES.update({"embarkingList": embarkingPath})
                 print("Embarque\tOK\tLista de descripción")
