@@ -328,7 +328,11 @@ def create_table18(subarea_path) -> None:
             # for elem in sigs_info: print(elem)
             #HACK: Existe la posibilidad de que haya problemas en la creación de la tablas por el tamaño de las fases entre horas valles y puntas.
             finalPath, code, tipicidad = _create_table(sigs_info, tipicidad, tablasPath) #TODO: Analizar si funciona con tamaños de fases distintos.
-            texto = f"Programación semafórica de la intersección {code} día {tipicidad}"
+            if tipicidad == "Tipico":
+                tipicidadTxt = "típico"
+            elif tipicidad == "Atipico":
+                tipicidadTxt = "atípico"
+            texto = f"Programación semafórica de la intersección {code} día {tipicidadTxt}"
             listData.append((texto, finalPath, code, tipicidad))
 
     wb.close()
