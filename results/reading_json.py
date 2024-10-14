@@ -11,6 +11,21 @@ from docxtpl import DocxTemplate
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn, nsdecls
 
+def _remove_top_bottom_bordes(cell, topValue = True, bottomValue = True):
+    tc_pr = cell._element.get_or_add_tcPr()
+    tc_borders = OxmlElement('w:tcBorders')
+    if topValue:
+        top = OxmlElement('w:top')
+        top.set(qn('w:val'), 'nil')
+        tc_borders.append(top)
+    
+    if bottomValue:
+        bottom = OxmlElement('w:bottom')
+        bottom.set(qn('w:val'), 'nil')
+        tc_borders.append(bottom)
+
+    tc_pr.append(tc_borders)
+
 def get_color_by_los(los: str) -> str:
     colores = {
         "A": "00B050", # Verde
@@ -411,6 +426,7 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
     doc = Document()
     table = doc.add_table(rows = 1, cols = 9)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    table.style = 'Table Grid'
 
     headers = [
         "Escenarios", "Num. Sim.", "Demora\nPromedio", "Demora\nParadas\nPromedio", "Velocidad\nPromedio",
@@ -443,14 +459,36 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
     if  countActual > 0:
         table.cell(1,0).text = "Actual"
         table.cell(1,0).merge(table.cell(12,0))
+        
+        for cell in table.rows[1].cells[1:]:
+            _remove_top_bottom_bordes(cell, topValue=False)
+        for cell in table.rows[8].cells[1:]:
+            _remove_top_bottom_bordes(cell, bottomValue=False)
+        for selectedRow in [i for i in range(2,8)]:
+            for cell in table.rows[selectedRow].cells[1:]:
+                _remove_top_bottom_bordes(cell)
 
     if  countBase > 0:
         table.cell(13,0).text = "Propuesta Base"
         table.cell(13,0).merge(table.cell(24,0))
+        for cell in table.rows[13].cells[1:]:
+            _remove_top_bottom_bordes(cell, topValue=False)
+        for cell in table.rows[20].cells[1:]:
+            _remove_top_bottom_bordes(cell, bottomValue=False)
+        for selectedRow in [i for i in range(14,20)]:
+            for cell in table.rows[selectedRow].cells[1:]:
+                _remove_top_bottom_bordes(cell)
 
     if countProyectada > 0:
         table.cell(25,0).text = "Propuesta Proyectada"
         table.cell(25,0).merge(table.cell(36,0))
+        for cell in table.rows[25].cells[1:]:
+            _remove_top_bottom_bordes(cell, topValue=False)
+        for cell in table.rows[32].cells[1:]:
+            _remove_top_bottom_bordes(cell, bottomValue=False)
+        for selectedRow in [i for i in range(26,32)]:
+            for cell in table.rows[selectedRow].cells[1:]:
+                _remove_top_bottom_bordes(cell)
 
     _align_content(table)
 
@@ -471,8 +509,6 @@ def create_tables_vehicular(df: pd.DataFrame, tipicidad: str, scenario: str, sub
                     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 except:
                     pass
-
-    table.style = 'Table Grid'
 
     #Saving table
     result_vehicular_path = os.path.join(subareaPath, "Tablas", f"vehicular_{tipicidad}_{scenario}.docx")
@@ -511,6 +547,7 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
     doc = Document()
     table = doc.add_table(rows = 1, cols = 8)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    table.style = 'Table Grid'
 
     headers = [
         "Escenarios", "Num. Sim", "Dens. Prom.", "Flujo Prom.", "Vel. Norm. Prom.", "Vel. Prom.", "Tiempo Parada Prom.", "Tiempo Viaje Prom."
@@ -543,13 +580,37 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
         table.cell(1,0).text = "Actual"
         table.cell(1,0).merge(table.cell(12,0))
 
+        for cell in table.rows[1].cells[1:]:
+            _remove_top_bottom_bordes(cell, topValue=False)
+        for cell in table.rows[8].cells[1:]:
+            _remove_top_bottom_bordes(cell, bottomValue=False)
+        for selectedRow in [i for i in range(2,8)]:
+            for cell in table.rows[selectedRow].cells[1:]:
+                _remove_top_bottom_bordes(cell)
+
     if  countBase > 0:
         table.cell(13,0).text = "Propuesta Base"
         table.cell(13,0).merge(table.cell(24,0))
 
+        for cell in table.rows[13].cells[1:]:
+            _remove_top_bottom_bordes(cell, topValue=False)
+        for cell in table.rows[20].cells[1:]:
+            _remove_top_bottom_bordes(cell, bottomValue=False)
+        for selectedRow in [i for i in range(14,20)]:
+            for cell in table.rows[selectedRow].cells[1:]:
+                _remove_top_bottom_bordes(cell)
+
     if countProyectada > 0:
         table.cell(25,0).text = "Propuesta Proyectada"
         table.cell(25,0).merge(table.cell(36,0))
+
+        for cell in table.rows[25].cells[1:]:
+            _remove_top_bottom_bordes(cell, topValue=False)
+        for cell in table.rows[32].cells[1:]:
+            _remove_top_bottom_bordes(cell, bottomValue=False)
+        for selectedRow in [i for i in range(26,32)]:
+            for cell in table.rows[selectedRow].cells[1:]:
+                _remove_top_bottom_bordes(cell)
 
     _align_content(table)
 
@@ -570,8 +631,6 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
                     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 except:
                     pass
-
-    table.style = 'Table Grid'
 
     #Saving tableq
     result_peatonal_path = os.path.join(subareaPath, "Tablas", f"peatonal_{tipicidad}_{scenario}.docx")

@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from unidecode import unidecode
 from openpyxl import load_workbook
 import pandas as pd
+import re
 
 #docx
 from docxtpl import DocxTemplate
@@ -17,8 +18,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.table import _Cell
 
-horarios = {
-    "Tipico": [
+horarios = [
     "00:00 - 05:00",
     "05:00 - 06:30",
     "06:30 - 10:30",
@@ -27,15 +27,12 @@ horarios = {
     "15:00 - 17:00",
     "17:00 - 22:00",
     "22:00 - 00:00",
-    ],
-    "Atipico": [
     "00:00 - 06:00",
     "06:00 - 12:00",
     "12:00 - 17:00",
     "17:00 - 22:00",
     "22:00 - 00:00",
-    ],
-}
+    ]
 
 def _translation_greens(sigPath: str) -> None:
     tree = ET.parse(sigPath)
@@ -214,7 +211,7 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
 
     return sig_info
 
-def _create_table(sigs_info, tipicidad, tablasPath) -> None:
+def _create_table(sigs_info, tablasPath) -> None:
     doc = Document()
     maximum = 0
     for sigInfo in sigs_info:
@@ -235,12 +232,16 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
         table.cell(0,4+2+3*i).text = f'A'
         table.cell(0,4+3+3*i).text = f'RR'
 
+    countPlans = 1
     for i, sig_info in enumerate(sigs_info):
         new_row = table.add_row()
-        if i == 0:
-            new_row.cells[0].text = sig_info['sig_name'] #Nombre de la intersección
-        new_row.cells[1].text = f"{i+1}" #N° Plan
-        new_row.cells[2].text = horarios[tipicidad][i] #00:00 - 05:00
+        if i == 7:
+            atypical_row = table.add_row()
+            atypical_row.cells[0].text = "DÍA ATÍPICO"
+            atypical_row.cells[0].merge(atypical_row.cells[len(atypical_row.cells)-1])
+            
+        new_row.cells[1].text = f"{countPlans}" #N° Plan
+        new_row.cells[2].text = horarios[countPlans-1] #00:00 - 05:00
         new_row.cells[3].text = f"{sig_info['offset']}" #Desfase
         new_row.cells[4].text = f"{sig_info['cycle_time']}" #Tiempo de Ciclo
         #Repartos:
@@ -248,12 +249,12 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
             new_row.cells[4+1+3*j].text = f"{greens}"
             new_row.cells[4+2+3*j].text = f"{ambars}"
             new_row.cells[4+3+3*j].text = f"{reds}"
-        if i == 8:
-            new_row = table.add_row()
-            new_row.cells[0].text = "DÍA ATÍPICO"
-            new_row.cells[0].merge(new_row.cells[len(new_row.cells)-1])
-    
-    table.cell(1,0).merge(table.cell(i+1,0))
+        countPlans += 1
+        
+    table.cell(1,0).text = sig_info['sig_name']
+    table.cell(1,0).merge(table.cell(8,0))
+    table.cell(10,0).text = sig_info['sig_name']
+    table.cell(10,0).merge(table.cell(14,0))
 
     table.style = 'Table Grid'
     table.cell(0,0).width = Cm(1.75)
@@ -280,15 +281,17 @@ def _create_table(sigs_info, tipicidad, tablasPath) -> None:
         shade_obj.set(qn('w:fill'),'B4C6E7')
         table_cell_properties.append(shade_obj)
 
-    for i in range(len(table.columns)):
-        cell = table.cell(0,i)
-        for paragraph in cell.paragraphs:
-            run = paragraph.runs[0]
-            run.font.bold = True
+    for selectedRow in [0, 9]:
+        for i in range(len(table.columns)):
+            cell = table.cell(selectedRow,i)
+            for paragraph in cell.paragraphs:
+                run = paragraph.runs[0]
+                run.font.bold = True
 
-    finalPath = os.path.join(tablasPath, f"table18_{sig_info['sig_name']}_{unidecode(tipicidad).upper()}.docx")
+    finalPath = os.path.join(tablasPath, f"table18_{sig_info['sig_name']}.docx")
     doc.save(finalPath)
-    return finalPath, sig_info['sig_name'], tipicidad
+
+    return finalPath, sig_info['sig_name']
 
 def create_table18(subarea_path) -> None:
     #Reading each folder
@@ -296,49 +299,47 @@ def create_table18(subarea_path) -> None:
     output_folder = Path(subarea_path) / "Output_Base"
     tipicidades = ["Tipico", "Atipico"]
 
-    listData = []
     scenarioByTipicidad = {
         "Tipico": ["HPMAD", "HVMAD", "HPM", "HVM", "HPT", "HVT", "HPN", "HVN"],
         "Atipico": ["HVMAD", "HPM", "HPT", "HPN", "HVN"],
     }
 
+    #listCodes
+    subareaFiles = os.listdir(subarea_path)
+    patternInpxFile = r"PTV Vissim Sub Area [0-9]+ \(SA\).inpx"
+    vissimFile = [file for file in subareaFiles if re.search(patternInpxFile, file)][0]
+    inpxPath = Path(subarea_path) / vissimFile
+    tree = ET.parse(inpxPath)
+    networkTag = tree.getroot()
+    listNodes = []
+    for nodeTag in networkTag.findall("./nodes/node"):
+        udaTag = nodeTag.find("./uda") #NOTE: There is only one uda in each node
+        listNodes.append(udaTag.attrib["value"])
+    
     #Program Results:
     programResultsPath = Path(subarea_path) / "Program_Results.xlsx"
     wb = load_workbook(programResultsPath, read_only=True, data_only=True)
+    listData = []
 
-    for tipicidad in tipicidades:
-        for i, scenario in enumerate(scenarioByTipicidad[tipicidad]):
-            if scenario in ["HPMAD", "HVMAD", "HVM", "HVT", "HVN"]: continue
-            scenario_path = output_folder / tipicidad / scenario
-            sig_files = os.listdir(scenario_path)
-            sig_files = [file for file in sig_files if file.endswith(".sig")]
-            break
-
-        for sig_file in sig_files:
-            sigs_info = []
+    for node in listNodes:
+        sigsInfo = []
+        for tipicidad in tipicidades:
             for scenario in scenarioByTipicidad[tipicidad]:
-                sig_path = output_folder / tipicidad / scenario / sig_file
+                sigPath = output_folder / tipicidad / scenario / f"{node}.sig"
                 if scenario in ["HPMAD", "HVMAD", "HVM", "HVT", "HVN"]:
-                    sig_info = _create_from_excel(sig_path, scenario, tipicidad, wb)
+                    sigInfo = _create_from_excel(sigPath, scenario, tipicidad, wb)
                 else:
-                    sig_info = _create_data(sig_path, scenario, tipicidad)
-                sigs_info.append(sig_info)
-
-            # print("Analizando Sig File:", sig_file)
-            # for elem in sigs_info: print(elem)
-            #HACK: Existe la posibilidad de que haya problemas en la creación de la tablas por el tamaño de las fases entre horas valles y puntas.
-            finalPath, code, tipicidad = _create_table(sigs_info, tipicidad, tablasPath) #TODO: Analizar si funciona con tamaños de fases distintos.
-            if tipicidad == "Tipico":
-                tipicidadTxt = "típico"
-            elif tipicidad == "Atipico":
-                tipicidadTxt = "atípico"
-            texto = f"Programación semafórica de la intersección {code} día {tipicidadTxt}"
-            listData.append((texto, finalPath, code, tipicidad))
+                    sigInfo = _create_data(sigPath, scenario, tipicidad)
+                sigsInfo.append(sigInfo)
+        
+        finalPath, code = _create_table(sigsInfo, tablasPath)
+        texto = f"Programación semafórica de la intersección {node}"
+        listData.append((texto, finalPath, node))
 
     wb.close()
 
     listWordPaths = []
-    for text, pathTable, code, tipicidad in listData:
+    for text, pathTable, code in listData:
         doc_template = DocxTemplate("./templates/template_tablas4.docx")
         new_table = doc_template.new_subdoc(pathTable)
         doc_template.render({
@@ -347,7 +348,7 @@ def create_table18(subarea_path) -> None:
         })
         refPath = os.path.join(
             tablasPath,
-            f"table18_{code}_{unidecode(tipicidad).upper()}_REF.docx"
+            f"table18_{code}_REF.docx"
         )
         doc_template.save(refPath)
         listWordPaths.append(refPath)
@@ -360,5 +361,5 @@ def create_table18(subarea_path) -> None:
     return programPath
 
 # if __name__ == '__main__':
-#     sigPath = r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\04 Proyecto Universitaria (37 Int. - 19 SA)\6. Sub Area Vissim\Sub Area 034\Output_Base\Tipico\HPT\SS-87.sig"
-#     _create_data(sigPath, "HPM", "Tipico")
+#     subareaPath = r"D:\Work\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 080"
+#     create_table18(subareaPath)

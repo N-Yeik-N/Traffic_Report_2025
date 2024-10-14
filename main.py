@@ -457,7 +457,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 raise e
 
         checkObject = self.ui.tableWidget.item(16,0).checkState()
-        if checkObject: #NOTE: Results ready
+        if checkObject: #NOTE: Table 20
             try:
                 results_nodes, results_vehicular, results_peatonal, paragraphsNodes, paragraphsVehicular, paragraphsPeatonal = generate_results(self.path_subarea)
 

@@ -3,8 +3,8 @@
 
 a = Analysis(
     ['main.py'],
-    pathex=['C:/Users/dacan/OneDrive/Desktop/Projects/TRAFFIC_REPORT'],
-    # pathex=['D:\Projects\TRAFFIC_REPORT'],
+    # pathex=['C:/Users/dacan/OneDrive/Desktop/Projects/TRAFFIC_REPORT'],
+    pathex=['D:\Projects\TRAFFIC_REPORT'],
     binaries=[],
     datas=[("templates", "templates"), ("data", "data"), ('./.env/Lib/site-packages/docxcompose/templates', 'docxcompose/templates')],
     hiddenimports=[],
@@ -23,7 +23,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Traffic_Report v2.2.3',
+    name='Traffic_Report v2.2.4',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
