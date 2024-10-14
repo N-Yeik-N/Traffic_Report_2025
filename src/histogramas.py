@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import csv
 import os
 from docxtpl import DocxTemplate, InlineImage
-from docx.shared import Inches
+from docx.shared import Inches, Cm
 from docxcompose.composer import Composer
 from docx import Document
 
@@ -308,7 +308,7 @@ def histogramas_vehiculares(subareaPath: str) -> str:
             texto = f"Histograma vehicular {tipicidadTxt} de la {nameIntersection}"
 
             docTemplate = DocxTemplate("./templates/template_imagenes.docx")
-            newImage = InlineImage(docTemplate, histogramaPath, width=Inches(6))
+            newImage = InlineImage(docTemplate, histogramaPath, height=Cm(7.5))
             docTemplate.render({"texto": texto, "tabla": newImage})
 
             finalPath = os.path.join(subareaPath, "Tablas", f"HistogramaVehicular_{tipicidad}_{countImages}.docx")
@@ -471,7 +471,7 @@ def histogramas_peatonales(subareaPath: str) -> str:
             texto = f"Histograma peatonal {tipicidadTxt} de la {nameIntersection}"
 
             docTemplate = DocxTemplate("./templates/template_imagenes.docx")
-            newImage = InlineImage(docTemplate, histogramaPath, width=Inches(6))
+            newImage = InlineImage(docTemplate, histogramaPath, height=Cm(7.5))
             docTemplate.render({"texto": texto, "tabla": newImage})
 
             finalPath = os.path.join(subareaPath, "Tablas", f"HistogramaVehicular_{tipicidad}_{countImages}.docx")

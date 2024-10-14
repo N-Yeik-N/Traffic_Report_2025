@@ -11,6 +11,21 @@ from docx.oxml.ns import qn, nsdecls
 tipicoList = ["HPM", "HPT", "HPN"]
 atipicoList = ["HPM", "HPT", "HPN"]
 
+def _remove_top_bottom_bordes(cell, topValue = True, bottomValue = True):
+    tc_pr = cell._element.get_or_add_tcPr()
+    tc_borders = OxmlElement('w:tcBorders')
+    if topValue:
+        top = OxmlElement('w:top')
+        top.set(qn('w:val'), 'nil')
+        tc_borders.append(top)
+    
+    if bottomValue:
+        bottom = OxmlElement('w:bottom')
+        bottom.set(qn('w:val'), 'nil')
+        tc_borders.append(bottom)
+
+    tc_pr.append(tc_borders)
+
 def get_color_by_los(los):
     colores = {
         "A": "00B050", # Verde
@@ -132,6 +147,7 @@ def create_table23(subareaPath):
 
     doc = Document()
     table = doc.add_table(rows = 1, cols = 9)
+    table.style = 'Table Grid'
 
     table.cell(0,0).text = "Tipicidad"
     table.cell(0,1).text = "Escenario"
@@ -168,12 +184,15 @@ def create_table23(subareaPath):
             #Actual
             new_row = table.add_row()
             new_row.cells[2].text = "Actual"
+            _remove_top_bottom_bordes(new_row.cells[2], topValue=False)
             new_row.cells[3].text = data['nodes_names'][j]                  #Nodo
             new_row.cells[4].text = str(round(float(data['nodes_totres'][j][4])))    #Número de Vehículos
             new_row.cells[5].text = str(round(float(data['nodes_totres'][j][3])))    #Cola Máx. Promedio
             new_row.cells[6].text = str(round(float(data['nodes_totres'][j][1]), 1))    #Pare Promedio
             new_row.cells[7].text = str(round(float(data['nodes_totres'][j][0]), 1))    #Demora Promedio
             new_row.cells[8].text = data['nodes_los'][j]
+            for selectedColumns in [3, 4, 5, 6, 7, 8]:
+                _remove_top_bottom_bordes(new_row.cells[selectedColumns], topValue=False)
             color_hex = get_color_by_los(data['nodes_los'][j])
             shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
             new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
@@ -184,11 +203,14 @@ def create_table23(subareaPath):
                 new_row = table.add_row()
                 table.cell(nroRow-1,3).merge(table.cell(nroRow,3))
                 new_row.cells[2].text = "Propuesto"
+                _remove_top_bottom_bordes(new_row.cells[2])
                 new_row.cells[4].text = str(round(float(data2['nodes_totres'][j][4])))    #Número de Vehículos
                 new_row.cells[5].text = str(round(float(data2['nodes_totres'][j][3])))    #Cola Máx. Promedio
                 new_row.cells[6].text = str(round(float(data2['nodes_totres'][j][1]), 1))    #Pare Promedio
                 new_row.cells[7].text = str(round(float(data2['nodes_totres'][j][0]), 1))    #Demora Promedio
                 new_row.cells[8].text = data2['nodes_los'][j]
+                for selectedColumns in [4, 5, 6, 7, 8]:
+                    _remove_top_bottom_bordes(new_row.cells[selectedColumns])
                 color_hex = get_color_by_los(data2['nodes_los'][j])
                 shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
                 new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
@@ -200,11 +222,14 @@ def create_table23(subareaPath):
                 table.cell(nroRow-1,3).merge(table.cell(nroRow,3))
                 #table.cell(nroRow-1,2).merge(table.cell(nroRow,2))
                 new_row.cells[2].text = "Proyectado"
+                _remove_top_bottom_bordes(new_row.cells[2], bottomValue=False)
                 new_row.cells[4].text = str(round(float(data3['nodes_totres'][j][4])))    #Número de Vehículos
                 new_row.cells[5].text = str(round(float(data3['nodes_totres'][j][3])))    #Cola Máx. Promedio
                 new_row.cells[6].text = str(round(float(data3['nodes_totres'][j][1]), 1))    #Pare Promedio
                 new_row.cells[7].text = str(round(float(data3['nodes_totres'][j][0]), 1))    #Demora Promedio
                 new_row.cells[8].text = data3['nodes_los'][j]
+                for selectedColumns in [4, 5, 6, 7, 8]:
+                    _remove_top_bottom_bordes(new_row.cells[selectedColumns], bottomValue=False)
                 color_hex = get_color_by_los(data3['nodes_los'][j])
                 shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
                 new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
@@ -237,7 +262,6 @@ def create_table23(subareaPath):
     _align_content(table)
 
     finalPathVehicle = os.path.join(subareaPath, "Tablas", "resumenTable.docx")
-    table.style = 'Table Grid'
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
     doc.save(finalPathVehicle)
@@ -248,6 +272,7 @@ def create_table23(subareaPath):
 
     doc = Document()
     table = doc.add_table(rows = 19, cols=6)
+    table.style = 'Table Grid'
 
     #Headers
     table.cell(0,0).text = "Tipicidad"
@@ -279,6 +304,10 @@ def create_table23(subareaPath):
         table.cell(1+3*i,2).text = "Actual"
         table.cell(2+3*i,2).text = "Propuesto"
         table.cell(3+3*i,2).text = "Proyectado"
+        for col in [2,3,4,5]:
+            _remove_top_bottom_bordes(table.cell(1+3*i,col), topValue=False)
+            _remove_top_bottom_bordes(table.cell(2+3*i,col))
+            _remove_top_bottom_bordes(table.cell(3+3*i,col), bottomValue=False)
 
     jump = 0
     for tipicidad in ["Tipico", "Atipico"]:
@@ -314,7 +343,6 @@ def create_table23(subareaPath):
             jump += 1
 
     _align_content(table)
-    table.style = 'Table Grid'
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     for row in table.rows:

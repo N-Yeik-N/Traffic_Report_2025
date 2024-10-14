@@ -4,7 +4,7 @@ import os
 from docxcompose.composer import Composer
 from docxtpl import DocxTemplate, InlineImage
 from docx import Document
-from docx.shared import Inches
+from docx.shared import Inches, Cm
 from images.tools.diana import create_dianas
 from images.tools.r2 import create_r2s
 
@@ -66,8 +66,8 @@ def create_resultados_images(subareaPath) -> str:
     listWordPaths = []
     for vehicleType, (gehFilePath, r2FilePath) in imagesDict.items():
         doc_template = DocxTemplate(r"templates\template_tablas3.docx")
-        gehImage = InlineImage(doc_template, gehFilePath, width = Inches(2.37))
-        r2Image = InlineImage(doc_template, r2FilePath, width = Inches(3))
+        gehImage = InlineImage(doc_template, gehFilePath, height = Inches(5))
+        r2Image = InlineImage(doc_template, r2FilePath, height = Inches(5))
         text = f'Análisis de GEH y R2 de {vehicleType}'
         doc_template.render({
             'texto': text,

@@ -2,7 +2,7 @@ import json
 import pandas as pd
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt, Inches
+from docx.shared import Pt, Inches, Cm
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_ALIGN_VERTICAL
 import os
@@ -320,6 +320,14 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     table.cell(start, 0).text = dfActual.iloc[0, 0] + "\nActual"
     table.cell(start, 0).merge(table.cell(end, 0))
 
+    for cell in table.rows[start].cells[1:]:
+        _remove_top_bottom_bordes(cell, topValue=False)
+    for cell in table.rows[end].cells[1:]:
+        _remove_top_bottom_bordes(cell, bottomValue=False)
+    for selectedRow in [i for i in range(start+1,end+1)]:
+        for cell in table.rows[selectedRow].cells[1:]:
+            _remove_top_bottom_bordes(cell)
+
     start = end+1
     for j in range(dfBase.shape[0]):
         newRow = table.add_row()
@@ -339,6 +347,14 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
 
     table.cell(start, 0).text = dfBase.iloc[0,0] + "\nPropuesta\nBase"
     table.cell(start, 0).merge(table.cell(end, 0))
+
+    for cell in table.rows[start].cells[1:]:
+        _remove_top_bottom_bordes(cell, topValue=False)
+    for cell in table.rows[end].cells[1:]:
+        _remove_top_bottom_bordes(cell, bottomValue=False)
+    for selectedRow in [i for i in range(start+1,end+1)]:
+        for cell in table.rows[selectedRow].cells[1:]:
+            _remove_top_bottom_bordes(cell)
 
     start = end+1  
     for j in range(dfProyectado.shape[0]):
@@ -360,6 +376,14 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     table.cell(start, 0).text = dfProyectado.iloc[0,0] + "\nPropuesta\nProyectada"
     table.cell(start, 0).merge(table.cell(end, 0))
 
+    for cell in table.rows[start].cells[1:]:
+        _remove_top_bottom_bordes(cell, topValue=False)
+    for cell in table.rows[end].cells[1:]:
+        _remove_top_bottom_bordes(cell, bottomValue=False)
+    for selectedRow in [i for i in range(start+1,end)]:
+        for cell in table.rows[selectedRow].cells[1:]:
+            _remove_top_bottom_bordes(cell)
+
     #Aesthetics
     _align_content(table)
 
@@ -378,9 +402,9 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    for id, x in zip([1],[1]):
+    for id, x in zip([1,7],[4.5,1.5]):
         for cell in table.columns[id].cells:
-            cell.width = Inches(x)
+            cell.width = Cm(x)
 
     table.style = 'Table Grid'
 
