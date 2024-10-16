@@ -3,8 +3,8 @@
 
 a = Analysis(
     ['main.py'],
-    # pathex=['C:/Users/dacan/OneDrive/Desktop/Projects/TRAFFIC_REPORT'],
-    pathex=['D:\Projects\TRAFFIC_REPORT'],
+    pathex=['C:/Users/dacan/OneDrive/Desktop/Projects/TRAFFIC_REPORT'],
+    # pathex=['D:\Projects\TRAFFIC_REPORT'],
     binaries=[],
     datas=[("templates", "templates"), ("data", "data"), ('./.env/Lib/site-packages/docxcompose/templates', 'docxcompose/templates')],
     hiddenimports=[],

@@ -99,6 +99,31 @@ def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
     codigo = os.path.split(sig_path)[1][:-4]
     ws = wb[codigo]
 
+    #Computing number of phases according peak hours
+    listSlicesPeakhours = [
+        slice("V4,AJ4"),
+        slice("V6,AJ6"),
+        slice("V8,AJ8"),
+        slice("V10,AJ10"),
+        slice("V11,AJ11"),
+        slice("V12,AJ12"),
+    ]
+
+    maxnumphases = 0
+    emptyThree = lambda three: all(x in [None, ""] for x in three)
+
+    for sliceph in listSlicesPeakhours:
+        rowList = [elem.value for row in ws[sliceph] for elem in row]
+        for i in range(len(rowList)-3, -1, -3):
+            terna = rowList[i:i+3]
+            if emptyThree(terna):
+                numphases = (i+3)//3
+                if numphases > maxnumphases:
+                    maxnumphases = numphases
+                break
+
+    #Extracting data for no peak hours
+
     listSlices = [
         (slice("V2", "AJ2"), "HPMAD", "Tipico"),
         (slice("V3", "AJ3"), "HVMAD", "Tipico"),
@@ -111,7 +136,7 @@ def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
 
     for slicev, scenario, tipicidad in listSlices:
         if scenarioValue == scenario and tipicidad == tipicidadValue:
-            rowList = [elem.value for row in ws[slicev] for elem in row if elem.value is not None] 
+            rowList = ['' if elem.value is None else elem.value for row in ws[slicev] for elem in row][:maxnumphases*3]
             greens = [elem for i, elem in enumerate(rowList) if i % 3 == 0]
             ambars = [elem for i, elem in enumerate(rowList) if i % 3 == 1]
             reds = [elem for i, elem in enumerate(rowList) if i % 3 == 2]

@@ -66,8 +66,8 @@ def create_resultados_images(subareaPath) -> str:
     listWordPaths = []
     for vehicleType, (gehFilePath, r2FilePath) in imagesDict.items():
         doc_template = DocxTemplate(r"templates\template_tablas3.docx")
-        gehImage = InlineImage(doc_template, gehFilePath, height = Inches(5))
-        r2Image = InlineImage(doc_template, r2FilePath, height = Inches(5))
+        gehImage = InlineImage(doc_template, gehFilePath, height = Cm(5))
+        r2Image = InlineImage(doc_template, r2FilePath, height = Cm(5))
         text = f'Análisis de GEH y R2 de {vehicleType}'
         doc_template.render({
             'texto': text,

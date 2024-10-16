@@ -283,7 +283,7 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
         "codinterseccion": codigo,
         "nomacceso": nombre,
         "sentido": sentido,
-        "delaymax": f"{float(valueMaxDelay):.2f}",
+        "delaymax": f"{float(valueMaxDelay):.1f}",
     }
 
     resultsFolder = os.path.join(subareaPath, "Tablas", "Results")
