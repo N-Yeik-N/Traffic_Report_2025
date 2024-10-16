@@ -272,18 +272,46 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     #########################
     # Creation of paragraph #
     #########################
+    repeatedNames = df.groupby('Nombre')['State'].nunique()
+    repeatedNames = repeatedNames[repeatedNames == 3].index.tolist()
 
-    idxMaxDelay = dfActual['Delay'].idxmax()
-    nombreMaxDelay = dfActual.loc[idxMaxDelay, 'Nombre']
-    valueMaxDelay = dfActual.loc[idxMaxDelay, 'Delay']
-    nombre, sentido = nombreMaxDelay.split(" - ")
+    dfRepeated = df[df['Nombre'].isin(repeatedNames)]
+
+    maxDelayActual = dfRepeated[dfRepeated['State'] == 'Actual'].sort_values(by='Delay', ascending=False).iloc[0]
+    nameMaxDelayActual = maxDelayActual['Nombre']
+    nombre, sentido = nameMaxDelayActual.split(" - ")
+    valueMaxDelayActual = float(maxDelayActual['Delay'])
+
+    dfOthers = dfRepeated[dfRepeated['Nombre'] == nameMaxDelayActual][['State', 'Delay']]
+    valueDelayBase = float(dfOthers[dfOthers['State'] == 'Propuesta Base']['Delay'].iloc[0])
+    valueDelayProyectado = float(dfOthers[dfOthers['State'] == 'Propuesta Proyectada']['Delay'].iloc[0])
+
+    #Cases of comparison:
+    if valueMaxDelayActual > valueDelayBase and valueMaxDelayActual > valueDelayProyectado:
+        comparison_txt = "Para la propuesta base y propuesta proyectada se presenta una disminución de la demora debido a COMPLETAR MANUAL"
+
+    elif valueMaxDelayActual > valueDelayBase and valueMaxDelayActual < valueDelayProyectado:
+        if valueDelayProyectado < 1.5*valueMaxDelayActual:
+            comparison_txt = "Para la propuesta base se presenta una disminución de la demora y para la propuesta proyectada un aumento ligero de la demora debido a COMPLETAR MANUAL"
+        elif valueDelayProyectado >= 1.5*valueMaxDelayActual:
+            comparison_txt = "Para la propuesta base se presenta una disminución de la demora y para la propuesta proyectada un aumento de la demora debido a COMPLETAR MANUAL"
+
+    elif valueMaxDelayActual < valueDelayBase and valueMaxDelayActual > valueDelayProyectado:
+        if valueDelayBase < 1.5*valueMaxDelayActual:
+            comparison_txt = "Para la propuesta base se presenta un aumento ligero de la demora y para la propuesta proyectada una disminución de la demora debido a COMPLETAR MANUAL"
+        elif valueDelayBase >= 1.5*valueMaxDelayActual:
+            comparison_txt = "Para la propuesta base se presenta un aumento la demora y para la propuesta proyectada una disminución de la demora debido a COMPLETAR MANUAL"
+    
+    elif valueMaxDelayActual < valueDelayBase and valueMaxDelayActual < valueDelayProyectado:
+        comparison_txt = "Para la propuesta base y propuesta proyectada se presenta un aumento de la demora debido a COMPLETAR MANUAL"    
 
     VARIABLES = {
         "nominterseccion": namesByCode[codigo],
         "codinterseccion": codigo,
         "nomacceso": nombre,
         "sentido": sentido,
-        "delaymax": f"{float(valueMaxDelay):.1f}",
+        "delaymax": f"{float(valueMaxDelayActual):.1f}",
+        "comparison_txt": comparison_txt,
     }
 
     resultsFolder = os.path.join(subareaPath, "Tablas", "Results")
@@ -554,7 +582,7 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
         "speedavg_actual": round(float(dfAvg.loc[0]["SpeedAvg"]),2),
         "stoptmavg_actual": round(float(dfAvg.loc[0]["StopTmAvg"]),2),
         "speedavg_propuesto": round(float(dfAvg.loc[1]["SpeedAvg"]),2),
-        "stoptmavg_propuesto": round(float(dfAvg.loc[1]["StopTmAvg"]),2),
+        #"stoptmavg_propuesto": round(float(dfAvg.loc[1]["StopTmAvg"]),2),
         "speedavg_proyectado": round(float(dfAvg.loc[2]["SpeedAvg"]),2),
         "stoptmavg_proyectado": round(float(dfAvg.loc[2]["StopTmAvg"]),2),
     }
@@ -569,12 +597,12 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
     ##################
 
     doc = Document()
-    table = doc.add_table(rows = 1, cols = 8)
+    table = doc.add_table(rows = 1, cols = 7)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
     table.style = 'Table Grid'
 
     headers = [
-        "Escenarios", "Num. Sim", "Dens. Prom.", "Flujo Prom.", "Vel. Norm. Prom.", "Vel. Prom.", "Tiempo Parada Prom.", "Tiempo Viaje Prom."
+        "Escenarios", "Num. Sim", "Dens. Prom.", "Flujo Prom.", "Vel. Norm. Prom.", "Vel. Prom.", "Tiempo Viaje Prom."
     ]
 
     for i, header in enumerate(headers):
@@ -583,12 +611,12 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
     for j in range(df.shape[0]):
         newRow = table.add_row()
         for i, column in enumerate([
-            "Escenario", "SimRun", "DensAvg", "FlowAvg", "NormSpeedAvg", "SpeedAvg", "StopTmAvg", "TravTmAvg"
+            "Escenario", "SimRun", "DensAvg", "FlowAvg", "NormSpeedAvg", "SpeedAvg", "TravTmAvg"
         ]):
             if i == 0: continue
             if column == "SimRun":
                 newRow.cells[i].text = str(df.loc[j, column])
-            elif column in ["DensAvg", "FlowAvg", "NormSpeedAvg", "SpeedAvg", "StopTmAvg", "TravTmAvg"]:
+            elif column in ["DensAvg", "FlowAvg", "NormSpeedAvg", "SpeedAvg", "TravTmAvg"]:
                 try:
                     newRow.cells[i].text = f"{float(df.loc[j, column]):.4f}"
                 except:
