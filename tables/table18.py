@@ -101,12 +101,12 @@ def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
 
     #Computing number of phases according peak hours
     listSlicesPeakhours = [
-        slice("V4,AJ4"),
-        slice("V6,AJ6"),
-        slice("V8,AJ8"),
-        slice("V10,AJ10"),
-        slice("V11,AJ11"),
-        slice("V12,AJ12"),
+        slice("V4","AJ4"),
+        slice("V6","AJ6"),
+        slice("V8","AJ8"),
+        slice("V10","AJ10"),
+        slice("V11","AJ11"),
+        slice("V12","AJ12"),
     ]
 
     maxnumphases = 0
