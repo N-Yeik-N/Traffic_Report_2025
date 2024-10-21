@@ -268,6 +268,7 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     dfActual['Delay'] = pd.to_numeric(dfActual['Delay'], errors='coerce')
     dfBase = df[df["State"] == "Propuesta Base"].reset_index(drop=True)
     dfProyectado = df[df["State"] == "Propuesta Proyectada"].reset_index(drop=True)
+    df['Delay'] = pd.to_numeric(df['Delay'], errors='coerce')
 
     #########################
     # Creation of paragraph #
@@ -275,9 +276,9 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     repeatedNames = df.groupby('Nombre')['State'].nunique()
     repeatedNames = repeatedNames[repeatedNames == 3].index.tolist()
 
-    dfRepeated = df[df['Nombre'].isin(repeatedNames)]
+    dfRepeated = df[df['Nombre'].isin(repeatedNames)].reset_index(drop=True)
 
-    maxDelayActual = dfRepeated[dfRepeated['State'] == 'Actual'].sort_values(by='Delay', ascending=False).iloc[0]
+    maxDelayActual = dfRepeated[(dfRepeated['State'] == 'Actual') & (dfRepeated['Delay'].notna())].sort_values(by='Delay', ascending=False).iloc[0]
     nameMaxDelayActual = maxDelayActual['Nombre']
     nombre, sentido = nameMaxDelayActual.split(" - ")
     valueMaxDelayActual = float(maxDelayActual['Delay'])
