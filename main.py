@@ -412,6 +412,10 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 14\tERROR\tNo hay matrices en la carpeta Actual")
                 LOGGER.warning("Error tabla 14")
                 LOGGER.warning("No hay matrices en alguna de las carpetas Actual")
+            except AssertionError as e:
+                print(f"Tabla 14\tERROR\t{e}")
+                LOGGER.warning("Error tabla 14")
+                LOGGER.warning("No hay matrices en alguna de las carpetas Actual")
             except Exception as e:
                 print("Tabla 14\tERROR\tTabla de orígenes y destinos de situación actual")
                 LOGGER.warning("Error Tabla 14")

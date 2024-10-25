@@ -155,78 +155,30 @@ def create_table14(path_subarea, maxTurn, maxTipicidad):
     if scenarioBalanced == "Manana": scenarioBalanced = "HPM"
     elif scenarioBalanced == "Tarde": scenarioBalanced = "HPT"
     elif scenarioBalanced == "Noche": scenarioBalanced = "HPN"
-
-    scenarios_by_tipicidad = {}
-    for tipicidad in ["Tipico", "Atipico"]:
-        tipFolder = actualFolder / tipicidad
-        listScenarios = os.listdir(tipFolder)
-        
-        listScenarios = [scenario for scenario in listScenarios if os.path.isdir(tipFolder / scenario)]
-        scenarios_by_tipicidad[tipicidad] = listScenarios
-
-    matrixes_by_tipicidad = {}
-    for tipicidad, listScenarios in scenarios_by_tipicidad.items():
-        listMatrixes = []
-        for scenario in listScenarios:
-            scenarioFolder = actualFolder / tipicidad / scenario
-            listExcels = os.listdir(scenarioFolder)
-            excelMatrix = [excel for excel in listExcels
-                          if excel.endswith(".xlsx") and not excel.startswith("~") and 'Matriz' in excel]
-            if len(excelMatrix) > 1: print("Error: Hay más de una matriz en: ", scenario)
-            listMatrixes.append(scenarioFolder / excelMatrix[0])
-
-
-        matrixes_by_tipicidad[tipicidad] = listMatrixes
     
-    listPathsByTipicidad = []
-    pattern = r'Matriz-OD_([A-Z]+).xlsx'
-    count = 1
-    for tipicidad, listExcels in matrixes_by_tipicidad.items():
-        for excel in tqdm(listExcels, desc=f"Procesando matrices de {tipicidad}"):
-            nameExcel = os.path.split(excel)[-1]
-            coincidence = re.search(pattern, nameExcel)
-            if coincidence:
-                nameScenario = coincidence.group(1)
-            else:
-                print("Error: No se encontro un nombre correcto de escenario en: ", excel)
+    #Unique matrix
+    scenarioFolder = actualFolder / tipicidadBalanced / scenarioBalanced
+    listContent = os.listdir(scenarioFolder)
+    matrixExcel = [file for file in listContent if file.endswith(".xlsx") and 'Matriz-OD_' in file]
 
-            try:
-                ORIGINS, DESTINYS, MATRIX = read_matrix(excel)
-                tablePath = table_creation(MATRIX, nameScenario, tipicidad, path_subarea)
-                count += 1
-                #print(f"Procesado tabla Nro. {count-1}")
-            except Exception as inst:
-                raise inst
-            
-            if tipicidad == tipicidadBalanced:
-                if nameScenario == scenarioBalanced:
-                    selectedInformation = [ORIGINS, DESTINYS, MATRIX]
+    assert len(matrixExcel) == 1, f"Hay más de una matriz o no hay en: {scenarioFolder}"
+    matrixExcelPath = scenarioFolder / matrixExcel[0]
+    ORIGINS, DESTINATIONS, MATRIX = read_matrix(matrixExcelPath)
+    tablePath = table_creation(MATRIX, matrixExcel[0][:-5], tipicidadBalanced, path_subarea)
 
-            doc_template = DocxTemplate("./templates/template_tablas2.docx")
-            texto = f"Matriz OD de la subárea {subareaID} {nameScenario} día {tipicidad.lower()}"
-            new_table = doc_template.new_subdoc(tablePath)
-            VARIABLES = {
-                'texto': texto,
-                'tabla': new_table,
-            }
-            doc_template.render(VARIABLES)
-            if tipicidad == 'Tipico':
-                tip = "T"
-            elif tipicidad == "Atipico":
-                tip = "A"
-            finalPath = os.path.join(path_subarea, "Tablas", f"table14_{nameScenario}_{tip}_REF.docx")
-            doc_template.save(finalPath)
-            listPathsByTipicidad.append(finalPath)
-
+    docTemplate = DocxTemplate("./templates/template_tablas2.docx")
+    texto = f"Matriz OD de la subarea {subareaID} {scenarioBalanced} día {tipicidadBalanced.lower()}"
+    newTable = docTemplate.new_subdoc(tablePath)
+    VARIABLES = {
+        'texto': texto,
+        'tabla': newTable,
+    }
+    docTemplate.render(VARIABLES)
     table14_path = os.path.join(path_subarea, "Tablas", "tabla14.docx")
-    filePathMaster = listPathsByTipicidad[0]
-    filePathList = listPathsByTipicidad[1:]
-    _combine_all_docx(filePathMaster, filePathList, table14_path)
+    docTemplate.save(table14_path)
 
-    #Information about maximums value of calibrated matrix
-    # dataframeMatrix = pd.DataFrame(selectedInformation[2])
-    # dataframeMatrix.replace('-', np.nan, inplace=True)
-    #dataframeMatrix = dataframeMatrix.apply(pd.to_numeric, errors='coerce')
+    selectedInformation = [ORIGINS, DESTINATIONS, MATRIX]
+
     dataframeMatrix = selectedInformation[2]
 
     max_value = dataframeMatrix.max().max()
