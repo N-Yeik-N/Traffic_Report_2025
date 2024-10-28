@@ -581,11 +581,11 @@ def create_tables_peatonal(df: pd.DataFrame, tipicidad: str, scenario: str, suba
     dfAvg = df[df["SimRun"] == "Avg"].reset_index(drop=True)
     VARIABLES = {
         "speedavg_actual": round(float(dfAvg.loc[0]["SpeedAvg"]),2),
-        "stoptmavg_actual": round(float(dfAvg.loc[0]["StopTmAvg"]),2),
+        #"stoptmavg_actual": round(float(dfAvg.loc[0]["StopTmAvg"]),2),
         "speedavg_propuesto": round(float(dfAvg.loc[1]["SpeedAvg"]),2),
         #"stoptmavg_propuesto": round(float(dfAvg.loc[1]["StopTmAvg"]),2),
         "speedavg_proyectado": round(float(dfAvg.loc[2]["SpeedAvg"]),2),
-        "stoptmavg_proyectado": round(float(dfAvg.loc[2]["StopTmAvg"]),2),
+        #"stoptmavg_proyectado": round(float(dfAvg.loc[2]["StopTmAvg"]),2),
     }
 
     paragraphDoc = DocxTemplate("./templates/template_lista_peatonal.docx")
