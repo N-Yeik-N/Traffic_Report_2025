@@ -40,6 +40,8 @@ def create_table9(path_subarea):
     list_excels = os.listdir(field_data)
     list_excels = [os.path.join(field_data, file) for file in list_excels
                 if file.endswith(".xlsx") and not file.startswith("~")]
+    
+    assert len(list_excels) > 0, "No existen tiempos de ciclo semafóricos actuales."
 
     phasesList = []
     for excel in list_excels:

@@ -140,11 +140,12 @@ def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
             greens = [elem for i, elem in enumerate(rowList) if i % 3 == 0]
             ambars = [elem for i, elem in enumerate(rowList) if i % 3 == 1]
             reds = [elem for i, elem in enumerate(rowList) if i % 3 == 2]
+            rowListNumbers = [elem for elem in rowList if elem not in ['', None]]
             sig_info = {
                 "sig_name": codigo,
                 "turn": scenario,
                 "tipicidad": tipicidad,
-                "cycle_time": sum(rowList),
+                "cycle_time": sum(rowListNumbers),
                 "offset": 0,
                 "greens": greens,
                 "ambars": ambars,

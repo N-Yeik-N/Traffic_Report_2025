@@ -308,6 +308,8 @@ class MyWindow(QMainWindow, Ui_Form):
                 parrafos_programacion = doc.new_subdoc(parrafos_programacion_path)
                 VARIABLES.update({"tabla9": table9, "parrafos_programacion": parrafos_programacion})
                 print("Tabla 9\t\tOK\tGráficas de programaciones semafóricas")
+            except AssertionError as e:
+                print(f"Tabla 9\t\tOK\t{e}")
             except Exception as e:
                 print("Tabla 9\t\tERROR\tGráficas de programaciones semafóricas")
                 LOGGER.warning("Error Tabla 9")
@@ -587,7 +589,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 VARIABLES.update({"sigactual": sigActual})
                 print("Sigs actual\tOK")
             except IndexError as e:
-                print("Sigs actual\tERROR\tNo hay sigs")
+                print("Sigs actual\tOK\tNo hay sigs")
             except Exception as e:
                 print("Sigs actual\tERROR")
                 LOGGER.warning("Sigs actual")

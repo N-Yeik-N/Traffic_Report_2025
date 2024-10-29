@@ -71,11 +71,13 @@ def get_sigs_actual(
         for pathPNG in listPathsPNGs:
             pathPNG_parts = pathPNG.split("\\")
             scenarioName = pathPNG_parts[-2]
-            if scenarioName == 'HPM': turno = 'Mañana'
+            texto = ''
+            if scenarioName == 'HPM':
+                turno = 'Mañana'
+                texto = f"Tiempo de ciclo y fases semafóricas en el Turno {turno} de la intersección {code}"
             elif scenarioName == 'HPT': turno = 'Tarde'
             elif scenarioName == 'HPN': turno = 'Noche'
             else: print(f"Error: No se encontró ningún escenario de HPM, HPT o HPN: {pathPNG}")
-            texto = f"Tiempo de ciclo y fases semafóricas en el Turno {turno} de la intersección {code}"
             pathImage = pathPNG
             dictTurns[turno] = (texto, pathImage)
         dictCode[code] = dictTurns
@@ -98,9 +100,15 @@ def get_sigs_actual(
             except IndexError as e:
                 parrafo_sig = "NO SE ENCONTRÓ NOMBRE RELACIÓN CON ESE CÓDIGO: data/Datos Generales.xlsx"
 
-            doc_template = DocxTemplate("./templates/template_imagenes_parrafo.docx")
-            newImage = InlineImage(doc_template, pathImg, width=Inches(6))
-            doc_template.render({"parrafo_sig": parrafo_sig, "texto": text, "tabla": newImage}) #NOTE: {{sigactual}}
+            if text != '':
+                doc_template = DocxTemplate("./templates/template_imagenes_parrafo.docx")
+                newImage = InlineImage(doc_template, pathImg, width=Inches(6))
+                doc_template.render({"parrafo_sig": parrafo_sig, "texto": text, "tabla": newImage}) #NOTE: {{sigactual}}
+            else:
+                doc_template = DocxTemplate("./templates/template_imagenes.docx")
+                newImage = InlineImage(doc_template, pathImg, width=Inches(6))
+                doc_template.render({"texto": text, "tabla": newImage})
+            
             turno_text = unidecode(turno)
             finalPath = os.path.join(imagesDirectory, f"{code}_{turno_text}_sig{typesig}.docx")
             doc_template.save(finalPath) #TODO: <---- Este estaba comentando, parace que este código no esta completo.
