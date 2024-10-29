@@ -398,7 +398,7 @@ def histogramas_vehiculares(subareaPath: str) -> str:
         else:
             tipicidadTxt = "atípico"
         docTemplate = DocxTemplate("./templates/template_imagenes.docx")
-        newImage = InlineImage(docTemplate, pathTotal, width=Cm(7.5))
+        newImage = InlineImage(docTemplate, pathTotal, height=Cm(7.5))
         docTemplate.render({"texto": f"Histograma vehicular {tipicidadTxt} del sistema", "tabla": newImage})
 
         finalPath = os.path.join(subareaPath, "Tablas", f"HistogramaVehicular_{tipicidad}_SISTEMA.docx")

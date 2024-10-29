@@ -279,8 +279,7 @@ def create_table23(subareaPath):
     table.cell(0,1).text = "Escenario"
     table.cell(0,1).merge(table.cell(0,2))
     table.cell(0,3).text = "Vel. Prom.\n(km/h)"
-    table.cell(0,4).text = "Tiempo Parada Prom.\n(seg/peat)"
-    table.cell(0,5).text = "Tiempo Viaje Prom.\n(seg/peat)"
+    table.cell(0,4).text = "Tiempo Viaje Prom.\n(seg/peat)"
 
     #Tipically and turn
     table.cell(1,0).text = "TÍPICO"
@@ -304,7 +303,7 @@ def create_table23(subareaPath):
         table.cell(1+3*i,2).text = "Actual"
         table.cell(2+3*i,2).text = "Propuesto"
         table.cell(3+3*i,2).text = "Proyectado"
-        for col in [2,3,4,5]:
+        for col in [2,3,4]:
             _remove_top_bottom_bordes(table.cell(1+3*i,col), topValue=False)
             _remove_top_bottom_bordes(table.cell(2+3*i,col))
             _remove_top_bottom_bordes(table.cell(3+3*i,col), bottomValue=False)
@@ -332,14 +331,11 @@ def create_table23(subareaPath):
 
             for i in range(3):
                 table.cell(1+3*jump,3).text = f"{float(data1['pedestrian_performance']['Avg']['SpeedAvg']):.2f}"
-                table.cell(1+3*jump,4).text = str(int(float(data1['pedestrian_performance']['Avg']['StopTmAvg'])))
-                table.cell(1+3*jump,5).text = str(int(float(data1['pedestrian_performance']['Avg']['TravTmAvg'])))
+                table.cell(1+3*jump,4).text = str(int(float(data1['pedestrian_performance']['Avg']['TravTmAvg'])))
                 table.cell(2+3*jump,3).text = f"{float(data2['pedestrian_performance']['Avg']['SpeedAvg']):.2f}"
-                table.cell(2+3*jump,4).text = str(int(float(data2['pedestrian_performance']['Avg']['StopTmAvg'])))
-                table.cell(2+3*jump,5).text = str(int(float(data2['pedestrian_performance']['Avg']['TravTmAvg'])))
+                table.cell(2+3*jump,4).text = str(int(float(data2['pedestrian_performance']['Avg']['TravTmAvg'])))
                 table.cell(3+3*jump,3).text = f"{float(data3['pedestrian_performance']['Avg']['SpeedAvg']):.2f}"
-                table.cell(3+3*jump,4).text = str(int(float(data3['pedestrian_performance']['Avg']['StopTmAvg'])))
-                table.cell(3+3*jump,5).text = str(int(float(data3['pedestrian_performance']['Avg']['TravTmAvg'])))
+                table.cell(3+3*jump,4).text = str(int(float(data3['pedestrian_performance']['Avg']['TravTmAvg'])))
             jump += 1
 
     _align_content(table)
