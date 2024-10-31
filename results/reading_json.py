@@ -306,6 +306,10 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     elif valueMaxDelayActual < valueDelayBase and valueMaxDelayActual < valueDelayProyectado:
         comparison_txt = "Para la propuesta base y propuesta proyectada se presenta un aumento de la demora debido a COMPLETAR MANUAL"    
 
+    if scenario == "HPM": turno = "mañana"
+    elif scenario == "HPT": turno = "tarde"
+    elif scenario == "HPN": turno = "noche"
+
     VARIABLES = {
         "nominterseccion": namesByCode[codigo],
         "codinterseccion": codigo,
@@ -313,6 +317,7 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
         "sentido": sentido,
         "delaymax": f"{float(valueMaxDelayActual):.1f}",
         "comparison_txt": comparison_txt,
+        "scenario": turno
     }
 
     resultsFolder = os.path.join(subareaPath, "Tablas", "Results")

@@ -110,7 +110,9 @@ def _create_from_excel(sig_path, scenarioValue, tipicidadValue, wb):
     ]
 
     maxnumphases = 0
-    emptyThree = lambda three: all(x in [None, ""] for x in three)
+    #emptyThree = lambda three: all(x in [None, ""] for x in three)
+    #emptyThree = lambda three: three in [["","",""], [None,None,None], [0,0,0]]
+    emptyThree = lambda three: any(x>0 for x in three if isinstance(x, (int, float)))
 
     for sliceph in listSlicesPeakhours:
         rowList = [elem.value for row in ws[sliceph] for elem in row]

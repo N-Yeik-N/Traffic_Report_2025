@@ -71,13 +71,12 @@ def get_sigs_actual(
         for pathPNG in listPathsPNGs:
             pathPNG_parts = pathPNG.split("\\")
             scenarioName = pathPNG_parts[-2]
-            texto = ''
-            if scenarioName == 'HPM':
-                turno = 'Mañana'
-                texto = f"Tiempo de ciclo y fases semafóricas en el Turno {turno} de la intersección {code}"
+            #texto = ''
+            if scenarioName == 'HPM': turno = 'Mañana'
             elif scenarioName == 'HPT': turno = 'Tarde'
             elif scenarioName == 'HPN': turno = 'Noche'
             else: print(f"Error: No se encontró ningún escenario de HPM, HPT o HPN: {pathPNG}")
+            texto = f"Tiempo de ciclo y fases semafóricas en el Turno {turno} de la intersección {code}"
             pathImage = pathPNG
             dictTurns[turno] = (texto, pathImage)
         dictCode[code] = dictTurns
@@ -100,7 +99,7 @@ def get_sigs_actual(
             except IndexError as e:
                 parrafo_sig = "NO SE ENCONTRÓ NOMBRE RELACIÓN CON ESE CÓDIGO: data/Datos Generales.xlsx"
 
-            if text != '':
+            if turno == 'Mañana':
                 doc_template = DocxTemplate("./templates/template_imagenes_parrafo.docx")
                 newImage = InlineImage(doc_template, pathImg, width=Inches(6))
                 doc_template.render({"parrafo_sig": parrafo_sig, "texto": text, "tabla": newImage}) #NOTE: {{sigactual}}
