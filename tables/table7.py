@@ -6,21 +6,10 @@ from pathlib import Path
 from dataclasses import asdict
 import pandas as pd
 from docxtpl import DocxTemplate
-from docxcompose.composer import Composer
 
 def append_document_content(source_doc, target_doc) -> None:
     for element in source_doc.element.body:
         target_doc.element.body.append(element)
-
-def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
-    number_of_sections = len(filePathsList)
-    master = Document(filePathMaster)
-    composer = Composer(master)
-    for i in range(0, number_of_sections):
-        doc_temp = Document(filePathsList[i])
-        composer.append(doc_temp)
-
-    composer.save(finalPath)
 
 def create_table7(path_subarea) -> None:
     path_subarea = Path(path_subarea)
@@ -44,11 +33,13 @@ def create_table7(path_subarea) -> None:
 
     tables_by_tipicidad = {}
     listDfs = []
+    listCodes = []
     for tipicidad, excel_list in excels_by_tipicidad.items():
         tables_by_code = {}
         for excel in excel_list:
             codigo, tableList, name = board_by_excel(excel)
             if tipicidad == "Tipico":
+                listCodes.append(codigo)
                 dataDict = tableList.copy()
                 dataDict = [asdict(obj) for obj in dataDict]
                 df = pd.DataFrame(dataDict) #<--- TODO: Estoy guardando lo que va a ser usado, ahora debes usar solo el promedio.
@@ -59,6 +50,19 @@ def create_table7(path_subarea) -> None:
             tables_by_code[codigo] = tableList
         tables_by_tipicidad[tipicidad] = tables_by_code
 
+    ####################
+    # Creating table 7 #
+    ####################
+
+    count = 1
+    listTableEmbarking = {}
+    for tipicidad, value in tables_by_tipicidad.items():
+        if tipicidad == "Tipico":
+            for code, tableData in value.items():
+                table7_path_ref = create_table(tableData, code, count, path_subarea)
+                listTableEmbarking[code] = table7_path_ref
+                count += 1
+
     ###########################
     # Creating embarking list #
     ###########################
@@ -66,56 +70,36 @@ def create_table7(path_subarea) -> None:
     embarkingFolder = path_subarea / "Tablas" / "Embarking"
     embarkingFolder.mkdir(parents=True, exist_ok=True)
 
-    listWordsEmbarking = []
+    # Creating embarking list by code only Tipico typicality 
+    listWordsEmbarking = {}
     for df, code, name in listDfs:
         dfMeanByTurn = df.groupby('turno')['promedio'].mean().round(2)
         doc = DocxTemplate("templates/template_embarquelist.docx")
+        tableEmbarking = doc.new_subdoc(listTableEmbarking[code])
         variables = {
             "codinterseccion": code,
             "nominterseccion": name,
             "temprom_morning": dfMeanByTurn['Mañana'],
             "temprom_afternoon": dfMeanByTurn['Medio dia'],
-            "temprom_night": dfMeanByTurn['Noche']
+            "temprom_night": dfMeanByTurn['Noche'],
+            "table": tableEmbarking,
         }
         doc.render(variables)
         savePath = path_subarea / "Tablas" / "Embarking" / f"table7_{code}.docx"
         doc.save(savePath)
-        listWordsEmbarking.append(savePath)
+        listWordsEmbarking[code] = savePath
 
-    embarkingListPath = path_subarea / "Tablas" / "Embarking" / "embarking_list.docx"
-
-    if len(listWordsEmbarking) == 0:
-        embarkingListPath = None
-    elif len(listWordsEmbarking) == 1:
-        embarkingListPath = listWordsEmbarking[0]
-    elif len(listWordsEmbarking) > 1:
-        filePathMaster = listWordsEmbarking[0]
-        filePathList = listWordsEmbarking[1:]
-        _combine_all_docx(filePathMaster, filePathList, embarkingListPath)
-
-    ####################
-    # Creating table 7 #
-    ####################
-
-    count = 1
-    list_REF = []
-    for tipicidad, value in tables_by_tipicidad.items():
-        if tipicidad == "Tipico":
-            for code, tableData in value.items():
-                table7_path_ref = create_table(tableData, code, count, path_subarea)
-                list_REF.append(table7_path_ref)
-                count += 1
-
-    doc_target = Document(list_REF[0])
+    # This will to be at the end with the mixed list
     table7_path = Path(path_subarea) / "Tablas" / "table7.docx"
-    for i in range(len(list_REF)):
+    for i, code in enumerate(listCodes):
         if i == 0:
+            fullPathRef = listWordsEmbarking[code]
+            docTarget = Document(fullPathRef)
             continue
-        doc_source = Document(list_REF[i])
-        append_document_content(doc_source, doc_target)
-        
-        doc_target.save(table7_path)
-        doc_target = Document(table7_path)
 
-    doc_target.save(table7_path)
-    return table7_path, embarkingListPath
+        docSource = Document(listWordsEmbarking[code])
+        append_document_content(docSource, docTarget)
+
+    docTarget.save(table7_path)
+
+    return table7_path

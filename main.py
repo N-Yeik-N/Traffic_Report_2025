@@ -262,7 +262,7 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(5,0).checkState()
         if checkObject: #NOTE: Ready tabla7
             try:
-                table7_path, embarkingListPath = create_table7(self.path_subarea)
+                table7_path = create_table7(self.path_subarea)
                 table7 = doc.new_subdoc(table7_path)
                 VARIABLES.update({"tabla7": table7})
                 print("Tabla 7\t\tOK\tDatos estadísticas de embarque y desembarque")
@@ -276,16 +276,6 @@ class MyWindow(QMainWindow, Ui_Form):
             except Exception as e:
                 print("Tabla 7\t\tERROR\tDatos estadísticas de embarque y desembarque")
                 LOGGER.warning("Error Tabla 7")
-                LOGGER.warning(str(e))
-
-            try:
-                if embarkingListPath:
-                    embarkingPath = doc.new_subdoc(embarkingListPath)
-                    VARIABLES.update({"embarkingList": embarkingPath})
-                print("Embarque\tOK\tLista de descripción")
-            except Exception as e:
-                print("Embarque\tERROR\tLista de descripción")
-                LOGGER.warning("Error lista de embarque")
                 LOGGER.warning(str(e))
 
         checkObject = self.ui.tableWidget.item(6,0).checkState()
