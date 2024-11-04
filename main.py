@@ -209,14 +209,14 @@ class MyWindow(QMainWindow, Ui_Form):
         checkObject = self.ui.tableWidget.item(2,0).checkState()
         if checkObject: #NOTE: Ready tabla4
             try:
-                table4_path, table5_path, finalPathQueue = create_table4n5(self.path_subarea)
+                table4_path, table5_path = create_table4n5(self.path_subarea)
                 table4 = doc.new_subdoc(table4_path)
                 VARIABLES.update({"tabla4": table4})
                 print("Tabla 4\t\tOK\tFechas de toma de longitud de cola")
             except FileNotFoundError as e:
-                print("Tabla 4\t\tERROR\tNo existen archivos de colas")
+                print("Tabla 4\t\tOK\tNo existen archivos de colas")
             except IndexError as e:
-                print("Tabla 4\t\tERROR\tNo existen archivos de colas")
+                print("Tabla 4\t\tOK\tNo existen archivos de colas")
             except Exception as e:
                 print("Tabla 4\t\tERROR\tFechas de toma de longitud de cola")
                 LOGGER.warning("ERRROR Tabla 4")
@@ -229,24 +229,14 @@ class MyWindow(QMainWindow, Ui_Form):
                 VARIABLES.update({"tabla5": table5})
                 print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
             except FileNotFoundError as e:
-                print("Tabla 5\t\tERROR\tNo existen archivos de colas")
+                print("Tabla 5\t\OK\tNo existen archivos de colas")
             except UnboundLocalError as e:
-                print("Tabla 5\t\tERROR\tNo existen archivos de colas")
+                print("Tabla 5\t\tOK\tNo existen archivos de colas")
             except Exception as e:
                 print("Tabla 5\t\tERROR\tDatos estadísticas de longitud de cola")
                 LOGGER.warning("Error Tabla 5")
                 LOGGER.warning(str(e))
-            
-        try:
-            queueList = doc.new_subdoc(finalPathQueue)
-            if queueList:
-                VARIABLES.update({"queueList": queueList})
-                print("Colas\t\tOK\tDescripción en listas de Colas")
-        except Exception as e:
-            print("Colas\t\tERROR\tDescripción en listas de Colas")
-            LOGGER.warning("ERROR Lista de Colas")
-            LOGGER.warning(str(e))
-        
+
         checkObject = self.ui.tableWidget.item(4,0).checkState()
         if checkObject: #NOTE: Ready tabla6
             try:

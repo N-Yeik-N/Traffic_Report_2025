@@ -57,84 +57,6 @@ def create_table4n5(path_subarea):
             dataList.append([codigo, date, dict_info, name])
         data_by_tipicidad[tipicidad] = dataList
 
-    ###############
-    # Queues list #
-    ###############
-
-    generalTextSingular = "En el turno {TURN}, el sentido {SENT} presenta una longitud de cola máxima de {LONGCOLAMAX}m, siendo el sentido más crítico ({NUMAUTOS} autos en cola aproximadamente)."
-    generalTextPlural = "En el turno {TURN}, los sentidos {SENT} presentan una longitud de cola máxima de {LONGCOLAMAX}m, siendo los sentidos más críticos ({NUMAUTOS} autos en cola aproximadamente)."
-
-    if not os.path.exists(os.path.join(
-        path_subarea, "Tablas", "Queues"
-    )):
-        os.makedirs(os.path.join(
-            path_subarea, "Tablas", "Queues"
-        ))
-
-    queueWordLists = []
-    for codigo, _, df, name in data_by_tipicidad["Tipico"]:
-        queueDict = {}
-        max_values = df.groupby('Turn')['Max'].transform('max')
-        dfResult = df[df['Max'] == max_values]
-        for turn in ["Mañana", "Tarde", "Noche"]:
-            dfTurn = dfResult[dfResult['Turn'] == turn].reset_index(drop=True)
-            if dfTurn.shape[0] == 0:
-                queueDict[turn] = f"No hay datos para el turno {turn.lower()}."
-            elif dfTurn.shape[0] == 1:
-                SENT = dfTurn.iloc[0]['Direction']
-                LONGCOLAMAX = int(dfTurn.iloc[0]['Max'])
-                NUMAUTOS = LONGCOLAMAX//5.5
-                variables = {
-                    "TURN": turn.lower(),
-                    "SENT": SENT.lower(),
-                    "LONGCOLAMAX": LONGCOLAMAX,
-                    "NUMAUTOS": int(NUMAUTOS),
-                }
-                resultText = generalTextSingular.format(**variables)
-
-            elif dfTurn.shape[0] >= 2:
-                listSENT = [dfTurn.iloc[i]['Direction'] for i in range(dfTurn.shape[0])]
-                if len(listSENT) > 2:
-                    SENT = ', '.join(listSENT[:-1]) + ' y ' + listSENT[-1]
-                elif len(listSENT) == 2:
-                    SENT = ' y '.join(listSENT)
-                LONGCOLAMAX = int(dfTurn.iloc[0]['Max'])
-                NUMAUTOS = LONGCOLAMAX//5.5
-                variables = {
-                    "TURN": turn.lower(),
-                    "SENT": SENT.lower(),
-                    "LONGCOLAMAX": LONGCOLAMAX,
-                    "NUMAUTOS": int(NUMAUTOS),
-                } 
-                resultText = generalTextPlural.format(**variables)
-
-            queueDict[turn] = resultText
-
-        doc = DocxTemplate("./templates/template_queue.docx")
-        VARIABLES = {
-            "codinterseccion": codigo,
-            "nominterseccion": name,
-            "morning": queueDict["Mañana"],
-            "afternoon": queueDict["Tarde"],
-            "night": queueDict["Noche"],
-        }
-        doc.render(VARIABLES)
-        queuePath = os.path.join(
-            path_subarea, "Tablas", "Queues", f"{codigo}.docx"
-        )
-        doc.save(queuePath)
-        queueWordLists.append(queuePath)
-    
-    finalPathQueue = os.path.join(path_subarea, "Tablas", "queues_list.docx")
-    if len(queueWordLists) == 1:
-        finalPathQueue = queueWordLists[0]
-    elif len(queueWordLists) > 1:
-        filePathMaster = queueWordLists[0]
-        filePathsList = queueWordLists[1:]
-        _combine_all_docx(filePathMaster, filePathsList, finalPathQueue)
-    else:
-        finalPathQueue = None
-
     list_codes = list(set(list_codes))
     
     tipico_date = []
@@ -233,7 +155,7 @@ def create_table4n5(path_subarea):
     }
 
     count = 1
-    list_REF = []
+    tablesByCode = {}
     for tipicidad, dataList in data_by_tipicidad.items():
         for data in dataList:
             df = data[2]
@@ -325,19 +247,87 @@ def create_table4n5(path_subarea):
                 doc_template.render(VARIABLES)
                 ref_path = Path(path_subarea) / "Tablas" / f"table5_{count}_REF.docx"
                 doc_template.save(ref_path)
-                list_REF.append(ref_path)
+                tablesByCode[data[0]] = ref_path
                 count += 1
+
+    ###############
+    # Queues list #
+    ###############
+
+    generalTextSingular = "En el turno {TURN}, el sentido {SENT} presenta una longitud de cola máxima de {LONGCOLAMAX}m, siendo el sentido más crítico ({NUMAUTOS} autos en cola aproximadamente)."
+    generalTextPlural = "En el turno {TURN}, los sentidos {SENT} presentan una longitud de cola máxima de {LONGCOLAMAX}m, siendo los sentidos más críticos ({NUMAUTOS} autos en cola aproximadamente)."
+
+    if not os.path.exists(os.path.join(
+        path_subarea, "Tablas", "Queues"
+    )):
+        os.makedirs(os.path.join(
+            path_subarea, "Tablas", "Queues"
+        ))
+
+    queueWordLists = []
+    for codigo, _, df, name in data_by_tipicidad["Tipico"]:
+        queueDict = {}
+        max_values = df.groupby('Turn')['Max'].transform('max')
+        dfResult = df[df['Max'] == max_values]
+        for turn in ["Mañana", "Tarde", "Noche"]:
+            dfTurn = dfResult[dfResult['Turn'] == turn].reset_index(drop=True)
+            if dfTurn.shape[0] == 0:
+                queueDict[turn] = f"No hay datos para el turno {turn.lower()}."
+            elif dfTurn.shape[0] == 1:
+                SENT = dfTurn.iloc[0]['Direction']
+                LONGCOLAMAX = int(dfTurn.iloc[0]['Max'])
+                NUMAUTOS = LONGCOLAMAX//5.5
+                variables = {
+                    "TURN": turn.lower(),
+                    "SENT": SENT.lower(),
+                    "LONGCOLAMAX": LONGCOLAMAX,
+                    "NUMAUTOS": int(NUMAUTOS),
+                }
+                resultText = generalTextSingular.format(**variables)
+
+            elif dfTurn.shape[0] >= 2:
+                listSENT = [dfTurn.iloc[i]['Direction'] for i in range(dfTurn.shape[0])]
+                if len(listSENT) > 2:
+                    SENT = ', '.join(listSENT[:-1]) + ' y ' + listSENT[-1]
+                elif len(listSENT) == 2:
+                    SENT = ' y '.join(listSENT)
+                LONGCOLAMAX = int(dfTurn.iloc[0]['Max'])
+                NUMAUTOS = LONGCOLAMAX//5.5
+                variables = {
+                    "TURN": turn.lower(),
+                    "SENT": SENT.lower(),
+                    "LONGCOLAMAX": LONGCOLAMAX,
+                    "NUMAUTOS": int(NUMAUTOS),
+                } 
+                resultText = generalTextPlural.format(**variables)
+
+            queueDict[turn] = resultText
+
+        doc = DocxTemplate("./templates/template_queue.docx")
+        tableQueue = doc.new_subdoc(tablesByCode[codigo])
+        VARIABLES = {
+            "codinterseccion": codigo,
+            "nominterseccion": name,
+            "morning": queueDict["Mañana"],
+            "afternoon": queueDict["Tarde"],
+            "night": queueDict["Noche"],
+            "tabla": tableQueue,
+        }
+        doc.render(VARIABLES)
+        queuePath = os.path.join(
+            path_subarea, "Tablas", "Queues", f"{codigo}.docx"
+        )
+        doc.save(queuePath)
+        queueWordLists.append(queuePath)
     
-    doc_target = Document(list_REF[0])
-    for i in range(len(list_REF)):
-        if i == 0: continue
-        doc_source = Document(list_REF[i])
-        append_document_content(doc_source, doc_target)
-        table5_path_aux = Path(path_subarea) / "Tablas" / f"table5.docx"
-        doc_target.save(table5_path_aux)
-        doc_target = Document(table5_path_aux)
+    table5_path = os.path.join(path_subarea, "Tablas", "table5.docx")
+    if len(queueWordLists) == 1:
+        table5_path = queueWordLists[0]
+    elif len(queueWordLists) > 1:
+        filePathMaster = queueWordLists[0]
+        filePathsList = queueWordLists[1:]
+        _combine_all_docx(filePathMaster, filePathsList, table5_path)
+    else:
+        table5_path = None
 
-    table5_path = Path(path_subarea) / "Tablas" / "table5.docx"
-    doc_target.save(table5_path)
-
-    return table4_path, table5_path, finalPathQueue
+    return table4_path, table5_path
