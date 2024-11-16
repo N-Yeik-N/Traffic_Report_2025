@@ -57,8 +57,11 @@ def _align_content(table) -> None:
 
     for cell in table.rows[0].cells:
         for paragraph in cell.paragraphs:
-            run = paragraph.runs[0]
-            run.font.bold = True
+            try:
+                run = paragraph.runs[0]
+                run.font.bold = True
+            except IndexError:
+                pass
 
     for row in table.rows:
         for col_index in range(3):  # Columnas 0, 1 y 2
@@ -271,7 +274,7 @@ def create_table23(subareaPath):
     ######################
 
     doc = Document()
-    table = doc.add_table(rows = 19, cols=6)
+    table = doc.add_table(rows = 19, cols=5)
     table.style = 'Table Grid'
 
     #Headers

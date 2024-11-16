@@ -196,15 +196,21 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
     decreaseGreens = []
     for interstageProg in sc_tag.findall("./interstageProgs/interstageProg"):
         check = False
+        miniCycleTime = float(interstageProg.get("cycletime"))//1000
         for sg in interstageProg.findall("./sgs/sg"):
             if check: break
             if sg.get("signal_sequence") == "1": continue
+            cmdCheck = False
             for i, cmd in enumerate(sg.findall("./cmds/cmd")):
                 if i == 0 and cmd.get("display") == "3": break
                 if i == 1 and cmd.get("display") == "3":
                     decreaseGreens.append(int(cmd.get("begin"))//1000)
                     check = True
+                    cmdCheck = True
                     break
+
+            if not cmdCheck:
+                decreaseGreens.append(miniCycleTime)
 
     #Ambers
     ambers = []
@@ -274,9 +280,9 @@ def _create_table(sigs_info, tablasPath) -> None:
         new_row.cells[4].text = f"{sig_info['cycle_time']}" #Tiempo de Ciclo
         #Repartos:
         for (j, greens), ambars, reds in zip(enumerate(sig_info['greens']),sig_info['ambars'],sig_info['reds']):
-            new_row.cells[4+1+3*j].text = f"{greens}"
-            new_row.cells[4+2+3*j].text = f"{ambars}"
-            new_row.cells[4+3+3*j].text = f"{reds}"
+            new_row.cells[4+1+3*j].text = f"{int(greens)}"
+            new_row.cells[4+2+3*j].text = f"{int(ambars)}"
+            new_row.cells[4+3+3*j].text = f"{int(reds)}"
         countPlans += 1
         
     table.cell(1,0).text = sig_info['sig_name']
@@ -355,9 +361,9 @@ def create_table18(subarea_path) -> None:
             for scenario in scenarioByTipicidad[tipicidad]:
                 sigPath = output_folder / tipicidad / scenario / f"{node}.sig"
                 if scenario in ["HPMAD", "HVMAD", "HVM", "HVT", "HVN"]:
-                    sigInfo = _create_from_excel(sigPath, scenario, tipicidad, wb)
+                    sigInfo = _create_from_excel(sigPath, scenario, tipicidad, wb) #NOTE: from program_results.xlsx
                 else:
-                    sigInfo = _create_data(sigPath, scenario, tipicidad)
+                    sigInfo = _create_data(sigPath, scenario, tipicidad) #NOTE: from .sig
                 sigsInfo.append(sigInfo)
         
         finalPath, code = _create_table(sigsInfo, tablasPath)
