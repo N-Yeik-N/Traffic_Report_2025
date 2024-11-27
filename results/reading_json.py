@@ -304,7 +304,10 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
             comparison_txt = "Para la propuesta base se presenta un aumento la demora y para la propuesta proyectada una disminución de la demora debido a COMPLETAR MANUAL"
     
     elif valueMaxDelayActual < valueDelayBase and valueMaxDelayActual < valueDelayProyectado:
-        comparison_txt = "Para la propuesta base y propuesta proyectada se presenta un aumento de la demora debido a COMPLETAR MANUAL"    
+        comparison_txt = "Para la propuesta base y propuesta proyectada se presenta un aumento de la demora debido a COMPLETAR MANUAL"
+
+    else:
+        comparison_txt = "BORRAR ESTE TEXTO, LOS DATOS SALEN IGUALES EN TODOS LOS ESCENARIOS."
 
     if scenario == "HPM": turno = "mañana"
     elif scenario == "HPT": turno = "tarde"

@@ -276,7 +276,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 VARIABLES.update({"tabla8": table8})
                 print("Tabla 8\t\tOK\tTabla de fechas de tiempos de ciclo y fases")
             except Exception as e:
-                print("Tabla 8:\t\tERROR\tTabla de fechas de tiempos de ciclo y fases")
+                print("Tabla 8\t\tERROR\tTabla de fechas de tiempos de ciclo y fases")
                 LOGGER.warning("Error Tabla 8")
                 LOGGER.warning(str(e))
 
