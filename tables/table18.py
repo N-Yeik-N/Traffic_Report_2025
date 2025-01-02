@@ -193,6 +193,84 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
     greens = [y-x for x,y in zip(greens[:-1], greens[1:])]
     greens[:0] = [firstValue]
 
+    ######################
+    # Intergreen Matrix  #
+    ######################
+
+    intergreenmatrix = sc_tag.find("./intergreenmatrices/intergreenmatrix")
+
+    clearingsg_list = [int(elem_tag.get('clearingsg')) for elem_tag in intergreenmatrix.findall("./intergreen")]
+    enteringsg_list = [int(elem_tag.get('enteringsg')) for elem_tag in intergreenmatrix.findall("./intergreen")]
+    value_list = [int(elem_tag.get('value'))//1000 for elem_tag in intergreenmatrix.findall("./intergreen")]
+
+    integreen_data = {  
+        'clearingsg': clearingsg_list,
+        'enteringsg': enteringsg_list,
+        'value': value_list,
+    }
+
+    df = pd.DataFrame(integreen_data)
+
+    intergreen_matrix = df.pivot(index='clearingsg', columns='enteringsg', values='value')
+    print(intergreen_matrix)
+
+    #################################
+    # Obtaining movements in phases #
+    #################################
+
+    # Obtaining number of movements
+
+    movements = [int(sg.get("id")) for sg in sc_tag.findall("./sgs/sg")]
+
+    # Obtaining number of phases
+
+    number_phases = [i+1 for i in range(len(sc_tag.findall("./stages/stage")))]
+
+    # Creating matrix
+
+    df_phases = pd.DataFrame(index=movements, columns=number_phases)
+
+    for nro_phase, stage in enumerate(sc_tag.findall("./stages/stage"), start = 1):
+        for activation in stage.findall("./activations/activation"):
+            turn_phase = activation.get("activation") == "ON"
+            movement = int(activation.get("sg_id"))
+            df_phases.loc[movement, nro_phase] = turn_phase
+
+    print(df_phases)
+
+    # Checking if all red exists in a phase
+
+    columns = df_phases.columns
+    rr_phases = []
+    for i in range(len(columns)):
+        col_current = columns[i]
+        col_next = columns[(i+1) % len(columns)] # Columna siguiente (cíclica)
+
+        check = False
+        for idx, (val_current, val_next) in enumerate(zip(df_phases[col_current], df_phases[col_next])):
+            if check:
+                break
+            # Check if they are T,F or F,T
+            if (val_current and not val_next) or (not val_current and val_next):
+                # Check if the opposite pair is in the next row
+                for next_idx, (next_val_current, next_val_next) in enumerate(zip(df_phases[col_current], df_phases[col_next])):
+                    if next_idx != idx and (
+                        (not val_current and val_next and next_val_current and not next_val_next) or
+                        (val_current and not val_next and not next_val_current and next_val_next)
+                    ):
+                        rr_phases.append(list(columns)[i])
+                        check = True
+                        break
+
+    print(rr_phases)
+
+    return None
+
+    #####################
+    # Compute V, A & RR #
+    #####################
+
+
     decreaseGreens = []
     for interstageProg in sc_tag.findall("./interstageProgs/interstageProg"):
         check = False
@@ -394,6 +472,11 @@ def create_table18(subarea_path) -> None:
 
     return programPath
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
+    _create_data(
+        sig_path=r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\03 Proyecto Chorrillos-Barranco\6. Sub Area Vissim\Sub Area 151\Output_Base\Tipico\HPM\VM-35.sig",
+        scenario="HPM",
+        tipicidad="Tipico"
+    )
 #     subareaPath = r"D:\Work\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 080"
 #     create_table18(subareaPath)
