@@ -212,7 +212,6 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
     df = pd.DataFrame(integreen_data)
 
     intergreen_matrix = df.pivot(index='clearingsg', columns='enteringsg', values='value')
-    print(intergreen_matrix)
 
     #################################
     # Obtaining movements in phases #
@@ -235,8 +234,6 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
             turn_phase = activation.get("activation") == "ON"
             movement = int(activation.get("sg_id"))
             df_phases.loc[movement, nro_phase] = turn_phase
-
-    print(df_phases)
 
     # Checking if all red exists in a phase
 
@@ -262,35 +259,7 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
                         check = True
                         break
 
-    print(rr_phases)
-
-    return None
-
-    #####################
-    # Compute V, A & RR #
-    #####################
-
-
-    decreaseGreens = []
-    for interstageProg in sc_tag.findall("./interstageProgs/interstageProg"):
-        check = False
-        miniCycleTime = float(interstageProg.get("cycletime"))//1000
-        for sg in interstageProg.findall("./sgs/sg"):
-            if check: break
-            if sg.get("signal_sequence") == "1": continue
-            cmdCheck = False
-            for i, cmd in enumerate(sg.findall("./cmds/cmd")):
-                if i == 0 and cmd.get("display") == "3": break
-                if i == 1 and cmd.get("display") == "3":
-                    decreaseGreens.append(int(cmd.get("begin"))//1000)
-                    check = True
-                    cmdCheck = True
-                    break
-
-            if not cmdCheck:
-                decreaseGreens.append(miniCycleTime)
-
-    #Ambers
+    # Obtaining values of ambers
     ambers = []
     for interstageProg in sc_tag.findall("./interstageProgs/interstageProg"):
         checkPhase = False
@@ -302,13 +271,23 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
                 break
         if not checkPhase: ambers.append(0)
 
-    #Modifying greens values:
-    firstValue = greens[0]
-    greens = [y-x for x,y in zip(decreaseGreens, greens[1:])]
-    greens[:0] = [firstValue]
+    # Obtaining movements per phase
+    movements_by_phase = {}
+    for column in list(df_phases.columns):
+        movements_by_phase[column] = df_phases.index[df_phases[column]].tolist()
 
-    #Reds
-    reds = [y-x for x,y in zip(ambers, decreaseGreens)]
+    # Obtaining rr
+    reds = []
+    for phase, mov_list in movements_by_phase.items():
+        if not phase in rr_phases:
+            reds.append(0)
+            continue
+        max_value = 0
+        for mov in mov_list:
+            value = int(intergreen_matrix[mov].max())
+            if value > max_value:
+                max_value = value
+        reds.append(max_value)
 
     sig_info = {
         "sig_name": os.path.split(sig_path)[1][:-4],
@@ -472,11 +451,11 @@ def create_table18(subarea_path) -> None:
 
     return programPath
 
-if __name__ == '__main__':
-    _create_data(
-        sig_path=r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\03 Proyecto Chorrillos-Barranco\6. Sub Area Vissim\Sub Area 151\Output_Base\Tipico\HPM\VM-35.sig",
-        scenario="HPM",
-        tipicidad="Tipico"
-    )
+# if __name__ == '__main__':
+#     _create_data(
+#         sig_path=r"C:\Users\dacan\OneDrive\Desktop\PRUEBAS\Maxima Entropia\03 Proyecto Chorrillos-Barranco\6. Sub Area Vissim\Sub Area 151\Output_Base\Tipico\HPM\VM-35.sig",
+#         scenario="HPM",
+#         tipicidad="Tipico"
+#     )
 #     subareaPath = r"D:\Work\02 Proyecto SJL-El Agustino (57 Int. - 18 SA)\6. Sub Area Vissim\Sub Area 080"
 #     create_table18(subareaPath)
