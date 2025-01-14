@@ -229,7 +229,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 VARIABLES.update({"tabla5": table5})
                 print("Tabla 5\t\tOK\tDatos estadísticas de longitud de cola")
             except FileNotFoundError as e:
-                print("Tabla 5\t\OK\tNo existen archivos de colas")
+                print("Tabla 5\t\tOK\tNo existen archivos de colas")
             except UnboundLocalError as e:
                 print("Tabla 5\t\tOK\tNo existen archivos de colas")
             except Exception as e:

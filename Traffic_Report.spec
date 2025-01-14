@@ -3,10 +3,10 @@
 
 a = Analysis(
     ['main.py'],
-    pathex=['C:/Users/dacan/OneDrive/Desktop/Projects/TRAFFIC_REPORT'],
+    pathex=['D:/00_Programando/00_Protransito/TRAFFIC_REPORT'],
     # pathex=['D:\Projects\TRAFFIC_REPORT'],
     binaries=[],
-    datas=[("templates", "templates"), ("data", "data"), ('./.env/Lib/site-packages/docxcompose/templates', 'docxcompose/templates')],
+    datas=[("templates", "templates"), ("data", "data"), ('./env/Lib/site-packages/docxcompose/templates', 'docxcompose/templates')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -23,7 +23,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Traffic_Report v2.2.14',
+    name='Traffic_Report v2.2.15',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -36,5 +36,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['ui\\icono.ico'],
+    icon=[],
 )

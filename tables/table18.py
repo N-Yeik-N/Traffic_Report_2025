@@ -284,10 +284,15 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
             continue
         max_value = 0
         for mov in mov_list:
-            value = int(intergreen_matrix[mov].max())
+
+            value = int(intergreen_matrix[mov].max())-int(ambers[phase-1])  
             if value > max_value:
                 max_value = value
+
+
         reds.append(max_value)
+
+
 
     sig_info = {
         "sig_name": os.path.split(sig_path)[1][:-4],
