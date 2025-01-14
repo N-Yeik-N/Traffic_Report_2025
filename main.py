@@ -262,7 +262,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 try:
                     print(f"Tabla 7\t\tError\tDebes pegar la tabla manualmente:\n{table7_path}")
                 except:
-                    print("Tabla 7\t\OK\tNo existe datos de embarque y desembarque")
+                    print("Tabla 7\tOK\tNo existe datos de embarque y desembarque")
             except Exception as e:
                 print("Tabla 7\t\tERROR\tDatos estadísticas de embarque y desembarque")
                 LOGGER.warning("Error Tabla 7")
