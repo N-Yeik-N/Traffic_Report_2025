@@ -149,18 +149,20 @@ def create_table23(subareaPath):
     #####################
 
     doc = Document()
-    table = doc.add_table(rows = 1, cols = 9)
+    table = doc.add_table(rows = 1, cols = 10)
     table.style = 'Table Grid'
 
     table.cell(0,0).text = "Tipicidad"
     table.cell(0,1).text = "Escenario"
+    table.cell(0,3).text = "Semáforo"
     table.cell(0,1).merge(table.cell(0,2))
-
+    
+    ff=1 #este valor es el numero de columnas que se desplaza la ubicación de la columna "Nodo"
     #Creating Headers
     for i, texto in enumerate([
         "Nodo", "Número de\nVehículos\n(veh)", "Cola Máx.\nPromedio\n(m)", "Demora por parada\nPromedio\n(s/veh)", "Demora\nPromedio\n(s/veh)", "LOS\n(A-F)"
         ]):
-        table.cell(0,i+3).text = texto
+        table.cell(0,i+3+ff).text = texto
 
     nroRow = 1
 
@@ -184,58 +186,77 @@ def create_table23(subareaPath):
 
         for j in range(len(data['nodes_names'])): #NOTE: Estoy considerando que son del mismo tamaño, puede que no sea así siempre.
             
+            #rint(data['nodes_signalized'][j])
+            #rint(data2['nodes_signalized'][j])
+            if data['nodes_signalized'][j] == ['NONSIGNALIZED']:
+                Sem_status="No"
+            else:
+                Sem_status="Si"
+            
+            if data2['nodes_signalized'][j] == ['NONSIGNALIZED']:
+                Sem_2_status="No"
+            else:
+                Sem_2_status="Si"
+
             #Actual
             new_row = table.add_row()
             new_row.cells[2].text = "Actual"
             _remove_top_bottom_bordes(new_row.cells[2], topValue=False)
-            new_row.cells[3].text = data['nodes_names'][j]                  #Nodo
-            new_row.cells[4].text = str(round(float(data['nodes_totres'][j][4])))    #Número de Vehículos
-            new_row.cells[5].text = str(round(float(data['nodes_totres'][j][3])))    #Cola Máx. Promedio
-            new_row.cells[6].text = str(round(float(data['nodes_totres'][j][1]), 1))    #Pare Promedio
-            new_row.cells[7].text = str(round(float(data['nodes_totres'][j][0]), 1))    #Demora Promedio
-            new_row.cells[8].text = data['nodes_los'][j]
-            for selectedColumns in [3, 4, 5, 6, 7, 8]:
+            new_row.cells[3].text = Sem_status
+            _remove_top_bottom_bordes(new_row.cells[3], topValue=False)
+            new_row.cells[3+ff].text = data['nodes_names'][j]                  #Nodo
+            new_row.cells[4+ff].text = str(round(float(data['nodes_totres'][j][4])))    #Número de Vehículos
+            new_row.cells[5+ff].text = str(round(float(data['nodes_totres'][j][3])))    #Cola Máx. Promedio
+            new_row.cells[6+ff].text = str(round(float(data['nodes_totres'][j][1]), 1))    #Pare Promedio
+            new_row.cells[7+ff].text = str(round(float(data['nodes_totres'][j][0]), 1))    #Demora Promedio
+            new_row.cells[8+ff].text = data['nodes_los'][j]
+            for selectedColumns in [3+ff, 4+ff, 5+ff, 6+ff, 7+ff, 8+ff]:
                 _remove_top_bottom_bordes(new_row.cells[selectedColumns], topValue=False)
             color_hex = get_color_by_los(data['nodes_los'][j])
             shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
-            new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
+            new_row.cells[8+ff]._element.get_or_add_tcPr().append(shading_elm)
             nroRow += 1
 
             #Base
             if checkBase:
                 new_row = table.add_row()
-                table.cell(nroRow-1,3).merge(table.cell(nroRow,3))
+                table.cell(nroRow-1,3+ff).merge(table.cell(nroRow,3+ff))
                 new_row.cells[2].text = "Propuesto"
                 _remove_top_bottom_bordes(new_row.cells[2])
-                new_row.cells[4].text = str(round(float(data2['nodes_totres'][j][4])))    #Número de Vehículos
-                new_row.cells[5].text = str(round(float(data2['nodes_totres'][j][3])))    #Cola Máx. Promedio
-                new_row.cells[6].text = str(round(float(data2['nodes_totres'][j][1]), 1))    #Pare Promedio
-                new_row.cells[7].text = str(round(float(data2['nodes_totres'][j][0]), 1))    #Demora Promedio
-                new_row.cells[8].text = data2['nodes_los'][j]
-                for selectedColumns in [4, 5, 6, 7, 8]:
+                new_row.cells[3].text = Sem_2_status
+                _remove_top_bottom_bordes(new_row.cells[3])
+                new_row.cells[4+ff].text = str(round(float(data2['nodes_totres'][j][4])))    #Número de Vehículos
+                new_row.cells[5+ff].text = str(round(float(data2['nodes_totres'][j][3])))    #Cola Máx. Promedio
+                new_row.cells[6+ff].text = str(round(float(data2['nodes_totres'][j][1]), 1))    #Pare Promedio
+                new_row.cells[7+ff].text = str(round(float(data2['nodes_totres'][j][0]), 1))    #Demora Promedio
+                new_row.cells[8+ff].text = data2['nodes_los'][j]
+                for selectedColumns in [4+ff, 5+ff, 6+ff, 7+ff, 8+ff]:
                     _remove_top_bottom_bordes(new_row.cells[selectedColumns])
                 color_hex = get_color_by_los(data2['nodes_los'][j])
                 shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
-                new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
+                new_row.cells[8+ff]._element.get_or_add_tcPr().append(shading_elm)
                 nroRow += 1
 
             #Proyectado
             if checkProyectado:
                 new_row = table.add_row()
-                table.cell(nroRow-1,3).merge(table.cell(nroRow,3))
+                table.cell(nroRow-1,3+ff).merge(table.cell(nroRow,3+ff))
                 #table.cell(nroRow-1,2).merge(table.cell(nroRow,2))
                 new_row.cells[2].text = "Proyectado"
+                
                 _remove_top_bottom_bordes(new_row.cells[2], bottomValue=False)
-                new_row.cells[4].text = str(round(float(data3['nodes_totres'][j][4])))    #Número de Vehículos
-                new_row.cells[5].text = str(round(float(data3['nodes_totres'][j][3])))    #Cola Máx. Promedio
-                new_row.cells[6].text = str(round(float(data3['nodes_totres'][j][1]), 1))    #Pare Promedio
-                new_row.cells[7].text = str(round(float(data3['nodes_totres'][j][0]), 1))    #Demora Promedio
-                new_row.cells[8].text = data3['nodes_los'][j]
-                for selectedColumns in [4, 5, 6, 7, 8]:
+                new_row.cells[3].text = Sem_2_status
+                _remove_top_bottom_bordes(new_row.cells[3], bottomValue=False)
+                new_row.cells[4+ff].text = str(round(float(data3['nodes_totres'][j][4])))    #Número de Vehículos
+                new_row.cells[5+ff].text = str(round(float(data3['nodes_totres'][j][3])))    #Cola Máx. Promedio
+                new_row.cells[6+ff].text = str(round(float(data3['nodes_totres'][j][1]), 1))    #Pare Promedio
+                new_row.cells[7+ff].text = str(round(float(data3['nodes_totres'][j][0]), 1))    #Demora Promedio
+                new_row.cells[8+ff].text = data3['nodes_los'][j]
+                for selectedColumns in [4+ff, 5+ff, 6+ff, 7+ff, 8+ff]:
                     _remove_top_bottom_bordes(new_row.cells[selectedColumns], bottomValue=False)
                 color_hex = get_color_by_los(data3['nodes_los'][j])
                 shading_elm = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls('w'), color_hex))
-                new_row.cells[8]._element.get_or_add_tcPr().append(shading_elm)
+                new_row.cells[8+ff]._element.get_or_add_tcPr().append(shading_elm)
                 nroRow += 1
 
         if i == 0:

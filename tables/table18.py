@@ -188,10 +188,16 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
     offset = int(stageProg.get('offset'))//1000
     for interstage in stageProg.findall("./interstages/interstage"):
         greens.append(int(interstage.get('begin'))//1000)
+        #revisar verdes
+        #print(greens)
 
     firstValue = greens[0]
     greens = [y-x for x,y in zip(greens[:-1], greens[1:])]
     greens[:0] = [firstValue]
+
+    #para revisar
+    #print(greens)
+    
 
     ######################
     # Intergreen Matrix  #
@@ -286,12 +292,23 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
         for mov in mov_list:
 
             value = int(intergreen_matrix[mov].max())-int(ambers[phase-1])  
+
             if value > max_value:
                 max_value = value
 
 
         reds.append(max_value)
 
+    #corrigiendo verdes
+    #restarle a arrelglo greens los ambers y rr de la misma fase
+    for i in range(1,len(greens)):
+        #print(greens)
+        #print(ambers)
+        #print(reds,"\n")
+        #greens[i]=greens[i]-ambers[i-1]-reds[i-1]
+        greens[i]=greens[i]-ambers[i]-reds[i]
+        #print(greens,"\n\n\n")
+    
 
 
     sig_info = {

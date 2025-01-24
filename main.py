@@ -560,6 +560,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Resumenes\tERROR\tTabla resumen de resultados")
                 LOGGER.warning("Error en tablas de resumenes de resultados")
                 LOGGER.warning(str(e))
+                raise e
 
         checkObject = self.ui.tableWidget.item(18,0).checkState()
         if checkObject: #NOTE: Ready get sigs actual

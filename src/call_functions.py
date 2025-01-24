@@ -30,8 +30,15 @@ def _combine_all_docx(filePathMaster, filePathsList, finalPath) -> None:
 def location(path_subarea: str) -> list[dict, list]:
     numsubarea = os.path.split(path_subarea)[1][-3:]
     df_general = pd.read_excel("./data/Datos Generales.xlsx", sheet_name="DATOS", header=0, usecols="A:E")
-    nro_entregable = df_general[df_general['Sub_Area'] == int(numsubarea)]["Entregable"].unique()[0]
-    nameproject = project_names[nro_entregable]
+    
+    #nro_entregable = df_general[df_general['Sub_Area'] == int(numsubarea)]["Entregable"].unique()[0]
+    #nameproject = project_names[nro_entregable]
+
+    try:
+        nro_entregable = df_general[df_general['Sub_Area'] == int(numsubarea)]["Entregable"].unique()[0]
+        nameproject = project_names[nro_entregable]
+    except:
+        print("revisar el excel Datos Generales en la carpeta DATA")
     
     nomdistrito = df_general[df_general['Sub_Area'] == int(numsubarea)]["Distrito"].unique()[0]
     intersecciones = df_general[df_general['Sub_Area'] == int(numsubarea)]["Interseccion"].unique().tolist()
