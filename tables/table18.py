@@ -43,6 +43,13 @@ def _translation_greens(sigPath: str) -> None:
     for sg in networkTag.findall("./sgs/sg"):
         sgList.append(int(sg.get("id")))
 
+    #Nombre de las fases
+    #sgnames = []
+    #for sg in networkTag.findall("./sgs/sg"):
+    #    sgnames.append(unidecode(sg.get("name")))
+    #print(sgnames)
+
+
     #Stages data
     dfStages = pd.DataFrame(
         columns=[int(stage.attrib["id"]) for stage in networkTag.findall('./stages/stage')],
@@ -290,9 +297,10 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
             continue
         max_value = 0
         for mov in mov_list:
-
-            value = int(intergreen_matrix[mov].max())-int(ambers[phase-1])  
-
+            #print(intergreen_matrix[mov],"\t",ambers[phase-1])
+            #print("____")
+            value = int(intergreen_matrix[mov].max())-int(ambers[phase-1]) 
+            #print(intergreen_matrix[mov].max(),"\t",ambers[phase-1])
             if value > max_value:
                 max_value = value
 
@@ -305,8 +313,8 @@ def _create_data(sig_path: str, scenario: str, tipicidad: str) -> dict:
         #print(greens)
         #print(ambers)
         #print(reds,"\n")
-        #greens[i]=greens[i]-ambers[i-1]-reds[i-1]
-        greens[i]=greens[i]-ambers[i]-reds[i]
+        greens[i]=greens[i]-ambers[i-1]-reds[i-1]
+        #greens[i]=greens[i]-ambers[i]-reds[i]
         #print(greens,"\n\n\n")
     
 

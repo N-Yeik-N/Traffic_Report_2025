@@ -32,6 +32,7 @@ def create_table4n5(path_subarea):
     subarea_id = path_subarea.name
     proyect_folder = path_subarea.parents[1]
 
+
     field_data = os.path.join(
         proyect_folder,
         "7. Informacion de Campo",

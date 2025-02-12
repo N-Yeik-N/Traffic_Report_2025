@@ -8,7 +8,7 @@ def tale_by_excel(path):
     name_excel = path.split("\\")[-1]
     coincidence1 = re.search(pattern1, name_excel)
     coincidence2 = re.search(pattern2, name_excel)
-
+    #print("primer \t",path)
     if coincidence1:
         code = coincidence1.group(1)
     elif coincidence2:
@@ -20,7 +20,7 @@ def tale_by_excel(path):
     ws = wb['Base Data']
     sentido_slice = slice("C7","C14")
     acceso_slice = slice("D7","D14")
-
+    #print(path)
     list_sentido = [row[0].value for row in ws[sentido_slice] if row[0].value != None]
     list_acceso = [row[0].value for row in ws[acceso_slice] if row[0].value != None]
 
@@ -52,7 +52,7 @@ def tale_by_excel(path):
     df["Std"] = pd.to_numeric(df["Std"], errors = 'coerce')
     date = ws['D4'].value
     name = ws['D3'].value
-
+    #print(code,"\n",date,"\n",name,"\n",df,"\n\n")
     wb.close()
 
     return code, date, df, name

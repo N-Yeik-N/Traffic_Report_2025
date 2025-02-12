@@ -219,6 +219,7 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 4\t\tOK\tNo existen archivos de colas")
             except Exception as e:
                 print("Tabla 4\t\tERROR\tFechas de toma de longitud de cola")
+                raise e
                 LOGGER.warning("ERRROR Tabla 4")
                 LOGGER.warning(str(e))
 
@@ -394,15 +395,18 @@ class MyWindow(QMainWindow, Ui_Form):
                 print("Tabla 14\tERROR\tNo hay matrices en la carpeta Actual")
                 LOGGER.warning("Error tabla 14")
                 LOGGER.warning("No hay matrices en alguna de las carpetas Actual")
+                #raise e
             except AssertionError as e:
                 print(f"Tabla 14\tERROR\t{e}")
                 LOGGER.warning("Error tabla 14")
                 LOGGER.warning("No hay matrices en alguna de las carpetas Actual")
+                #raise e
             except Exception as e:
                 print("Tabla 14\tERROR\tTabla de orígenes y destinos de situación actual")
                 LOGGER.warning("Error Tabla 14")
                 LOGGER.warning(str(e))
-
+                #raise e
+        
         checkObject = self.ui.tableWidget.item(13,0).checkState()
         if checkObject: #NOTE: Ready tabla16
             try:

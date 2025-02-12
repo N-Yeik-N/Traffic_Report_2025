@@ -273,16 +273,17 @@ def create_tables_nodos(df: pd.DataFrame, tipicidad: str, scenario: str, subarea
     #########################
     # Creation of paragraph #
     #########################
+    #print(df)
     repeatedNames = df.groupby('Nombre')['State'].nunique()
     repeatedNames = repeatedNames[repeatedNames == 3].index.tolist()
-
+    #print(repeatedNames)
     dfRepeated = df[df['Nombre'].isin(repeatedNames)].reset_index(drop=True)
-
+    #print(dfRepeated)
     maxDelayActual = dfRepeated[(dfRepeated['State'] == 'Actual') & (dfRepeated['Delay'].notna())].sort_values(by='Delay', ascending=False).iloc[0]
     nameMaxDelayActual = maxDelayActual['Nombre']
     nombre, sentido = nameMaxDelayActual.split(" - ")
     valueMaxDelayActual = float(maxDelayActual['Delay'])
-
+    
     dfOthers = dfRepeated[dfRepeated['Nombre'] == nameMaxDelayActual][['State', 'Delay']]
     valueDelayBase = float(dfOthers[dfOthers['State'] == 'Propuesta Base']['Delay'].iloc[0])
     valueDelayProyectado = float(dfOthers[dfOthers['State'] == 'Propuesta Proyectada']['Delay'].iloc[0])
