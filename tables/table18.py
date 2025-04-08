@@ -367,6 +367,7 @@ def _create_table(sigs_info, tablasPath) -> None:
         new_row.cells[4].text = f"{sig_info['cycle_time']}" #Tiempo de Ciclo
         #Repartos:
         for (j, greens), ambars, reds in zip(enumerate(sig_info['greens']),sig_info['ambars'],sig_info['reds']):
+            #print(sig_info) aveces falla cuando en el excel program results tiene vacio los valores, deben ir 0
             new_row.cells[4+1+3*j].text = f"{int(greens)}"
             new_row.cells[4+2+3*j].text = f"{int(ambars)}"
             new_row.cells[4+3+3*j].text = f"{int(reds)}"

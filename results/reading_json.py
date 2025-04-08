@@ -832,6 +832,7 @@ def generate_results(subareaPath: str) -> list[str]:
                     (df["Scenario"] == turno) &
                     (df["Tipicidad"] == tipicidad)
                     ]
+                #print(filtered_df)# losn nombres de los links debe ser igal en hpm, hpt y hpn, o el nombre de la carpeta esta mal
                 tablaPath = create_tables_nodos(filtered_df, tipicidad, turno, subareaPath, namesByCode)
                 listPaths.append(tablaPath)
 
